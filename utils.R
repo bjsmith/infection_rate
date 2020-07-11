@@ -96,44 +96,7 @@ get_world_with_supplements<-function(){
 }
 
 get_owid <- function(){
-  
-  #load the test rates and prevalence of COVID-19
-  # owid_fullset<-readr::read_csv("https://github.com/owid/covid-19-data/raw/master/public/data/owid-covid-data.csv")
-  # owid_fullset$date<-as.Date(as.character(owid_fullset$date))
-  
-  ######adjustment for China deaths.
-  #this is because a whole lot of deaths were attributed to the wrong date.
-  # chn_extra_deaths<-owid_fullset[owid_fullset$iso_code=="CHN" & owid_fullset$date=="2020-04-17","new_deaths"]
-  # owid_fullset[owid_fullset$iso_code=="CHN" & owid_fullset$date=="2020-04-17","new_deaths"]<-10
-  # chn_base_deaths<-sum(owid_fullset[owid_fullset$iso_code=="CHN" ,"new_deaths"],na.rm = TRUE)
-  # chn_prop_increase<-(chn_extra_deaths+chn_base_deaths)/chn_base_deaths
-  # owid_fullset[owid_fullset$iso_code=="CHN" & !is.na(owid_fullset$new_deaths) %>% .$new_deaths <-
-  #   (
-  #     round(owid_fullset[owid_fullset$iso_code=="CHN",] %>% .[!is.na(.$new_deaths),"new_deaths"]*chn_prop_increase[[1]])
-  #   )
-  #no longer need this code because we only use data from the last three weeks anyway.
-  #not sure how this is going to go if China isn't reporting data anymore.
-  
-  
-  
-  test_data_availability<-owid_fullset %>% group_by(date) %>% summarise(datacount=sum(!is.na(new_tests)))
-  latest_date <- max(owid_fullset$date)
-  date_period_begin<- latest_date - days(7)
-  
-  most_complete_testing_date<-filter(test_data_availability,datacount==max(test_data_availability$datacount))$date
-  
-  
-  
-  #let's try 7-day averages
-  owid_7_day_average_testing_observable<-owid_fullset %>% 
-    filter(date>=date_period_begin) %>% 
-    select(-contains("total"))%>%select(-contains("tests_units"))%>%
-    select(-continent) %>%
-    group_by(iso_code,location) %>%
-    summarise_all(mean,na.rm=TRUE)
-  
-  owid_7_day_average_testing_observable$TestsPerCase <- owid_7_day_average_testing_observable$new_tests/owid_7_day_average_testing_observable$new_cases
-  return(owid_7_day_average_testing_observable)
+
 }
 get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date()){
   #### NEXT TO DO: ADD AUSTRALIA
@@ -218,7 +181,44 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date()){
     left_join(life_exp,by=c("ISO3166.1.Alpha.3"="CountryCode"),name="ISO3166.1.Alpha.3")
   
   ######load our world in data
-  owid_7_day_average_testing_observable <- get_owid()
+  
+  #load the test rates and prevalence of COVID-19
+  owid_fullset<-readr::read_csv("https://github.com/owid/covid-19-data/raw/master/public/data/owid-covid-data.csv")
+  owid_fullset$date<-as.Date(as.character(owid_fullset$date))
+
+  ######adjustment for China deaths.
+  #this is because a whole lot of deaths were attributed to the wrong date.
+  # chn_extra_deaths<-owid_fullset[owid_fullset$iso_code=="CHN" & owid_fullset$date=="2020-04-17","new_deaths"]
+  # owid_fullset[owid_fullset$iso_code=="CHN" & owid_fullset$date=="2020-04-17","new_deaths"]<-10
+  # chn_base_deaths<-sum(owid_fullset[owid_fullset$iso_code=="CHN" ,"new_deaths"],na.rm = TRUE)
+  # chn_prop_increase<-(chn_extra_deaths+chn_base_deaths)/chn_base_deaths
+  # owid_fullset[owid_fullset$iso_code=="CHN" & !is.na(owid_fullset$new_deaths) %>% .$new_deaths <-
+  #   (
+  #     round(owid_fullset[owid_fullset$iso_code=="CHN",] %>% .[!is.na(.$new_deaths),"new_deaths"]*chn_prop_increase[[1]])
+  #   )
+  #no longer need this code because we only use data from the last three weeks anyway.
+  #not sure how this is going to go if China isn't reporting data anymore.
+  
+  
+  
+  test_data_availability<-owid_fullset %>% group_by(date) %>% summarise(datacount=sum(!is.na(new_tests)))
+  latest_date <- max(owid_fullset$date)
+  date_period_begin<- latest_date - days(7)
+  
+  most_complete_testing_date<-filter(test_data_availability,datacount==max(test_data_availability$datacount))$date
+  
+  
+  
+  #let's try 7-day averages
+  owid_7_day_average_testing_observable<-owid_fullset %>% 
+    filter(date>=date_period_begin) %>% 
+    select(-contains("total"))%>%select(-contains("tests_units"))%>%
+    select(-continent) %>%
+    group_by(iso_code,location) %>%
+    summarise_all(mean,na.rm=TRUE)
+  
+  owid_7_day_average_testing_observable$TestsPerCase <- owid_7_day_average_testing_observable$new_tests/owid_7_day_average_testing_observable$new_cases
+  
   
   #merge it in
   world_with_covid_data<-

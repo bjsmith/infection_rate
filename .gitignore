@@ -3,6 +3,9 @@
 .Rproj.user
 .Rproj.user/*
 
+data/*
+.DS_Store
+rsconnect/
 
 */.DS_Store
 .httr-oauth
