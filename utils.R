@@ -300,7 +300,16 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
         filter(`ISO3166-1-Alpha-3`!="") %>% 
         select(MonthlyArrivals,`ISO3166-1-Alpha-3`),
       by=c("Alpha3CountryOnly" =  "ISO3166-1-Alpha-3"))
+  world_with_covid_data$MonthlyArrivals<-as.numeric(world_with_covid_data$MonthlyArrivals)
   
+  world_with_covid_data <- 
+    world_with_covid_data %>% 
+    group_by(Alpha3CountryOnly) %>% 
+    #if monthly arrivals from a country e.g. Australia need to be spread over mmultiple states, do it proportional to population, 
+    #if we want to be conservative, we can multiply it by the square root of the size of the population.
+    mutate(MonthlyArrivalsScaled1 = Population/sum(Population)*MonthlyArrivals#*sqrt(length(Population))
+           ) %>% 
+    ungroup
   
   world_with_covid_data <- 
     world_with_covid_data %>% 
@@ -326,8 +335,8 @@ get_analysis_covid_data <- function(world_with_covid_data,quarantine_odds_overri
   
   ### calculate the probability of at least one COVID-19 case
   
-  world_with_covid_data$MonthlyArrivals<-as.numeric(world_with_covid_data$MonthlyArrivals)
-  world_with_covid_data$MonthlyArrivalsScaled<-world_with_covid_data$MonthlyArrivals*travel_volume_weighting
+  #world_with_covid_data$MonthlyArrivals<-as.numeric(world_with_covid_data$MonthlyArrivals)
+  world_with_covid_data$MonthlyArrivalsScaled<-world_with_covid_data$MonthlyArrivalsScaled1*travel_volume_weighting
 
   #assume that each new person has an independent chance of carrying COVID-19
   #this is conservative when we are trying to work out the probability of at least one case
