@@ -13,6 +13,7 @@ library(shiny)   # for web applications
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(data.table)
+library(magrittr)
 
 
 show_leaflet <- function(data_to_show,primary_col,rounding_func,legend_title,
@@ -98,13 +99,25 @@ get_world_with_supplements<-function(){
 get_owid <- function(){
 
 }
-get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date()){
+get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),separate_australian_states=FALSE,include_geo_data=TRUE){
+  #separate_australian_states<-TRUE
+  #include_geo_data=FALSE
   #### NEXT TO DO: ADD AUSTRALIA
   #### THIS IS GONNA BE A TOUGH BECAUSE OUR WORLD IN DATA DOESN'T HAVE AUSTRALIAN STATES
   #### JH DATA DOES, BUT IT ONLY HAS CUMULATIVE CASES. SO NEED TO:
   #### 1. CREATE A NEW TABLE THAT RECORDS NON-CUMULATIVE CONFIRMED CASES BY DOING A LEAD/LAG ON THE CUMULATIVE CONFIRMED CASES.
   #### 2. USE THAT TO DO MY DEATHS COUNTS BELOW
   #### 3. THAT SHOULD BE ALL. MAY NEED TO REPLACE OTHER INSTANCES OF OUR WORLD IN DATA. WE NO LONGER NEED IT FOR TESTING INFORMATION.
+  
+  ### when listing countries and subdivisions it gets very confusing what kind of code I should use for matching
+  ### settling on matching using a "LocationCode", 
+  ### which is the ISO-3166-1 alpha-3 for countries, and ISO-3166-2 for subdivisions
+  ### this has a TWO LETTER country code.
+  ### will need to carry a "LocationCode" and "CountryCode" separately to determine appropriate behaviour.
+  
+  if(separate_australian_states & include_geo_data){
+    stop("Cannot include geo data and separate australian states; don't have polygons for Australian states.")
+  }
 
   jh_cases_recovered<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")
   jh_cases_recovered$EventType<-"Recoveries"
@@ -113,27 +126,64 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date()){
   jh_deaths<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
   jh_deaths$EventType<-"Deaths"
   jh_data<-rbind(jh_cases_confirmed,jh_cases_recovered,jh_deaths)
-  jh_bycountry<-jh_data %>% dplyr::select(-Lat,-Long,-`Province/State`) %>% group_by(`Country/Region`,EventType) %>% summarise_all(sum,na.rm=TRUE)
   
+  
+  if (separate_australian_states){
+    jh_data %<>% 
+      mutate(Location = 
+               ifelse(`Country/Region`=="Australia",
+                      paste0(`Province/State`,", ",`Country/Region`),
+                      `Country/Region`),
+             .before=`Province/State`)
+  }else{
+    jh_data %<>% 
+      mutate(Location = `Country/Region`,
+             .before=`Province/State`)
+  }
+  jh_bycountry<-jh_data %>% 
+    dplyr::select(-Lat,-Long,-`Province/State`,-`Country/Region`) %>% 
+    group_by(Location,EventType) %>% summarise_all(sum,na.rm=TRUE)
+  
+
   jh_long<-jh_bycountry %>% tidyr::gather("Date","Count",3:ncol(.))
   jh_long$Date<-as.Date(jh_long$Date,format="%m/%d/%y")
   
   jh_dxc <- jh_long %>% tidyr::spread("EventType","Count")
   
   jh_country_mapping <- readr::read_csv("data/mapping/country_mapping_jh.csv")
-  jh_dxc <- left_join(jh_dxc,jh_country_mapping,by=c("Country/Region" = "John_Hopkins_Name"))
   
-  jh_dxc<- jh_dxc%>% mutate(ActiveCases = CasesConfirmed-Deaths-Recoveries)
+  jh_dxc <- left_join(jh_dxc,jh_country_mapping,by=c("Location" = "John_Hopkins_Name"))
+  
+  #world pop
+  world_pop <- readr::read_csv("data/mapping/world_population/API_SP.POP.TOTL_DS2_en_csv_v2_1217749.csv") %>%
+    select(`Country Code`,`Country Name`,`2019`)
+  
   
   #now get life expectancy
   life_exp<-readr::read_csv("data/mapping/lifeexpectancy-verbose.csv") %>% 
     filter(GhoDisplay=="Life expectancy at birth (years)" & SexCode=="BTSX") %>%
-    select(CountryCode,Numeric,YearCode) %>% group_by(CountryCode) %>% filter(YearCode==max(YearCode)) %>%ungroup
+    select(CountryCode,Numeric,YearCode) %>% group_by(CountryCode) %>% filter(YearCode==max(YearCode)) %>%ungroup %>%
+    rename(LocationCode=CountryCode)
+    
   
   colnames(life_exp)[colnames(life_exp)=="Numeric"]<-"LifeExp"
-  life_exp<-rbind(life_exp,
-                  tibble::as_tibble(data.frame(CountryCode="TWN","LifeExp"=80.4,"YearCode"=2017,stringsAsFactors = FALSE)))
   
+  world_data <-left_join(life_exp,world_pop,by=c("LocationCode"="Country Code"))
+  colnames(world_data)[5]<-"Population"
+  
+  world_data<-rbind(world_data,
+                  tibble::tibble(
+                    LocationCode="TWN","LifeExp"=80.4,"YearCode"=2017,"Country Name"="Taiwan","Population"=23.78*10^6))
+  
+  #add the Australian states
+  if(separate_australian_states){
+    australian_states_data <- readr::read_csv("data/mapping/australian-state-population.csv") %>%
+      select(LocationCode=ISO, Population=Value,`Country Name`=Region) %>% 
+      mutate(LifeExp=as.numeric(world_data %>% filter(LocationCode=="AUS") %>% select(LifeExp) %>% .[[1]])) %>%
+      mutate(YearCode=2013) %>%
+      mutate(`Country Name`=paste0(`Country Name`,", Australia"))
+    world_data <- rbind(world_data,australian_states_data)
+  }
   
   #mapping to get iso2 to iso3
   country_codes<-read.csv("data/mapping/country-codes.csv")
@@ -153,144 +203,116 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date()){
   country_mapping_stats_nz <- read_csv("data/mapping/country_mapping_stats_nz_to_iso.csv")
   statsnz_arr <- left_join(arrivals_this_month,country_mapping_stats_nz,by=c("Country" = "Stats_NZ_Arrivals_Name"))
   
-  worldc <- get_world_with_supplements()
-  # world_large<-ne_countries(110,returnclass = "sf")
-  # world_tiny_countries<-ne_countries(50,type="tiny_countries",returnclass = "sf")
-  # world_tiny_countries<-world_tiny_countries[world_tiny_countries$formal_en %in% 
-  #                   c("Independent State of Samoa",
-  #                    "American Samoa",
-  #                    "Kingdom of Tonga",
-  #                    "Republic of Vanuatu",
-  #                    "Republic of Kiribati",
-  #                    "Republic of Nauru",
-  #                    "Republic of Singapore",
-  #                    "Tuvalu",
-  #                    "Hong Kong Special Administrative Region, PRC",
-  #                    "Macao Special Administrative Region, PRC",
-  #                    "Pitcairn, Henderson, Ducie and Oeno Islands"
-  #                    ) #select important pacific countries and other areas that aren't included in the main map.
-  #                   ,
-  # ]
-  # world_large$geometry <-  world_large$geometry %>% st_cast("GEOMETRY") %>% st_cast("GEOMETRYCOLLECTION")
-  # world_tiny_countries$geometry <-world_tiny_countries$geometry  %>% st_cast("GEOMETRY") %>% st_cast("GEOMETRYCOLLECTION")
-  # common_cols<-intersect(colnames(world_tiny_countries),colnames(world_large))
-  # world_full<-sf::st_as_sf(rbindlist(list(world_large[,common_cols],world_tiny_countries[,common_cols]),fill=TRUE))
-  # 
-  world_health<-worldc %>% 
-    left_join(country_iso_2_to_3_map,by=c("iso_a2" = "ISO3166.1.Alpha.2"),name="iso_a2") %>%
-    left_join(life_exp,by=c("ISO3166.1.Alpha.3"="CountryCode"),name="ISO3166.1.Alpha.3")
-  
-  ######load our world in data
-  
-  #load the test rates and prevalence of COVID-19
-  owid_fullset<-readr::read_csv("https://github.com/owid/covid-19-data/raw/master/public/data/owid-covid-data.csv")
-  owid_fullset$date<-as.Date(as.character(owid_fullset$date))
-
-  ######adjustment for China deaths.
-  #this is because a whole lot of deaths were attributed to the wrong date.
-  # chn_extra_deaths<-owid_fullset[owid_fullset$iso_code=="CHN" & owid_fullset$date=="2020-04-17","new_deaths"]
-  # owid_fullset[owid_fullset$iso_code=="CHN" & owid_fullset$date=="2020-04-17","new_deaths"]<-10
-  # chn_base_deaths<-sum(owid_fullset[owid_fullset$iso_code=="CHN" ,"new_deaths"],na.rm = TRUE)
-  # chn_prop_increase<-(chn_extra_deaths+chn_base_deaths)/chn_base_deaths
-  # owid_fullset[owid_fullset$iso_code=="CHN" & !is.na(owid_fullset$new_deaths) %>% .$new_deaths <-
-  #   (
-  #     round(owid_fullset[owid_fullset$iso_code=="CHN",] %>% .[!is.na(.$new_deaths),"new_deaths"]*chn_prop_increase[[1]])
-  #   )
-  #no longer need this code because we only use data from the last three weeks anyway.
-  #not sure how this is going to go if China isn't reporting data anymore.
-  
-  
-  
-  test_data_availability<-owid_fullset %>% group_by(date) %>% summarise(datacount=sum(!is.na(new_tests)))
-  latest_date <- max(owid_fullset$date)
-  date_period_begin<- latest_date - days(7)
-  
-  most_complete_testing_date<-filter(test_data_availability,datacount==max(test_data_availability$datacount))$date
-  
-  
-  
-  #let's try 7-day averages
-  owid_7_day_average_testing_observable<-owid_fullset %>% 
-    filter(date>=date_period_begin) %>% 
-    select(-contains("total"))%>%select(-contains("tests_units"))%>%
-    select(-continent) %>%
-    group_by(iso_code,location) %>%
-    summarise_all(mean,na.rm=TRUE)
-  
-  owid_7_day_average_testing_observable$TestsPerCase <- owid_7_day_average_testing_observable$new_tests/owid_7_day_average_testing_observable$new_cases
+  if(include_geo_data){
+    worldc <- get_world_with_supplements()
+    
+    world_health<-worldc %>% 
+      left_join(country_iso_2_to_3_map,by=c("iso_a2" = "ISO3166.1.Alpha.2"),name="iso_a2") %>%
+      left_join(world_data,by=c("ISO3166.1.Alpha.3"="LocationCode")) %>%
+      rename("LocationCode"="ISO3166.1.Alpha.3")
+  }else{
+    world_health<-world_data
+  }
   
   
   #merge it in
   world_with_covid_data<-
     #left_join(world,country_iso_2_to_3_map,by=c("iso_a2" = "ISO3166.1.Alpha.2"),name="iso_a2") %>%
-    world_health %>%
-    left_join(owid_7_day_average_testing_observable,by=c("ISO3166.1.Alpha.3" = "iso_code"))
+    world_health #%>%
+    # left_join(owid_7_day_average_testing_observable,by=c("ISO3166.1.Alpha.3" = "iso_code"))
   
   vals_to_include <- 
-    (is.finite(world_with_covid_data$TestsPerCase) & !is.na(world_with_covid_data$TestsPerCase)
-     & world_with_covid_data$LifeExp>=life_exp_thresh
+    (
+      #is.finite(world_with_covid_data$TestsPerCase) & !is.na(world_with_covid_data$TestsPerCase)
+    # & 
+    world_with_covid_data$LifeExp>=life_exp_thresh
     )
+  
   
   world_with_covid_data_inc<-world_with_covid_data[vals_to_include,]
   
-  #we could do the lags another day but right now we're just interested in that one 3 week average figure.
+  
+  
+  
+  jh_dxc <- jh_dxc %>%
+    group_by(CountryDivisionCodeMixed) %>%
+    arrange(Date) %>% 
+    mutate(NewDeaths = Deaths - lag(Deaths)) %>%
+    ungroup
+  
+  jh_dxc %<>% group_by(CountryDivisionCodeMixed) %>%
+    arrange(Date) %>% mutate(ActiveCases = CasesConfirmed-Deaths-Recoveries) %>% ungroup
+  jh_dxc <- jh_dxc %>% group_by(CountryDivisionCodeMixed) %>%
+    arrange(Date) %>% mutate(NewCases = CasesConfirmed-lag(CasesConfirmed)) %>% ungroup
+  
+  latest_date <- max(jh_dxc$Date)
+  date_period_begin<- latest_date - days(7)
   
   #select the cases 3 weeks ago
-  owid_7_day_cases_lagged<-owid_fullset %>% 
-    filter(date>=(date_period_begin - days(21)) & date<(date_period_begin - days(14))) %>% 
-    select(iso_code,location,contains("cases")) %>% 
-    group_by(iso_code,location) %>%
+  jh_dxc_7_day_cases_lagged <- jh_dxc %>%
+    filter(Date>=(date_period_begin - days(21)) & Date<(date_period_begin - days(14))) %>% 
+    select(CountryDivisionCodeMixed, Location, contains("Cases")) %>%
+    group_by(CountryDivisionCodeMixed, Location) %>%
     summarise_all(mean,na.rm=TRUE)
+  colnames(jh_dxc_7_day_cases_lagged)[3:ncol(jh_dxc_7_day_cases_lagged)]<-
+    paste0("Lagged",colnames(jh_dxc_7_day_cases_lagged)[3:ncol(jh_dxc_7_day_cases_lagged)])
   
-  #select the current deaths
-  owid_7_day_deaths<-owid_fullset %>% 
-    filter(date>=date_period_begin) %>% 
-    select(iso_code,location,contains("deaths")) %>% 
-    group_by(iso_code,location) %>%
+  
+  jh_dxc_7_day_deaths <- jh_dxc %>%
+    filter(Date>=date_period_begin) %>%
+    select(CountryDivisionCodeMixed, Location, contains("Deaths")) %>%
+    group_by(CountryDivisionCodeMixed, Location) %>%
     summarise_all(mean,na.rm=TRUE)
-  
-  
-  
-  deaths_with_lagged_cases <- owid_7_day_cases_lagged %>% left_join(owid_7_day_deaths)
+    
+
+  deaths_with_lagged_cases <- jh_dxc_7_day_cases_lagged %>% left_join(jh_dxc_7_day_deaths)
   
   assumed_cfr<-0.005
-  deaths_with_lagged_cases$InferredDetectionRate <- (assumed_cfr*deaths_with_lagged_cases$new_cases)/(deaths_with_lagged_cases$new_deaths)
+  deaths_with_lagged_cases<- 
+    deaths_with_lagged_cases %>% 
+    mutate(InferredDetectionRate = (assumed_cfr*LaggedNewCases/NewDeaths))
   #if there are NO deaths then we infer detection rate is 100%
-  deaths_with_lagged_cases[deaths_with_lagged_cases$new_deaths==0,"InferredDetectionRate"]<-1
+  deaths_with_lagged_cases[deaths_with_lagged_cases$NewDeaths==0,"InferredDetectionRate"]<-1
   
-  deaths_with_lagged_cases$CountryPopulation<-deaths_with_lagged_cases$total_cases/deaths_with_lagged_cases$total_cases_per_million*10^6
+  
+  
+  
+  #deaths_with_lagged_cases$CountryPopulation<-deaths_with_lagged_cases$total_cases/deaths_with_lagged_cases$total_cases_per_million*10^6
   #we want the inferred case population rate
   #this has to come from the john hopkins data because we can get active cases from that.
   jh_key_stats<-jh_dxc %>% ungroup %>% 
     filter(Date>=date_period_begin) %>% 
-    select(CasesConfirmed,Deaths,Recoveries,ActiveCases, `ISO3166-1-Alpha-3`) %>%
-    group_by(`ISO3166-1-Alpha-3`) %>%
+    select(CasesConfirmed,Recoveries,ActiveCases, CountryDivisionCodeMixed,Alpha3CountryOnly) %>%
+    group_by(CountryDivisionCodeMixed,Alpha3CountryOnly) %>%
     summarise_all(mean)
-  deaths_with_lagged_cases <- deaths_with_lagged_cases %>% left_join(jh_key_stats,by=c("iso_code"="ISO3166-1-Alpha-3"))
+  deaths_with_lagged_cases <- deaths_with_lagged_cases %>% left_join(jh_key_stats,by=c("CountryDivisionCodeMixed"="CountryDivisionCodeMixed"))
   
-  deaths_with_lagged_cases$InferredActiveCases <- (
-    (deaths_with_lagged_cases$ActiveCases/deaths_with_lagged_cases$InferredDetectionRate)
-  )
-  
-  deaths_with_lagged_cases$InferredActiveCasePopRate <- 
-    (deaths_with_lagged_cases$InferredActiveCases/
-       deaths_with_lagged_cases$CountryPopulation)
-  
-  deaths_with_lagged_cases$ActiveCasePopRate <- (
-    (deaths_with_lagged_cases$ActiveCases/deaths_with_lagged_cases$CountryPopulation)
-  )
-  
-  
+  deaths_with_lagged_cases <-
+    deaths_with_lagged_cases %>% 
+    mutate(InferredActiveCases= (ActiveCases/InferredDetectionRate))
   
   world_with_covid_data<-
     #left_join(world,country_iso_2_to_3_map,by=c("iso_a2" = "ISO3166.1.Alpha.2"),name="iso_a2") %>%
     world_health %>%
-    left_join(deaths_with_lagged_cases,by=c("ISO3166.1.Alpha.3" = "iso_code")) %>%
+    left_join(deaths_with_lagged_cases,by=c("LocationCode" = "CountryDivisionCodeMixed")) %>%
     left_join(
       statsnz_arr %>% 
         filter(`ISO3166-1-Alpha-3`!="") %>% 
         select(MonthlyArrivals,`ISO3166-1-Alpha-3`),
-      by=c("ISO3166.1.Alpha.3" =  "ISO3166-1-Alpha-3"))
+      by=c("Alpha3CountryOnly" =  "ISO3166-1-Alpha-3"))
+  
+  
+  world_with_covid_data <- 
+    world_with_covid_data %>% 
+    mutate(InferredActiveCasePopRate = (InferredActiveCases/Population))
+  
+  world_with_covid_data <- 
+    world_with_covid_data %>% 
+    mutate(ActiveCasePopRate = ActiveCases/Population)
+  
+  
+  
+  
   
   return(world_with_covid_data)
 }
@@ -317,7 +339,7 @@ get_analysis_covid_data <- function(world_with_covid_data,quarantine_odds_overri
   #0.8784233
   world_with_covid_data <- 
     world_with_covid_data %>% mutate(
-      ProbabilityOfMoreThanZeroCases=1-((CountryPopulation-InferredActiveCases)/CountryPopulation)^MonthlyArrivalsScaled)
+      ProbabilityOfMoreThanZeroCases=1-((Population-InferredActiveCases)/Population)^MonthlyArrivalsScaled)
   
   world_with_covid_data <- 
     world_with_covid_data %>% mutate(
@@ -338,7 +360,7 @@ get_analysis_covid_data <- function(world_with_covid_data,quarantine_odds_overri
   world_with_covid_data <- 
     world_with_covid_data %>% mutate(
       ProbabilityOfMoreThanZeroCommunityCases=
-        1-((CountryPopulation-InferredActiveCases*prob_infected_arr_reaches_community)/CountryPopulation)^MonthlyArrivalsScaled)
+        1-((Population-InferredActiveCases*prob_infected_arr_reaches_community)/Population)^MonthlyArrivalsScaled)
   
   world_with_covid_data <- 
     world_with_covid_data %>% mutate(

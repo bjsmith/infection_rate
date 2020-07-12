@@ -1,0 +1,56 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(magrittr)
+jh_cases_recovered<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")
+jh_cases_recovered$EventType<-"Recoveries"
+jh_cases_confirmed <- readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+jh_cases_confirmed$EventType<-"CasesConfirmed"
+jh_deaths<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
+
+separate_australian_states <- TRUE
+
+jh_deaths$EventType<-"Deaths"
+jh_data<-rbind(jh_cases_confirmed,jh_cases_recovered,jh_deaths)
+
+if (separate_australian_states){
+  jh_data %<>% 
+  mutate(SelectedTerritory = 
+           ifelse(`Country/Region`=="Australia",
+                  paste0(`Province/State`,", ",`Country/Region`),
+                  `Country/Region`),
+         .before=`Province/State`)
+}else{
+  jh_data %<>% 
+  mutate(SelectedTerritory = `Country/Region`,
+         .before=`Province/State`)
+}
+jh_bycountry<-jh_data %>% 
+  dplyr::select(-Lat,-Long,-`Province/State`,-`Country/Region`) %>% 
+  group_by(SelectedTerritory,EventType) %>% summarise_all(sum,na.rm=TRUE)
+
+jh_bycountry
+
+```
+
+
+
+```{r}
+jh_bycountry_activecases <- cbind(
+  jh_bycountry %>% arrange(SelectedTerritory) %>% filter(EventType=="CasesConfirmed") %>% .$SelectedTerritory,
+  "ActiveCases",
+  jh_bycountry %>% arrange(SelectedTerritory) %>% filter(EventType=="CasesConfirmed") %>% .[,3:ncol(.)] - 
+    jh_bycountry %>% arrange(SelectedTerritory) %>% filter(EventType=="Deaths") %>% .[,3:ncol(.)] -
+    jh_bycountry %>% arrange(SelectedTerritory) %>% filter(EventType=="Recoveries") %>% .[,3:ncol(.)]
+)
+colnames(jh_bycountry_activecases)[1:2] <- c("SelectedTerritory","EventType")
+
+
+View(jh_bycountry_activecases[,c(1:2,120:ncol(jh_bycountry_activecases))])
+
+```
+
+

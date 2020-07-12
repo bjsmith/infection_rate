@@ -5,31 +5,35 @@ life_exp_thresh <- 70
 run_date<-Sys.Date()
 month_name <- format(run_date,"%B")
 
-world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date)
-world_with_covid_data <- get_analysis_covid_data(world_basic_data)
+geo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date)
+geo_world_with_covid_data <- get_analysis_covid_data(geo_world_basic_data)
+nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_australian_states = TRUE,include_geo_data = FALSE)
+world_with_covid_data <- get_analysis_covid_data(nogeo_world_basic_data)
+
+
 
 
 ### now set up specific datasets for each output
 
 
-vals_to_include <- (is.finite(world_with_covid_data$InferredDetectionRate) & !is.na(world_with_covid_data$InferredDetectionRate)
+vals_to_include <- (is.finite(geo_world_with_covid_data$InferredDetectionRate) & !is.na(geo_world_with_covid_data$InferredDetectionRate)
                     
-                    & world_with_covid_data$LifeExp>=life_exp_thresh
+                    & geo_world_with_covid_data$LifeExp>=life_exp_thresh
 )
 
-inc_data_inf_det_rate<-world_with_covid_data[vals_to_include,]
+inc_data_inf_det_rate<-geo_world_with_covid_data[vals_to_include,]
 
 
 
 
 
 vals_to_include <- (
-  is.finite(world_with_covid_data$ActiveCasesPerThousand) & !is.na(world_with_covid_data$ActiveCasesPerThousand)
+  is.finite(geo_world_with_covid_data$ActiveCasesPerThousand) & !is.na(geo_world_with_covid_data$ActiveCasesPerThousand)
   
-  & world_with_covid_data$LifeExp>=life_exp_thresh
+  & geo_world_with_covid_data$LifeExp>=life_exp_thresh
 )
 
-inc_data_inf_cases_per_m<-world_with_covid_data[vals_to_include,]
+inc_data_inf_cases_per_m<-geo_world_with_covid_data[vals_to_include,]
 #pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
 
 #chloro_labels <- paste0(inc_data$name_long, ": ", as.character(round(inc_data$ActiveCasesPerThousand,1)))
@@ -37,44 +41,51 @@ inc_data_inf_cases_per_m<-world_with_covid_data[vals_to_include,]
 
 
 vals_to_include <- (
-  is.finite(world_with_covid_data$ActiveCasesPerThousand) & !is.na(world_with_covid_data$ActiveCasesPerThousand)
+  is.finite(geo_world_with_covid_data$ActiveCasesPerThousand) & !is.na(geo_world_with_covid_data$ActiveCasesPerThousand)
   
-  & world_with_covid_data$LifeExp>=life_exp_thresh
+  & geo_world_with_covid_data$LifeExp>=life_exp_thresh
 )
 
-inc_data_cases_per_m<-world_with_covid_data[vals_to_include,]
+inc_data_cases_per_m<-geo_world_with_covid_data[vals_to_include,]
 #pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
 
 #chloro_labels <- paste0(inc_data$name_long, ": ", as.character(round(inc_data$ActiveCasesPerThousand,1)))
 
 vals_to_include <- (
-  is.finite(world_with_covid_data$InferredActiveCases) & !is.na(world_with_covid_data$InferredActiveCases)
+  is.finite(geo_world_with_covid_data$InferredActiveCases) & !is.na(geo_world_with_covid_data$InferredActiveCases)
   
-  & world_with_covid_data$LifeExp>=life_exp_thresh
+  & geo_world_with_covid_data$LifeExp>=life_exp_thresh
 )
 
-inc_data_inf_active_cases<-world_with_covid_data[vals_to_include,]
+inc_data_inf_active_cases<-geo_world_with_covid_data[vals_to_include,]
 #pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
 
 #chloro_labels <- paste0(inc_data$name_long, ": ", as.character(round(inc_data$ActiveCasesPerThousand,1)))
 
 vals_to_include <- (
-  is.finite(world_with_covid_data$ActiveCases) & !is.na(world_with_covid_data$ActiveCases)
+  is.finite(geo_world_with_covid_data$ActiveCases) & !is.na(geo_world_with_covid_data$ActiveCases)
   
-  & world_with_covid_data$LifeExp>=life_exp_thresh
+  & geo_world_with_covid_data$LifeExp>=life_exp_thresh
 )
 
 
-inc_data_active_cases<-world_with_covid_data[vals_to_include,]
+inc_data_active_cases<-geo_world_with_covid_data[vals_to_include,]
 
-inc_data_arrivals<-world_with_covid_data
+inc_data_arrivals<-geo_world_with_covid_data
 #pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
 
 
+vals_to_include <- (
+  
+  world_with_covid_data$LifeExp>=life_exp_thresh
+)
+
+
+display_table<-world_with_covid_data[vals_to_include,]
 ######set up general simulator
 
 countries_to_choose_from<-
-  world_with_covid_data$name_long %>%
+  world_with_covid_data$Location %>%
   sort %>%
   .[.!="New Zealand"]
 
@@ -89,18 +100,18 @@ world_with_covid_data$DataQualityLow<-dql
 get_intsim_dt<-function(country_filter,selected_probs="bubble",world_w_covid_data#,quarantine_odds_override,travel_volume_weighting=1
                         ){
   # world_w_covid_data <- get_analysis_covid_data(
-  #   world_basic_data,
+  #   geo_world_basic_data,
   #   quarantine_odds_override=quarantine_odds_override,
   #   travel_volume_weighting=travel_volume_weighting)
   filtered_df <- world_w_covid_data %>%
     data.frame %>%
     filter(LifeExp>=life_exp_thresh) %>%
-    filter(name_long %in% country_filter) %>%
+    filter(Location %in% country_filter) %>%
     arrange(InfActiveCasesPerMillion)
   
   if(selected_probs=="bubble"){
     df_to_return <- filtered_df %>%
-      select(name_long,ProbabilityOfMoreThanZeroCases,
+      select(Location,ProbabilityOfMoreThanZeroCases,
            ExpectedNumberOfCases
     )
     percentage_cols <-c('ProbabilityOfMoreThanZeroCases')
@@ -110,7 +121,7 @@ get_intsim_dt<-function(country_filter,selected_probs="bubble",world_w_covid_dat
   
   if(selected_probs=="quarantine"){
     df_to_return<- filtered_df %>%
-    select(name_long,ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
+    select(Location,ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
            ExpectedNumberOfCases,ExpectedNumberOfCasesInCommunity
     )
     percentage_cols <-c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases')
@@ -129,10 +140,10 @@ get_intsim_dt<-function(country_filter,selected_probs="bubble",world_w_covid_dat
 #lose geometry info and convert to datatable. note: not the same as data.table!
 
 display_dt <- DT::datatable(
-  inc_data_active_cases %>% 
+  display_table %>% 
     data.frame %>%
     arrange(InfActiveCasesPerMillion) %>%
-    select(iso_a2, name_long, CountryPopulation,total_cases,
+    select(LocationCode, Location, Population, #total_cases,
            ActiveCases,InferredActiveCases,InfActiveCasesPerMillion,
            MonthlyArrivals,ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
            ExpectedNumberOfCases,ExpectedNumberOfCasesInCommunity
@@ -149,7 +160,7 @@ server <- function(input, output) {
       formatPercentage(c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases'),3) %>%
       formatRound(c('InferredActiveCases','InfActiveCasesPerMillion'),0,mark=",") %>%
       formatRound(c('ExpectedNumberOfCases','ExpectedNumberOfCasesInCommunity'),2) %>%
-      formatRound(c('CountryPopulation','total_cases','ActiveCases','MonthlyArrivals'),0,mark=",")
+      formatRound(c('Population','ActiveCases','MonthlyArrivals'),0,mark=",")
   )
   
   #intervention simulation page
@@ -166,17 +177,17 @@ Use the 'within our bubble' feature with caution.
 ")))})
   
 
-  sim_world_with_covid_data_bubble <- reactive({
+  sim_geo_world_with_covid_data_bubble <- reactive({
     world_w_covid_data <- get_analysis_covid_data(
-      world_basic_data,
+      nogeo_world_basic_data,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
       travel_volume_weighting=input$intsim_percent_capacity/100)
     return(world_w_covid_data)
   })
   
-  sim_world_with_covid_data_quarantine <- reactive({
+  sim_geo_world_with_covid_data_quarantine <- reactive({
     world_w_covid_data <- get_analysis_covid_data(
-      world_basic_data,
+      nogeo_world_basic_data,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
       travel_volume_weighting=input$intsim_percent_capacity_with_quarantine/100)
     return(world_w_covid_data)
@@ -185,14 +196,14 @@ Use the 'within our bubble' feature with caution.
   countries_bubble_df <- reactive({
     return(get_intsim_dt(input$intsim_countries_bubble,"bubble",
                          #quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
-                         sim_world_with_covid_data_bubble())
+                         sim_geo_world_with_covid_data_bubble())
     )
   })
 
   countries_quarantine_df <- reactive({
     return(get_intsim_dt(input$intsim_countries_quarantine,"quarantine",
                          #quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
-                         sim_world_with_covid_data_quarantine())
+                         sim_geo_world_with_covid_data_quarantine())
     )
   })
   
@@ -201,26 +212,26 @@ Use the 'within our bubble' feature with caution.
   total_risk_text <- reactive({
     
     countries_excluded_due_to_data<-
-      sim_world_with_covid_data_bubble() %>%
+      sim_geo_world_with_covid_data_bubble() %>%
       data.frame %>%
       #filter((name_long %in% input$intsim_countries_bubble) | name_long %in% (input$intsim_countries_qurantine)) %>%
-      filter(name_long %in% c(input$intsim_countries_bubble,input$intsim_countries_quarantine)) %>%
+      filter(Location %in% c(input$intsim_countries_bubble,input$intsim_countries_quarantine)) %>%
       filter(LifeExp<life_exp_thresh)
     
     
     #for countries that are let in without quarantine, we want to add 
     countries_in_bubble_risks <- (
-      sim_world_with_covid_data_bubble() %>%
+      sim_geo_world_with_covid_data_bubble() %>%
         data.frame %>%
         filter(LifeExp>=life_exp_thresh) %>%
-        filter(name_long %in% input$intsim_countries_bubble) %>%
+        filter(Location %in% input$intsim_countries_bubble) %>%
         .$ProbabilityOfMoreThanZeroCases
     )
     countries_out_of_bubble_risks <- (
-      sim_world_with_covid_data_quarantine() %>%
+      sim_geo_world_with_covid_data_quarantine() %>%
         data.frame %>%
         filter(LifeExp>=life_exp_thresh) %>%
-        filter(name_long %in% input$intsim_countries_quarantine) %>%
+        filter(Location %in% input$intsim_countries_quarantine) %>%
         .$ProbabilityOfMoreThanZeroCommunityCases
       #use the lower "community cases" figure here because these are going through quarantine.
     )
@@ -238,11 +249,11 @@ Use the 'within our bubble' feature with caution.
                     ,"."
                     )
     
-    if(length(countries_excluded_due_to_data$name_long)>0){
+    if(length(countries_excluded_due_to_data$Location)>0){
       textout<-paste0(textout,
 "<br /><br /> COVID-19 Data from the following countries is considered less reliable. 
 Risk from these countries cannot be estimated at this time:" ,
-paste0(countries_excluded_due_to_data$name_long,collapse = ", "))
+paste0(countries_excluded_due_to_data$Location,collapse = ", "))
     }
     
     
