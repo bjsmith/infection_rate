@@ -240,10 +240,21 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
     mutate(NewDeaths = Deaths - lag(Deaths)) %>%
     ungroup
   
-  jh_dxc %<>% group_by(CountryDivisionCodeMixed) %>%
-    arrange(Date) %>% mutate(ActiveCases = CasesConfirmed-Deaths-Recoveries) %>% ungroup
   jh_dxc <- jh_dxc %>% group_by(CountryDivisionCodeMixed) %>%
     arrange(Date) %>% mutate(NewCases = CasesConfirmed-lag(CasesConfirmed)) %>% ungroup
+  
+  library(zoo)
+  jh_dxc <- jh_dxc %>%
+    group_by(CountryDivisionCodeMixed) %>%
+    arrange(Date) %>% mutate(ActiveCases1 = CasesConfirmed-Deaths-Recoveries) %>%
+    mutate(ActiveCases2 = rollapply(NewCases,28,sum,align='right',fill=NA)) %>% 
+    mutate(ActiveCases = pmin(ActiveCases1,ActiveCases2,na.rm=TRUE)) %>%
+    ungroup
+  #some locations don't reliably report recoveries.
+  #to put a ceiling on cases, I follow NSW procedure and only include a case as active if it's been reported in four weeks from the beginning of my case period
+  
+  #https://www.nsw.gov.au/covid-19/find-facts-about-covid-19
+
   
   latest_date <- max(jh_dxc$Date)
   date_period_begin<- latest_date - days(7)

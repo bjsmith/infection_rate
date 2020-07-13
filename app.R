@@ -126,8 +126,9 @@ get_intsim_dt<-function(country_filter,selected_probs="bubble",world_w_covid_dat
     )
     percentage_cols <-c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases')
     rounding_cols <-c('ExpectedNumberOfCases','ExpectedNumberOfCasesInCommunity')
-    dt_colnames<-c("Territory","Probability of 1 or more cases\n arriving in quarantine","Probability of 1 or more cases\n reaching community",
-                "Expected cases in uarantine", "Expected cases in community")
+    dt_colnames<-c("Territory","Probability of 1 or more cases\n arriving in quarantine",
+                   "Probability of 1 or more cases\n reaching community",
+                "Expected cases in quarantine", "Expected cases reaching community")
   }
 
   return(DT::datatable(df_to_return,colnames=dt_colnames)%>%
@@ -244,7 +245,7 @@ Use the 'within our bubble' feature with caution.
     
     #now we need to add a warning for excluded countries.
     
-    textout<-paste0("Over a one month period, the total risk of one or more cases in the community is ",
+    textout<-paste0("Over a one month period, the total risk of one or more cases being present in the community is ",
                     scales::percent(total_risk_prop,accuracy = 0.01)
                     ,"."
                     )
