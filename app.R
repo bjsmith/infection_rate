@@ -209,7 +209,89 @@ Use the 'within our bubble' feature with caution.
   })
   
   
+  get_countries_in_bubble_risks <- reactive({
+    sim_geo_world_with_covid_data_bubble() %>%
+      data.frame %>%
+      filter(LifeExp>=life_exp_thresh) %>%
+      filter(Location %in% input$intsim_countries_bubble)
+  })
   
+  get_countries_out_of_bubble_risks <- reactive({
+    sim_geo_world_with_covid_data_quarantine() %>%
+      data.frame %>%
+      filter(LifeExp>=life_exp_thresh) %>%
+      filter(Location %in% input$intsim_countries_quarantine)
+    #use the lower "community cases" figure here because these are going through quarantine.
+  })
+  
+  get_foreign_risk <- reactive({
+    foreign_risk <- rbind(
+      get_countries_in_bubble_risks() %>%
+        select(Location,
+               "ExpectedCases"=ExpectedNumberOfCases),
+      get_countries_out_of_bubble_risks() %>%
+        select(Location,
+               "ExpectedCases"=ExpectedNumberOfCasesInCommunity)
+    )
+    
+  })
+  
+  get_nz_resident_risk <- reactive({
+    data.frame("Location"="Returning NZers",
+               "ExpectedCases"=39/input$intsim_quarantine_failure_odds)
+  })
+  
+  
+  output$total_risk_graph <- renderPlot({
+    foreign_risk <- get_foreign_risk()
+    
+    
+    #nz resident risk is the number of cases that have returned
+    #roughly 39 - need to get a better figure
+    #divided by our expected ratio of escaped cases
+    nz_resident_risk_df <- get_nz_resident_risk()
+    
+    nz_resident_risk_label <- nz_resident_risk_df$Location[[1]]
+    
+    foreign_risk$Location <-
+      factor(foreign_risk$Location,
+             levels = c(unique(foreign_risk$Location),nz_resident_risk_label),
+             ordered=TRUE)
+    
+
+      
+    
+    
+    
+    combined_risk_graph <- rbind(foreign_risk,nz_resident_risk_df)
+    
+    combined_risk_graph <- arrange(combined_risk_graph,desc(Location))
+    combined_risk_graph$LabelPosition<-cumsum(combined_risk_graph$ExpectedCases)-combined_risk_graph$ExpectedCases/2
+    combined_risk_graph <- arrange(combined_risk_graph,Location)
+    color_palette = c(
+      rep(
+        c('#1f78b4','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#6a3d9a','#b15928'),
+        ceiling(nrow(combined_risk_graph)/8))[1:nrow(foreign_risk)],
+      '#222222' #new zealand
+      )
+    
+    ggplot(combined_risk_graph,aes(x=1,y=ExpectedCases,fill=Location,label=Location))+
+      geom_bar(stat="identity",alpha=0.8)+
+      scale_x_continuous(name="",breaks=NULL)+
+      scale_y_continuous(name="Expected cases per month",
+                         breaks=0:10,minor_breaks = NULL, limits = c(0,max(6,sum(combined_risk_graph$ExpectedCases))),
+                         position="right")+
+      scale_fill_manual(values = color_palette)+
+      theme(legend.position = "none",legend.box="vertical",legend.margin=margin(),text=element_text(face = "bold"),
+            axis.text = element_text(size=16)
+            )+
+      #guides(fill=guide_legend(nrow=2,byrow=TRUE))+
+      geom_label_repel(aes(y=LabelPosition),color="white",fontface="bold")+
+      coord_flip()
+  })
+  
+  
+
 
   
   total_risk_text <- reactive({
@@ -223,21 +305,12 @@ Use the 'within our bubble' feature with caution.
     
     
     #for countries that are let in without quarantine, we want to add 
-    countries_in_bubble_risks <- (
-      sim_geo_world_with_covid_data_bubble() %>%
-        data.frame %>%
-        filter(LifeExp>=life_exp_thresh) %>%
-        filter(Location %in% input$intsim_countries_bubble) %>%
-        .$ProbabilityOfMoreThanZeroCases
-    )
-    countries_out_of_bubble_risks <- (
-      sim_geo_world_with_covid_data_quarantine() %>%
-        data.frame %>%
-        filter(LifeExp>=life_exp_thresh) %>%
-        filter(Location %in% input$intsim_countries_quarantine) %>%
-        .$ProbabilityOfMoreThanZeroCommunityCases
-      #use the lower "community cases" figure here because these are going through quarantine.
-    )
+    countries_in_bubble_risks <- get_countries_in_bubble_risks()$ProbabilityOfMoreThanZeroCases
+    countries_out_of_bubble_risks <- get_countries_out_of_bubble_risks()$ProbabilityOfMoreThanZeroCommunityCases
+    
+    foreign_risk <- get_foreign_risk()
+    nz_resident_risk <- get_nz_resident_risk()
+    pct_nz_risk <- sum(nz_resident_risk$ExpectedCases)/(sum(foreign_risk$ExpectedCases)+sum(nz_resident_risk$ExpectedCases))
     
     #now...
     #how do we combine these? 
@@ -249,7 +322,10 @@ Use the 'within our bubble' feature with caution.
     
     textout<-paste0("Over a one month period, the total risk of one or more cases being present in the community is ",
                     scales::percent(total_risk_prop,accuracy = 0.01)
-                    ,"."
+                    ,".\n\n"
+                    ,"Returning NZ Residents make up ",
+                    scales::percent(pct_nz_risk,accuracy=1),
+                    " of all expected cases."
                     )
     
     if(length(countries_excluded_due_to_data$Location)>0){
@@ -263,6 +339,8 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
     
     return(textout)
   })
+  
+
   
   output$dt_countries_bubble<-DT::renderDataTable(
     countries_bubble_df() 
@@ -407,15 +485,6 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
 ui <- navbarPage(
   "Opening the border: What's the risk?",
   tabPanel(
-    "Country List",
-    fluidPage(
-      titlePanel("COVID-19: List of countries and locations"),
-      mainPanel(
-        DT::dataTableOutput("country_table")
-      )
-    )
-  ),
-  tabPanel(
     "Intervention simulation",
     fluidPage(
       titlePanel("Intervention simulation"),
@@ -424,6 +493,13 @@ ui <- navbarPage(
           selectInput("intsim_countries_bubble",
                       "Select countries to enter our bubble (no quarantine):",
                       choices = countries_to_choose_from,
+                      selected = c("Queensland, Australia","Tasmania, Australia",
+                                   "Australian Capital Territory, Australia",
+                                   "Western Australia, Australia","South Australia, Australia",
+                                   "Northern Territory, Australia",
+                                   "Vietnam","Taiwan*","Thailand"
+                                   #"Malaysia","Cambodia","Sri Lanka"
+                                   ),
                       multiple=TRUE),
           numericInput("intsim_percent_capacity",
                        "When a country enters our bubble (no quarantine),
@@ -434,7 +510,8 @@ ui <- navbarPage(
           selectInput("intsim_countries_quarantine",
                       "Select countries to allow travelers from, under quarantine:",
                       choices = countries_to_choose_from,
-                      multiple=TRUE),
+                      multiple=TRUE,
+                      selected = c("Korea, South")),
           numericInput("intsim_percent_capacity_with_quarantine",
                        "When residents from a particular country are allowed to enter NZ, passing through quarantine first,
                        incoming travelers arrive at what percent of full capacity?",
@@ -451,18 +528,28 @@ ui <- navbarPage(
           
         ),
       mainPanel(
+        titlePanel("Total risk per month"),
+        uiOutput("intsim_totalrisk"),
+        plotOutput("total_risk_graph"),
         titlePanel("Risk from travelers from countries in our bubble"),
         DT::dataTableOutput("dt_countries_bubble"),
         titlePanel("Risk from travelers from countries outside our bubble"),
-        DT::dataTableOutput("dt_countries_quarantine"),
-        titlePanel("Total risk per month"),
-        uiOutput("intsim_totalrisk")
+        DT::dataTableOutput("dt_countries_quarantine")
       )
       )
     )
   ),
   tabPanel(
-   "map_page",
+    "Country List",
+    fluidPage(
+      titlePanel("COVID-19: List of countries and locations"),
+      mainPanel(
+        DT::dataTableOutput("country_table")
+      )
+    )
+  ),
+  tabPanel(
+   "Method and assumptions",
    
    fluidPage(
      # Application title
