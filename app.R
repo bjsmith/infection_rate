@@ -156,7 +156,7 @@ source("map_page.R")
 # Define server logic required to draw a histogram
 server <- function(input, output) {
   #country page
-  output$country_table<-renderDataTable(
+  output$country_table<-DT::renderDataTable(
     display_dt %>%
       formatPercentage(c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases'),3) %>%
       formatRound(c('InferredActiveCases','InfActiveCasesPerMillion'),0,mark=",") %>%
@@ -207,6 +207,8 @@ Use the 'within our bubble' feature with caution.
                          sim_geo_world_with_covid_data_quarantine())
     )
   })
+  
+  
   
 
   
@@ -262,12 +264,12 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
     return(textout)
   })
   
-  output$dt_countries_bubble<-renderDataTable(
+  output$dt_countries_bubble<-DT::renderDataTable(
     countries_bubble_df() 
   )
   
   
-  output$dt_countries_quarantine<-renderDataTable(
+  output$dt_countries_quarantine<-DT::renderDataTable(
     countries_quarantine_df() 
     # %>%
     #   formatPercentage(c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases'),3) %>%
@@ -409,7 +411,7 @@ ui <- navbarPage(
     fluidPage(
       titlePanel("COVID-19: List of countries and locations"),
       mainPanel(
-        dataTableOutput("country_table")
+        DT::dataTableOutput("country_table")
       )
     )
   ),
@@ -450,9 +452,9 @@ ui <- navbarPage(
         ),
       mainPanel(
         titlePanel("Risk from travelers from countries in our bubble"),
-        dataTableOutput("dt_countries_bubble"),
+        DT::dataTableOutput("dt_countries_bubble"),
         titlePanel("Risk from travelers from countries outside our bubble"),
-        dataTableOutput("dt_countries_quarantine"),
+        DT::dataTableOutput("dt_countries_quarantine"),
         titlePanel("Total risk per month"),
         uiOutput("intsim_totalrisk")
       )
