@@ -1,5 +1,6 @@
 library(DT)
 source("utils.R")
+library(ggrepel)
 
 life_exp_thresh <- 70
 run_date<-Sys.Date()
@@ -7,7 +8,7 @@ month_name <- format(run_date,"%B")
 
 geo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date)
 geo_world_with_covid_data <- get_analysis_covid_data(geo_world_basic_data)
-nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_australian_states = TRUE,include_geo_data = FALSE)
+nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
 world_with_covid_data <- get_analysis_covid_data(nogeo_world_basic_data)
 
 
@@ -88,6 +89,14 @@ countries_to_choose_from<-
   world_with_covid_data$Location %>%
   sort %>%
   .[.!="New Zealand"]
+
+# key_interest_countries <- c("US","China","Fiji","United Kingdom",
+#                             "Japan","India","Cook Islands",
+#                             "Samoa","Canada","Korea, South",
+#                             "Germany","Indonesia","Taiwan*",
+#                             "Singapore","Hong Kong SAR",
+#                             "Thailand","Philippines",
+#                             "Malaysia","France")
 
 dql<-(
   is.finite(world_with_covid_data$ActiveCases) & !is.na(world_with_covid_data$ActiveCases) &
@@ -279,7 +288,8 @@ Use the 'within our bubble' feature with caution.
       geom_bar(stat="identity",alpha=0.8)+
       scale_x_continuous(name="",breaks=NULL)+
       scale_y_continuous(name="Expected cases per month",
-                         breaks=0:10,minor_breaks = NULL, limits = c(0,max(6,sum(combined_risk_graph$ExpectedCases))),
+                         breaks=0:10,minor_breaks = NULL, 
+                         limits = c(0,max(nz_resident_risk_df$ExpectedCases*3,sum(combined_risk_graph$ExpectedCases))),
                          position="right")+
       scale_fill_manual(values = color_palette)+
       theme(legend.position = "none",legend.box="vertical",legend.margin=margin(),text=element_text(face = "bold"),
@@ -320,12 +330,15 @@ Use the 'within our bubble' feature with caution.
     
     #now we need to add a warning for excluded countries.
     
-    textout<-paste0("Over a one month period, the total risk of one or more cases being present in the community is ",
+    textout<-paste0(
+      "Returning NZ Residents make up ",
+      scales::percent(pct_nz_risk,accuracy=1),
+      " of all expected cases.",
+      "<br /> <br />",
+      "The total risk from non-New Zealanders of exposing the community to 1 or more cases over a 1-month period is ",
                     scales::percent(total_risk_prop,accuracy = 0.01)
                     ,".\n\n"
-                    ,"Returning NZ Residents make up ",
-                    scales::percent(pct_nz_risk,accuracy=1),
-                    " of all expected cases."
+                    
                     )
     
     if(length(countries_excluded_due_to_data$Location)>0){
@@ -385,6 +398,7 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
     show_leaflet(data_to_show = inc_data_inf_det_rate %>% filter(!is.na(InferredDetectionRate)),
                  primary_col = "InferredDetectionRate",
                  rounding_func = function(x){scales::percent(x,accuracy = 0.1)},
+                 quant_grades = 3,
                  legend_title = "Inferred detection rate <br /> (current deaths over cases three weeks prior; <br /> countries with a life expectancy of 75 or greater)")
     
   })
@@ -484,6 +498,83 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
 
 ui <- navbarPage(
   "Opening the border: What's the risk?",
+  # tabPanel(
+  #   "Intervention simulation 2",
+  #   fluidPage(
+  #     titlePanel("Intervention simulation 2"),
+  #     sidebarLayout(
+  #       sidebarPanel(
+  #         selectInput("intsim2_countries_l2",
+  #                     "Level 2",
+  #                     choices = countries_to_choose_from,
+  #                     selected = c("Queensland, Australia","Tasmania, Australia",
+  #                                  "Australian Capital Territory, Australia",
+  #                                  "Western Australia, Australia","South Australia, Australia",
+  #                                  "Northern Territory, Australia",
+  #                                  "Vietnam","Taiwan*","Thailand"
+  #                                  #"Malaysia","Cambodia","Sri Lanka"
+  #                                  ),
+  #                     multiple=TRUE),
+  #         numericInput("intsim2_percent_capacity_l2",
+  #                      "Level 2 - expected travel volume (% of 2019)",
+  #                      min=1,
+  #                      max=100,step=1,
+  #                      value = 80),
+  #         selectInput("intsim2_countries_l3",
+  #                     "Level 3",
+  #                     choices = countries_to_choose_from,
+  #                     multiple=TRUE),
+  #         numericInput("intsim2_percent_capacity_l3",
+  #                      "Level 3 - expected travel volume (% of 2019)",
+  #                      min=1,
+  #                      max=100,step=1,
+  #                      value = 60),
+  #         selectInput("intsim2_countries_l4",
+  #                     "Level 4",
+  #                     choices = countries_to_choose_from,
+  #                     multiple=TRUE),
+  #         numericInput("intsim2_percent_capacity_l4",
+  #                      "Level 4 - expected travel volume (% of 2019)",
+  #                      min=1,
+  #                      max=100,step=1,
+  #                      value = 60),
+  #         uiOutput("intsim_notes")
+  #         
+  #       ),
+  #     mainPanel(
+  #       titlePanel("Total risk per month"),
+  #       uiOutput("intsim2_totalrisk"),
+  #       plotOutput("intsim2_total_risk_graph"),
+  #       titlePanel("Risk from travelers from countries in our bubble"),
+  #       DT::dataTableOutput("intsim2_dt_countries_bubble"),
+  #       titlePanel("Risk from travelers from countries outside our bubble"),
+  #       DT::dataTableOutput("intsim2_dt_countries_quarantine")
+  #     )
+  #     )
+  #   )
+  # ),
+  # tabPanel(
+  #   "Location Profiles",
+  #   fluidPage(
+  #     titlePanel("Location Profiles"),
+  #     sidebarLayout(
+  #       sidebarPanel(
+  #         sidebarPanel(
+  #           selectInput("Location",
+  #                       "Select a location to profile:",
+  #                       choices = countries_to_choose_from,
+  #                       selected = c("Queensland, Australia","Tasmania, Australia",
+  #                                    "Australian Capital Territory, Australia",
+  #                                    "Western Australia, Australia","South Australia, Australia",
+  #                                    "Northern Territory, Australia",
+  #                                    "Vietnam","Taiwan*","Thailand"
+  #                                    #"Malaysia","Cambodia","Sri Lanka"
+  #                       ),
+  #                       multiple=TRUE),
+  #         )
+  #         
+  #   )
+  # ),
   tabPanel(
     "Intervention simulation",
     fluidPage(
@@ -499,7 +590,7 @@ ui <- navbarPage(
                                    "Northern Territory, Australia",
                                    "Vietnam","Taiwan*","Thailand"
                                    #"Malaysia","Cambodia","Sri Lanka"
-                                   ),
+                      ),
                       multiple=TRUE),
           numericInput("intsim_percent_capacity",
                        "When a country enters our bubble (no quarantine),
@@ -519,27 +610,28 @@ ui <- navbarPage(
                        max=100,step=1,
                        value = 40),
           numericInput("intsim_quarantine_failure_odds",
-                      "If someone who arrives in NZ with COVID19 and is quarantined,\nand they exit quarantine, the odds they are still contagious are 1 in ",
-                      min=5,
-                      max=10000,step=10,
-                      value = 12),
-
+                       "If someone who arrives in NZ with COVID19 and is quarantined,\nand they exit quarantine, the odds they are still contagious are 1 in ",
+                       min=5,
+                       max=10000,step=10,
+                       value = 12),
+          
           uiOutput("intsim_notes")
           
         ),
-      mainPanel(
-        titlePanel("Total risk per month"),
-        uiOutput("intsim_totalrisk"),
-        plotOutput("total_risk_graph"),
-        titlePanel("Risk from travelers from countries in our bubble"),
-        DT::dataTableOutput("dt_countries_bubble"),
-        titlePanel("Risk from travelers from countries outside our bubble"),
-        DT::dataTableOutput("dt_countries_quarantine")
-      )
+        mainPanel(
+          titlePanel("Total risk per month"),
+          uiOutput("intsim_totalrisk"),
+          plotOutput("total_risk_graph"),
+          titlePanel("Risk from travelers from countries in our bubble"),
+          DT::dataTableOutput("dt_countries_bubble"),
+          titlePanel("Risk from travelers from countries outside our bubble"),
+          DT::dataTableOutput("dt_countries_quarantine")
+        )
       )
     )
   ),
-  tabPanel(
+
+    tabPanel(
     "Country List",
     fluidPage(
       titlePanel("COVID-19: List of countries and locations"),

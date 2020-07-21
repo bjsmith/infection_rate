@@ -99,15 +99,10 @@ get_world_with_supplements<-function(){
 get_owid <- function(){
 
 }
-get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),separate_australian_states=FALSE,include_geo_data=TRUE){
-  #separate_australian_states<-TRUE
+get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),separate_aussie_states_and_hk=FALSE,include_geo_data=TRUE){
+  #separate_aussie_states_and_hk<-TRUE
   #include_geo_data=FALSE
-  #### NEXT TO DO: ADD AUSTRALIA
-  #### THIS IS GONNA BE A TOUGH BECAUSE OUR WORLD IN DATA DOESN'T HAVE AUSTRALIAN STATES
-  #### JH DATA DOES, BUT IT ONLY HAS CUMULATIVE CASES. SO NEED TO:
-  #### 1. CREATE A NEW TABLE THAT RECORDS NON-CUMULATIVE CONFIRMED CASES BY DOING A LEAD/LAG ON THE CUMULATIVE CONFIRMED CASES.
-  #### 2. USE THAT TO DO MY DEATHS COUNTS BELOW
-  #### 3. THAT SHOULD BE ALL. MAY NEED TO REPLACE OTHER INSTANCES OF OUR WORLD IN DATA. WE NO LONGER NEED IT FOR TESTING INFORMATION.
+  
   
   ### when listing countries and subdivisions it gets very confusing what kind of code I should use for matching
   ### settling on matching using a "LocationCode", 
@@ -115,7 +110,7 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   ### this has a TWO LETTER country code.
   ### will need to carry a "LocationCode" and "CountryCode" separately to determine appropriate behaviour.
   
-  if(separate_australian_states & include_geo_data){
+  if(separate_aussie_states_and_hk & include_geo_data){
     stop("Cannot include geo data and separate australian states; don't have polygons for Australian states.")
   }
 
@@ -128,13 +123,17 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   jh_data<-rbind(jh_cases_confirmed,jh_cases_recovered,jh_deaths)
   
   
-  if (separate_australian_states){
+  if (separate_aussie_states_and_hk){
     jh_data %<>% 
       mutate(Location = 
-               ifelse(`Country/Region`=="Australia",
-                      paste0(`Province/State`,", ",`Country/Region`),
-                      `Country/Region`),
-             .before=`Province/State`)
+      case_when(
+        `Country/Region`=="Australia" ~ paste0(`Province/State`,", ",`Country/Region`),
+        `Country/Region`=="China" & `Province/State`=="Hong Kong" ~ "Hong Kong, China",
+        `Country/Region`=="China" & `Province/State`=="Macao" ~ "Macao, China",
+        `Country/Region`=="China" & `Province/State`!="Hong Kong" ~ "China (mainland)",
+        TRUE ~ `Country/Region`
+        )
+      )
   }else{
     jh_data %<>% 
       mutate(Location = `Country/Region`,
@@ -176,13 +175,30 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
                     LocationCode="TWN","LifeExp"=80.4,"YearCode"=2017,"Country Name"="Taiwan","Population"=23.78*10^6))
   
   #add the Australian states
-  if(separate_australian_states){
+  if(separate_aussie_states_and_hk){
     australian_states_data <- readr::read_csv("data/mapping/australian-state-population.csv") %>%
       select(LocationCode=ISO, Population=Value,`Country Name`=Region) %>% 
       mutate(LifeExp=as.numeric(world_data %>% filter(LocationCode=="AUS") %>% select(LifeExp) %>% .[[1]])) %>%
       mutate(YearCode=2013) %>%
       mutate(`Country Name`=paste0(`Country Name`,", Australia"))
-    world_data <- rbind(world_data,australian_states_data)
+    
+    #need to manually add Hong Kong and Macao to this world data
+    hk_macao_data <- 
+      data.table(
+        "LocationCode"=c("HKG","MAC"),
+        "Population"=c(7.451*10^6,631636),
+        `Country Name`=c("Hong Kong, China","Macao, China"),
+        "LifeExp"=c(84.7,84.0),
+        "YearCode"=c(2017,2017))
+      readr::read_csv("data/mapping/australian-state-population.csv") %>%
+      select(LocationCode=ISO, Population=Value,`Country Name`=Region) %>% 
+      mutate(LifeExp=as.numeric(world_data %>% filter(LocationCode=="AUS") %>% select(LifeExp) %>% .[[1]])) %>%
+      mutate(YearCode=2013) %>%
+      mutate(`Country Name`=paste0(`Country Name`,", Australia"))
+    
+    world_data <- rbind(world_data,australian_states_data,hk_macao_data)
+    
+    
   }
   
   #mapping to get iso2 to iso3
@@ -243,6 +259,26 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   jh_dxc <- jh_dxc %>% group_by(CountryDivisionCodeMixed) %>%
     arrange(Date) %>% mutate(NewCases = CasesConfirmed-lag(CasesConfirmed)) %>% ungroup
   
+  if (separate_aussie_states_and_hk){
+    #move the Ruby princess cases from 3 July to 19 March
+    ruby_princess_category<-"AU-NSW"
+    
+  }else{
+    ruby_princess_category<-"AU"
+    
+  }
+  
+  #On 3 July, 189 historic cases reported in crew members on board a ship were classified as Australian cases and included in NSW totals.
+  #https://www.health.gov.au/news/health-alerts/novel-coronavirus-2019-ncov-health-alert/coronavirus-covid-19-current-situation-and-case-numbers#total-cases-recoveries-deaths-and-new-cases-in-the-last-24-hours
+  #moving these back to 19 March when these cases entered Sydney.
+  jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-07-03")),"NewCases"]<-(
+      jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-07-03")),"NewCases"] - 189
+    )
+  jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-03-19")),"NewCases"]<-(
+    jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-03-19")),"NewCases"] + 189
+  )
+  
+  
   library(zoo)
   jh_dxc <- jh_dxc %>%
     group_by(CountryDivisionCodeMixed) %>%
@@ -273,7 +309,12 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
     filter(Date>=date_period_begin) %>%
     select(CountryDivisionCodeMixed, Location, contains("Deaths")) %>%
     group_by(CountryDivisionCodeMixed, Location) %>%
-    summarise_all(mean,na.rm=TRUE)
+    summarise_all(mean,na.rm=TRUE) %>%
+    mutate(NewDeaths=pmax(0,NewDeaths)) 
+      #fix a bug so that new deaths cannot be negative
+      #new deaths were being recorded as negative if a death record is "corrected"
+      #instead we just don't correct
+    
     
 
   deaths_with_lagged_cases <- jh_dxc_7_day_cases_lagged %>% left_join(jh_dxc_7_day_deaths)
@@ -342,6 +383,9 @@ get_analysis_covid_data <- function(world_with_covid_data,quarantine_odds_overri
   print(travel_volume_weighting)
   
   world_with_covid_data$InferredDetectionRate[is.infinite(world_with_covid_data$InferredDetectionRate)]<-1
+    #can't be infinite
+  world_with_covid_data$InferredDetectionRate[world_with_covid_data$InferredDetectionRate>1]<-1
+    #can't be more than 1
   
   
   ### calculate the probability of at least one COVID-19 case
