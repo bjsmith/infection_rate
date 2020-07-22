@@ -189,31 +189,28 @@ server <- function(input, output) {
     return(params)
   })
   
-  output$onscreen_report <- renderText({
+  
+  output$onscreen_report <- renderUI({
+    #https://community.rstudio.com/t/generating-markdown-reports-from-shiny/8676/5
     print(paste0("generating report for ",input$locprofile_Location))
     params <- generate_country_profile_report_params()
     
     
-    temp_dir = tempdir()
-    tempReport <- file.path(temp_dir, "country_profile_report.Rmd")
-    file.copy("country_profile_report.Rmd", tempReport, overwrite = TRUE)
+    #temp_dir = tempdir()
+    #tempReport <- file.path(temp_dir, "country_profile_report.Rmd")
+    #file.copy("country_profile_report.Rmd", tempReport, overwrite = TRUE)
     
     # Knit the document, passing in the `params` list, and eval it in a
     # child of the global environment (this isolates the code in the document
     # from the code in this app).
-    output_filename="country_profile_report_temp.html"
-    rmarkdown::render(tempReport, output_file = output_filename,
+    #output_filename="country_profile_report_temp.html"
+    
+    includeHTML(
+    rmarkdown::render("country_profile_report.Rmd", 
                       output_format = "html_document",
                       params = params,
                       envir = new.env(parent = globalenv())
-    )
-    output_filepath <-paste0(temp_dir,"/",output_filename)
-    
-    
-    rawHTML <- paste(readLines(output_filepath), collapse="\n")
-    rawHTML <- paste0(rawHTML,"\n","last updated: ",now())
-    print("...generated.")
-    return(HTML(rawHTML))
+    ))
   })
     
   #country profile page
@@ -579,19 +576,20 @@ ui <- navbarPage(
     "Location Profiles",
     fluidPage(
       titlePanel("Location Profiles"),
-      #sidebarLayout(
-        #sidebarPanel(
+      # sidebarLayout(
+      #   sidebarPanel(
             textOutput("Location Profile Options"),
             selectInput("locprofile_Location",
                         "Select a location to profile:",
                         choices = key_interest_countries,
                         multiple=FALSE),
             downloadButton("downloadable_report", "Generate report")
-          #)
-        #)#,
+          # )
+        # ,
         # mainPanel(
         #   htmlOutput("onscreen_report")
         # )
+      # )
     )
   ),
   tabPanel(
