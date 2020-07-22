@@ -1,5 +1,7 @@
+
 library(DT)
 source("utils.R")
+source("country_classification_rules.R")
 library(ggrepel)
 
 life_exp_thresh <- 70
@@ -90,13 +92,13 @@ countries_to_choose_from<-
   sort %>%
   .[.!="New Zealand"]
 
-# key_interest_countries <- c("US","China","Fiji","United Kingdom",
-#                             "Japan","India","Cook Islands",
-#                             "Samoa","Canada","Korea, South",
-#                             "Germany","Indonesia","Taiwan*",
-#                             "Singapore","Hong Kong SAR",
-#                             "Thailand","Philippines",
-#                             "Malaysia","France")
+key_interest_countries <- c("US","China","Fiji","United Kingdom",
+                            "Japan","India","Cook Islands",
+                            "Samoa","Canada","Korea, South",
+                            "Germany","Indonesia","Taiwan*",
+                            "Singapore","Hong Kong SAR",
+                            "Thailand","Philippines",
+                            "Malaysia","France")
 
 dql<-(
   is.finite(world_with_covid_data$ActiveCases) & !is.na(world_with_covid_data$ActiveCases) &
@@ -164,7 +166,73 @@ display_dt <- DT::datatable(
 source("map_page.R")
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  #country page
+  
+  output$onscreen_report <- renderUI({
+
+    temp_dir = tempdir()
+    tempReport <- file.path(temp_dir, "country_profile_report.Rmd")
+    file.copy("country_profile_report.Rmd", tempReport, overwrite = TRUE)
+    
+    location_info <- world_with_covid_data %>% filter(Location==input$locprofile_Location)
+    
+    country_classification = classify_country(
+      location_info$LifeExp,
+      location_info$ExpectedNumberOfCases
+    )
+    trust_classification <- classify_country_trust(
+      location_info$LifeExp
+    )
+    
+    # Set up parameters to pass to Rmd document
+    params <- list(
+      location_profile = input$locprofile_Location,
+      location_info = location_info,
+      nz_info = world_with_covid_data %>% filter(Location=="New Zealand"),
+      country_classification = country_classification,
+      trust_rating = trust_classification
+      )
+    
+    
+    
+    # Knit the document, passing in the `params` list, and eval it in a
+    # child of the global environment (this isolates the code in the document
+    # from the code in this app).
+    output_filename="country_profile_report_temp.html"
+    rmarkdown::render(tempReport, output_file = output_filename,
+                      params = params,
+                      envir = new.env(parent = globalenv())
+    )
+    rawHTML <- paste(readLines(paste0(temp_dir,"/",output_filename)), collapse="\n")
+    
+    return(HTML(rawHTML))
+  })
+    
+  #country profile page
+  output$downloadable_report <- downloadHandler(
+    # For PDF output, change this to "report.pdf"
+    filename = "country_profile_report.html",
+    content = function(file) {
+      # Copy the report file to a temporary directory before processing it, in
+      # case we don't have write permissions to the current working dir (which
+      # can happen when deployed).
+      tempReport <- file.path(tempdir(), "country_profile_report.Rmd")
+      file.copy("country_profile_report.Rmd", tempReport, overwrite = TRUE)
+      
+      # Set up parameters to pass to Rmd document
+      params <- list(location_profile = input$locprofile_Location)
+      
+      # Knit the document, passing in the `params` list, and eval it in a
+      # child of the global environment (this isolates the code in the document
+      # from the code in this app).
+      rmarkdown::render(tempReport, output_file = file,
+                        params = params,
+                        envir = new.env(parent = globalenv())
+      )
+    }
+  )
+  
+  
+  #country list page
   output$country_table<-DT::renderDataTable(
     display_dt %>%
       formatPercentage(c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases'),3) %>%
@@ -498,83 +566,29 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
 
 ui <- navbarPage(
   "Opening the border: What's the risk?",
-  # tabPanel(
-  #   "Intervention simulation 2",
-  #   fluidPage(
-  #     titlePanel("Intervention simulation 2"),
-  #     sidebarLayout(
-  #       sidebarPanel(
-  #         selectInput("intsim2_countries_l2",
-  #                     "Level 2",
-  #                     choices = countries_to_choose_from,
-  #                     selected = c("Queensland, Australia","Tasmania, Australia",
-  #                                  "Australian Capital Territory, Australia",
-  #                                  "Western Australia, Australia","South Australia, Australia",
-  #                                  "Northern Territory, Australia",
-  #                                  "Vietnam","Taiwan*","Thailand"
-  #                                  #"Malaysia","Cambodia","Sri Lanka"
-  #                                  ),
-  #                     multiple=TRUE),
-  #         numericInput("intsim2_percent_capacity_l2",
-  #                      "Level 2 - expected travel volume (% of 2019)",
-  #                      min=1,
-  #                      max=100,step=1,
-  #                      value = 80),
-  #         selectInput("intsim2_countries_l3",
-  #                     "Level 3",
-  #                     choices = countries_to_choose_from,
-  #                     multiple=TRUE),
-  #         numericInput("intsim2_percent_capacity_l3",
-  #                      "Level 3 - expected travel volume (% of 2019)",
-  #                      min=1,
-  #                      max=100,step=1,
-  #                      value = 60),
-  #         selectInput("intsim2_countries_l4",
-  #                     "Level 4",
-  #                     choices = countries_to_choose_from,
-  #                     multiple=TRUE),
-  #         numericInput("intsim2_percent_capacity_l4",
-  #                      "Level 4 - expected travel volume (% of 2019)",
-  #                      min=1,
-  #                      max=100,step=1,
-  #                      value = 60),
-  #         uiOutput("intsim_notes")
-  #         
-  #       ),
-  #     mainPanel(
-  #       titlePanel("Total risk per month"),
-  #       uiOutput("intsim2_totalrisk"),
-  #       plotOutput("intsim2_total_risk_graph"),
-  #       titlePanel("Risk from travelers from countries in our bubble"),
-  #       DT::dataTableOutput("intsim2_dt_countries_bubble"),
-  #       titlePanel("Risk from travelers from countries outside our bubble"),
-  #       DT::dataTableOutput("intsim2_dt_countries_quarantine")
-  #     )
-  #     )
-  #   )
-  # ),
-  # tabPanel(
-  #   "Location Profiles",
-  #   fluidPage(
-  #     titlePanel("Location Profiles"),
-  #     sidebarLayout(
-  #       sidebarPanel(
-  #         sidebarPanel(
-  #           selectInput("Location",
-  #                       "Select a location to profile:",
-  #                       choices = countries_to_choose_from,
-  #                       selected = c("Queensland, Australia","Tasmania, Australia",
-  #                                    "Australian Capital Territory, Australia",
-  #                                    "Western Australia, Australia","South Australia, Australia",
-  #                                    "Northern Territory, Australia",
-  #                                    "Vietnam","Taiwan*","Thailand"
-  #                                    #"Malaysia","Cambodia","Sri Lanka"
-  #                       ),
-  #                       multiple=TRUE),
-  #         )
-  #         
-  #   )
-  # ),
+  tabPanel(
+    "Location Profiles",
+    fluidPage(
+      titlePanel("Location Profiles"),
+      sidebarLayout(
+        sidebarPanel(
+          sidebarPanel(
+            textOutput("Location Profile Options"),
+            selectInput("locprofile_Location",
+                        "Select a location to profile:",
+                        choices = key_interest_countries,
+                        multiple=FALSE)#,
+            #downloadButton("report", "Generate report")
+          )
+        ),
+        mainPanel(
+          uiOutput("onscreen_report"),
+          
+        )
+      )
+      
+    )
+  ),
   tabPanel(
     "Intervention simulation",
     fluidPage(

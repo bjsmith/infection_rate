@@ -1,0 +1,64 @@
+---
+title: ""
+output: html_document
+params:
+  location_profile: NA
+  trust_rating: NA
+  location_info: NA
+  nz_info: NA
+  country_classification: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+locname <- params$location_profile
+
+lifeExp <- params$location_info$LifeExp
+
+if(params$location_info$LifeExp>=70){
+  health_system_description<-"trustworthy"
+  lifeExpDescription = "high"
+}else{
+  health_system_description<-"not trustworthy"
+  lifeExpDescription = "low"
+}
+
+
+
+```
+
+# `r locname`
+
+This is a location profile for `r locname`.
+
+## Internal risk
+
+
+
+### COVID-19 prevalance
+
+Prevalence of COVID-19 in `r locname` is estimated at `r signif(params$location_info$InfActiveCasesPerMillion,2) ` active infections per million. Compare this to the current New Zealand case rate of `r signif(params$nz_info$InfActiveCasesPerMillion,2) ` active infections per million. 
+
+This is the "inferred" infection rate. It accounts for the likely number of undetected cases by starting with the detected case rate, and adjusting upward depending on the number of fatalities in the relevant country.
+
+### Trust
+
+`r locname` has a trust rating of **`r params$trust_rating`**. This is because its health system is considered `r health_system_description ` due to `r locname`'s `r lifeExpDescription` life expectancy of `r lifeExp`.
+
+## Travel to New Zealand
+
+This month last year, New Zealand received `r params$location_info$MonthlyArrivals ` arrivals who were _resident_ in `r locname`.
+
+Although arrivals' residency status is not a perfect measure of the _actual_ number of arrivals coming a particular country, it is indicative of the rough number of arrivals.
+
+It is also indicative of the number of arrivals likely to come into NZ as a result of any border restrictions, because NZ residents and citizens can already enter NZ under the current rules.
+
+## Overall rating: `r as.character(params$country_classification)`
+
+The overall rating for `r locname` is `r as.character(params$country_classification)`.
+
+
+
+
+
