@@ -92,11 +92,11 @@ countries_to_choose_from<-
   sort %>%
   .[.!="New Zealand"]
 
-key_interest_countries <- c("US","China","Fiji","United Kingdom",
+key_interest_countries <- c("US","China (mainland)","Fiji","United Kingdom",
                             "Japan","India","Cook Islands",
                             "Samoa","Canada","Korea, South",
                             "Germany","Indonesia","Taiwan*",
-                            "Singapore","Hong Kong SAR",
+                            "Singapore","Hong Kong, China",
                             "Thailand","Philippines",
                             "Malaysia","France")
 
@@ -167,14 +167,9 @@ source("map_page.R")
 # Define server logic required to draw a histogram
 server <- function(input, output) {
   
-  output$onscreen_report <- renderUI({
-
-    temp_dir = tempdir()
-    tempReport <- file.path(temp_dir, "country_profile_report.Rmd")
-    file.copy("country_profile_report.Rmd", tempReport, overwrite = TRUE)
+  generate_country_profile_report_params <-reactive({
     
     location_info <- world_with_covid_data %>% filter(Location==input$locprofile_Location)
-    
     country_classification = classify_country(
       location_info$LifeExp,
       location_info$ExpectedNumberOfCases
@@ -182,7 +177,6 @@ server <- function(input, output) {
     trust_classification <- classify_country_trust(
       location_info$LifeExp
     )
-    
     # Set up parameters to pass to Rmd document
     params <- list(
       location_profile = input$locprofile_Location,
@@ -190,41 +184,56 @@ server <- function(input, output) {
       nz_info = world_with_covid_data %>% filter(Location=="New Zealand"),
       country_classification = country_classification,
       trust_rating = trust_classification
-      )
+    )
+    
+    return(params)
+  })
+  
+  output$onscreen_report <- renderText({
+    print(paste0("generating report for ",input$locprofile_Location))
+    params <- generate_country_profile_report_params()
     
     
+    temp_dir = tempdir()
+    tempReport <- file.path(temp_dir, "country_profile_report.Rmd")
+    file.copy("country_profile_report.Rmd", tempReport, overwrite = TRUE)
     
     # Knit the document, passing in the `params` list, and eval it in a
     # child of the global environment (this isolates the code in the document
     # from the code in this app).
     output_filename="country_profile_report_temp.html"
     rmarkdown::render(tempReport, output_file = output_filename,
+                      output_format = "html_document",
                       params = params,
                       envir = new.env(parent = globalenv())
     )
-    rawHTML <- paste(readLines(paste0(temp_dir,"/",output_filename)), collapse="\n")
+    output_filepath <-paste0(temp_dir,"/",output_filename)
     
+    
+    rawHTML <- paste(readLines(output_filepath), collapse="\n")
+    rawHTML <- paste0(rawHTML,"\n","last updated: ",now())
+    print("...generated.")
     return(HTML(rawHTML))
   })
     
   #country profile page
   output$downloadable_report <- downloadHandler(
     # For PDF output, change this to "report.pdf"
-    filename = "country_profile_report.html",
+    filename = "report.pdf",
     content = function(file) {
-      # Copy the report file to a temporary directory before processing it, in
-      # case we don't have write permissions to the current working dir (which
-      # can happen when deployed).
-      tempReport <- file.path(tempdir(), "country_profile_report.Rmd")
-      file.copy("country_profile_report.Rmd", tempReport, overwrite = TRUE)
+      print(paste0("generating report for ",input$locprofile_Location))
+      params <- generate_country_profile_report_params()
       
-      # Set up parameters to pass to Rmd document
-      params <- list(location_profile = input$locprofile_Location)
+      
+      #temp_dir = tempdir()
+      tempReport <- file.path(tempdir(), "report.Rmd")
+      file.copy("country_profile_report.Rmd", tempReport, overwrite = TRUE)
       
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
       # from the code in this app).
       rmarkdown::render(tempReport, output_file = file,
+                        output_format = "pdf_document",
                         params = params,
                         envir = new.env(parent = globalenv())
       )
@@ -570,23 +579,19 @@ ui <- navbarPage(
     "Location Profiles",
     fluidPage(
       titlePanel("Location Profiles"),
-      sidebarLayout(
-        sidebarPanel(
-          sidebarPanel(
+      #sidebarLayout(
+        #sidebarPanel(
             textOutput("Location Profile Options"),
             selectInput("locprofile_Location",
                         "Select a location to profile:",
                         choices = key_interest_countries,
-                        multiple=FALSE)#,
-            #downloadButton("report", "Generate report")
-          )
-        ),
-        mainPanel(
-          uiOutput("onscreen_report"),
-          
-        )
-      )
-      
+                        multiple=FALSE),
+            downloadButton("downloadable_report", "Generate report")
+          #)
+        #)#,
+        # mainPanel(
+        #   htmlOutput("onscreen_report")
+        # )
     )
   ),
   tabPanel(

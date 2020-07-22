@@ -2,13 +2,18 @@ classify_country <-function(lifeExp,expectedCases){
   if(lifeExp>=70){
     if(expectedCases<0.01){
       return(2)
-    }else if(expectedCases<0.1){
+      #high trust, very low prevalence
+    }else if(expectedCases<1){
       return(3)
+      #high trust, low to moderate prevalence
+    }else{
+      return(4)
+      #high trust, high prevalence
     }
   }else{
-    return(4)
+    return(4) #low trust.
   }
-  return(4)
+  return(NULL)
   
 }
 

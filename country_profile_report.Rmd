@@ -1,6 +1,8 @@
 ---
-title: ""
-output: html_document
+title: "Country Profile"
+output:
+  pdf_document: default
+#  html_document: default
 params:
   location_profile: NA
   trust_rating: NA
@@ -8,9 +10,14 @@ params:
   nz_info: NA
   country_classification: NA
 ---
-
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
+
+options(scipen=10)
+```
+
+```{r setup2, include=FALSE}
+
 
 locname <- params$location_profile
 
@@ -34,25 +41,71 @@ This is a location profile for `r locname`.
 
 ## Internal risk
 
+```{r}
+scale_signif <- function(x){
+  if(x<1){
+    return(as.character(signif(x,2)))
+  }else{
+    return(as.character(scales::comma(signif(x,2))))
+  }
+}
+```
 
 
 ### COVID-19 prevalance
 
-Prevalence of COVID-19 in `r locname` is estimated at `r signif(params$location_info$InfActiveCasesPerMillion,2) ` active infections per million. Compare this to the current New Zealand case rate of `r signif(params$nz_info$InfActiveCasesPerMillion,2) ` active infections per million. 
+Prevalence of COVID-19 in `r locname` is estimated at `r scale_signif(params$location_info$InfActiveCasesPerMillion)` active infections per million. Compare this to the current New Zealand case rate of `r signif(params$nz_info$InfActiveCasesPerMillion,2) ` active infections per million. 
 
 This is the "inferred" infection rate. It accounts for the likely number of undetected cases by starting with the detected case rate, and adjusting upward depending on the number of fatalities in the relevant country.
 
-### Trust
+### Quality of health data reporting
 
-`r locname` has a trust rating of **`r params$trust_rating`**. This is because its health system is considered `r health_system_description ` due to `r locname`'s `r lifeExpDescription` life expectancy of `r lifeExp`.
+Health data reporting in `r locname` has a trust rating of **`r params$trust_rating`**. This is because its health system is considered `r health_system_description ` due to `r locname`'s `r lifeExpDescription` life expectancy of `r round(lifeExp,0)`.
 
 ## Travel to New Zealand
 
-This month last year, New Zealand received `r params$location_info$MonthlyArrivals ` arrivals who were _resident_ in `r locname`.
+This month last year, New Zealand received `r scale_signif(params$location_info$MonthlyArrivals) ` arrivals who were _resident_ in `r locname`. This would include both citizens of that country residing there, and citizens of New Zealand and other countries who reside in `r locname`.
 
 Although arrivals' residency status is not a perfect measure of the _actual_ number of arrivals coming a particular country, it is indicative of the rough number of arrivals.
 
 It is also indicative of the number of arrivals likely to come into NZ as a result of any border restrictions, because NZ residents and citizens can already enter NZ under the current rules.
+
+## Expected risk
+
+
+We consider the case rate of COVID-19 in `r locname`, 
+the likely true number of infections, the monthly number of arrivals from 
+`r locname`, and the country's trust rating to identify an overall expected risk.
+
+```{r echo=FALSE}
+
+if(params$trust_rating=="trustworthy"){
+  risk_statement <- paste0(
+      "Due to these considerations we expect, if the border were completely open to ",
+      locname,
+      ", the expected number of cases arriving from ",
+      locname,
+      " would be ",
+      as.character(signif(params$location_info$ExpectedNumberOfCases,1)),
+      " every month.",
+      "\n<br /><br />  Considering New Zealand's quarantine system as it has existed over the last few months, a quarantine system could ensure that only 0.5% to 1% (",
+      as.character(signif(params$location_info$ExpectedNumberOfCases*0.005,1)), " to ", as.character(signif(params$location_info$ExpectedNumberOfCases*0.01,1)),
+      ") of those cases would reach the community.")
+}else
+{
+  risk_statement <- (
+    paste0("Due to the trust rating for health data reporting in ",
+           locname, ", rated ", params$trust_rating,
+           "an overall expected risk cannot be calculated.",
+           "On that basis it is assumed that ", locname, " is a high-risk location."
+           )
+  )
+}
+
+```
+
+`r risk_statement`
+
 
 ## Overall rating: `r as.character(params$country_classification)`
 
