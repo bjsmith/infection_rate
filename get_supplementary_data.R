@@ -10,3 +10,4 @@
 #Currently only open to New Zealand and American Samoa
 #Describes Samoa as "COVID-free"
 
+# no need to model these countries. we'll do a bespoke output that points to the health ministry website and says the country is covid-free
