@@ -19,7 +19,7 @@ get_analysis_covid_data <- function(world_with_covid_data,quarantine_odds_overri
   world_with_covid_data <- (
     world_with_covid_data %>% mutate(
       NZResidentMonthlyArrivalsWeighted = (
-        NZResMonthlyArrivalsLatest + pmax(0,NZResMonthlyArrivals-NZResMonthlyArrivalsLatest)*general_travel_rate
+        NZResMonthlyArrivalsLatest + pmax(0,NZResMonthlyArrivalsScaled1-NZResMonthlyArrivalsLatest)*general_travel_rate
       )
     )
   )

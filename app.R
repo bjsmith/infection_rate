@@ -9,14 +9,14 @@ life_exp_thresh <- 70
 run_date<-Sys.Date()
 month_name <- format(run_date,"%B")
 
-geo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date)
-geo_world_with_covid_data <- get_analysis_covid_data(geo_world_basic_data)
+# geo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date)
+# geo_world_with_covid_data <- get_analysis_covid_data(geo_world_basic_data)
+# 
+# nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
+# world_with_covid_data <- get_analysis_covid_data(nogeo_world_basic_data)
 
-nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
-world_with_covid_data <- get_analysis_covid_data(nogeo_world_basic_data)
-
-
-
+#save.image("environ.RData")
+#load("environ.RData")
 
 ### now set up specific datasets for each output
 
@@ -439,7 +439,7 @@ Use the 'within our bubble' feature with caution.
       combined_risk_graph %>% 
       mutate(LocationLabel = 
         case_when(
-        is.na(Location) ~ nz_res_only_label,
+        ((Location %in% selected_locations)==FALSE) ~ nz_res_only_label,
         (Location %in% input$intsim_countries_bubble) & (ExpectedCases<0.02) ~ bubble_other_label,
         (Location %in% input$intsim_countries_quarantine) & (ExpectedCases<0.02) ~ quarantine_other_label,
         TRUE ~ Location
@@ -447,11 +447,11 @@ Use the 'within our bubble' feature with caution.
     
     combined_risk_graph$LocationLabel <-
       factor(combined_risk_graph$LocationLabel,
-             levels = c(selected_locations,nz_res_only_label,bubble_other_label,quarantine_other_label),
+             levels = c(bubble_other_label,quarantine_other_label,selected_locations,nz_res_only_label),
              ordered=TRUE)
     
     
-    #combine across "other location"
+    #combine across grouped categories
     combined_risk_graph<-
       combined_risk_graph %>% 
       group_by(LocationLabel,Condition) %>%
@@ -465,11 +465,14 @@ Use the 'within our bubble' feature with caution.
       arrange(desc(LocationLabel)) %>%
       mutate(LabelPosition=cumsum(ExpectedCases)-ExpectedCases/2)
     
+    location_labels_in_use <- length(intersect(selected_locations,combined_risk_graph$LocationLabel))
     color_palette = c(
+      '#888888',
+      '#555555',
       rep(
         c('#1f78b4','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#6a3d9a','#b15928'),
-        ceiling(nrow(combined_risk_graph)/8))[length(selected_locations)],
-      '#333333' #OTHER
+        ceiling(location_labels_in_use/8))[1:location_labels_in_use],
+      '#222222' #OTHER
       )
     
     ggplot(combined_risk_graph,aes(x=Condition,y=ExpectedCases,fill=LocationLabel,label=LocationLabel))+
@@ -478,14 +481,15 @@ Use the 'within our bubble' feature with caution.
       scale_y_continuous(name="Expected cases per month",
                          breaks=0:10,minor_breaks = NULL, 
                          limits = c(0,max(combined_risk_graph$ExpectedCases*3,sum(combined_risk_graph$ExpectedCases))),
+                         #limits=c(0,20),
                          position="right")+
-      scale_fill_brewer(palette="Set3")+
-      #scale_fill_manual(values = color_palette)+
+      #scale_fill_brewer(palette="Set3")+
+      scale_fill_manual(values = color_palette)+
       theme(legend.position = "none",legend.box="vertical",legend.margin=margin(),text=element_text(face = "bold"),
             axis.text = element_text(size=16)
             )+
       #guides(fill=guide_legend(nrow=2,byrow=TRUE))+
-      geom_label_repel(aes(y=LabelPosition),color="black",fontface="bold")+
+      geom_label_repel(aes(y=LabelPosition),color="white",fontface="bold")+
       coord_flip()
   })
   
@@ -508,8 +512,8 @@ Use the 'within our bubble' feature with caution.
     # foreign_risk <- get_foreign_risk()
     # nz_resident_risk <- get_intervention_risk()
     intervention_risk <- get_intervention_risk()
-    status_quo_risk <- get_intervention_risk()
-    increased_risk <- sum(intervention_risk$ExpectedCasesAll)/sum(status_quo_risk$ExpectedCasesAll)
+    status_quo_risk <- get_status_quo_risk()
+    increased_risk <- sum(intervention_risk$ExpectedCases,na.rm = TRUE)/sum(status_quo_risk$ExpectedCases,na.rm = TRUE)
     
     #now...
     #how do we combine these? 
@@ -521,20 +525,20 @@ Use the 'within our bubble' feature with caution.
     #total_risk_prop
     textout<-paste0(
       "In the status quo where only NZ residents are allowed can enter, we estimate ",
-      sum(status_quo_risk$ExpectedCasesAll),
+      signif(sum(status_quo_risk$ExpectedCases,na.rm = TRUE),2),
       " cases per month will be exposed to the community.",
       "<br /> <br />",
-      "In the specified intervention, we estimate",
-      sum(intervention_risk$ExpectedCasesAll),
+      "In the specified intervention, we estimate ",
+      signif(sum(intervention_risk$ExpectedCases,na.rm = TRUE),2),
       " cases per month will be exposed to the community.",
-      "The intervention increases the expected amount of community exposure by ",
+      " The intervention increases the expected amount of community exposure by ",
       scales::percent(increased_risk,accuracy = 0.01),
       ".<br /> <br />",
       "In this intervention, the total risk of exposing the community to 1 or more cases over a 1-month period is ",
       scales::percent(total_risk_prop,accuracy = 0.01)
       ,".\n\n"
       ,"<br /> <br />"
-      ,"Community exposure could be anything from one very brief encounter (e.g., stopping for directions) to an infected individual entering the community undetected"
+      ,"Community exposure could be anything from one very brief encounter (e.g., stopping for directions) to an infected individual entering the community undetected."
                     )
     
     if(length(countries_excluded_due_to_data$Location)>0){
