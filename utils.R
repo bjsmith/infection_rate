@@ -205,19 +205,38 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   country_codes<-read.csv("data/mapping/country-codes.csv")
   country_iso_2_to_3_map<-country_codes[,c("ISO3166.1.Alpha.2","ISO3166.1.Alpha.3","official_name_en")]
   
-  #### arrivals data
+  #### non-resident arrivals data
   #load New Zealand arrivals data.
   arrivals<-read_csv("data/stats-nz-arrivals-by-country.csv")
   #pick out the month we are interested in
-  
   month_code <- paste0("2019M",str_pad(as.character(lubridate::month(run_date)),2,side="left",pad="0"))
   
   arrivals_this_month <- arrivals %>% 
     filter(`Total passenger movements by EVERY country of residence (Monthly)`==month_code) %>% 
     .[,2:ncol(.)] %>%
-    tidyr::gather("Country","MonthlyArrivals")
+    tidyr::gather("Country","LocationResidentMonthlyArrivals")
   country_mapping_stats_nz <- read_csv("data/mapping/country_mapping_stats_nz_to_iso.csv")
   statsnz_arr <- left_join(arrivals_this_month,country_mapping_stats_nz,by=c("Country" = "Stats_NZ_Arrivals_Name"))
+  
+  
+  #### NZ resident monthly arrivals from pre-covid time
+  nz_resident_arrivals <- readr::read_csv("data/stats-nz-infoshare-nz-NZ-resident traveller arrivals by EVERY country of main destination and purpose (Monthly)_formatted.csv")
+  colnames(nz_resident_arrivals)[1] <- "MonthLabel"
+  nz_res_arrivals_this_month <- nz_resident_arrivals %>% 
+    filter(MonthLabel==month_code) %>% 
+    .[,2:ncol(.)] %>%
+    tidyr::gather("NZRArrivalsMainDestination","NZResMonthlyArrivals")
+  statsnz_nzres_arr <- left_join(nz_res_arrivals_this_month,country_mapping_stats_nz,by=c("NZRArrivalsMainDestination" = "Stats_NZ_Arrivals_Name"))
+  
+  #### NZ resident monthly arrivals from now 
+  nz_res_arrivals_latest <- nz_resident_arrivals %>% 
+    filter(MonthLabel==MonthLabel[nrow(.)]) %>%  #get the latest month
+    .[,2:ncol(.)] %>%
+    tidyr::gather("NZRArrivalsMainDestination","NZResMonthlyArrivalsLatest")
+  statsnz_nzres_latest_arr <- left_join(nz_res_arrivals_latest,country_mapping_stats_nz,by=c("NZRArrivalsMainDestination" = "Stats_NZ_Arrivals_Name"))
+  
+  
+  
   
   if(include_geo_data){
     worldc <- get_world_with_supplements()
@@ -350,16 +369,29 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
     left_join(
       statsnz_arr %>% 
         filter(`ISO3166-1-Alpha-3`!="") %>% 
-        select(MonthlyArrivals,`ISO3166-1-Alpha-3`),
+        select(LocationResidentMonthlyArrivals,`ISO3166-1-Alpha-3`),
+      by=c("Alpha3CountryOnly" =  "ISO3166-1-Alpha-3")) %>%
+    left_join(
+      statsnz_nzres_arr %>% 
+        filter(`ISO3166-1-Alpha-3`!="") %>% 
+        select(NZResMonthlyArrivals,`ISO3166-1-Alpha-3`),
+      by=c("Alpha3CountryOnly" =  "ISO3166-1-Alpha-3")) %>%
+    left_join(
+      statsnz_nzres_latest_arr %>% 
+        filter(`ISO3166-1-Alpha-3`!="") %>% 
+        select(NZResMonthlyArrivalsLatest,`ISO3166-1-Alpha-3`),
       by=c("Alpha3CountryOnly" =  "ISO3166-1-Alpha-3"))
-  world_with_covid_data$MonthlyArrivals<-as.numeric(world_with_covid_data$MonthlyArrivals)
+  
+  world_with_covid_data$LocationResidentMonthlyArrivals<-as.numeric(world_with_covid_data$LocationResidentMonthlyArrivals)
   
   world_with_covid_data <- 
     world_with_covid_data %>% 
     group_by(Alpha3CountryOnly) %>% 
     #if monthly arrivals from a country e.g. Australia need to be spread over mmultiple states, do it proportional to population, 
     #if we want to be conservative, we can multiply it by the square root of the size of the population.
-    mutate(MonthlyArrivalsScaled1 = Population/sum(Population)*MonthlyArrivals#*sqrt(length(Population))
+    mutate(LocationResidentMonthlyArrivalsScaled1 = Population/sum(Population)*LocationResidentMonthlyArrivals,
+           NZResMonthlyArrivalsScaled1 = Population/sum(Population)*NZResMonthlyArrivals,
+           NZResMonthlyArrivalsLatestScaled1 = Population/sum(Population)*NZResMonthlyArrivalsLatest
            ) %>% 
     ungroup
   
@@ -377,67 +409,4 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   
   return(world_with_covid_data)
 }
-
-get_analysis_covid_data <- function(world_with_covid_data,quarantine_odds_override=NULL,travel_volume_weighting=1){
-  print(quarantine_odds_override)
-  print(travel_volume_weighting)
-  
-  world_with_covid_data$InferredDetectionRate[is.infinite(world_with_covid_data$InferredDetectionRate)]<-1
-    #can't be infinite
-  world_with_covid_data$InferredDetectionRate[world_with_covid_data$InferredDetectionRate>1]<-1
-    #can't be more than 1
-  
-  
-  ### calculate the probability of at least one COVID-19 case
-  
-  #world_with_covid_data$MonthlyArrivals<-as.numeric(world_with_covid_data$MonthlyArrivals)
-  world_with_covid_data$MonthlyArrivalsScaled<-world_with_covid_data$MonthlyArrivalsScaled1*travel_volume_weighting
-
-  #assume that each new person has an independent chance of carrying COVID-19
-  #this is conservative when we are trying to work out the probability of at least one case
-  #so the probability is going to be 
-  #1-((Population-ProbableActiveCases)/Population)^MonthlyArrivals
-  #if 10% of the population of 5000 has covid, and 20 of them come to NZ, that's
-  #1-((5000-500)/5000)^20
-  #1-(4500/5000)^20
-  #0.8784233
-  world_with_covid_data <- 
-    world_with_covid_data %>% mutate(
-      ProbabilityOfMoreThanZeroCases=1-((Population-InferredActiveCases)/Population)^MonthlyArrivalsScaled)
-  
-  world_with_covid_data <- 
-    world_with_covid_data %>% mutate(
-      ExpectedNumberOfCases=InferredActiveCasePopRate*MonthlyArrivalsScaled)
-  
-  
-  
-  #odds that a detainee in quarantine with COVID-19 leaves before being COVID-19
-  if(is.null(quarantine_odds_override)){
-    probability_an_infected_arrival_escapes_quarantine <- 1/50
-    probability_an_infected_arrival_leaves_quarantine_undetected <- 0.01
-    prob_infected_arr_reaches_community<-probability_an_infected_arrival_escapes_quarantine+probability_an_infected_arrival_leaves_quarantine_undetected
-  }else{
-    prob_infected_arr_reaches_community<-quarantine_odds_override
-  }
-  
-  
-  world_with_covid_data <- 
-    world_with_covid_data %>% mutate(
-      ProbabilityOfMoreThanZeroCommunityCases=
-        1-((Population-InferredActiveCases*prob_infected_arr_reaches_community)/Population)^MonthlyArrivalsScaled)
-  
-  world_with_covid_data <- 
-    world_with_covid_data %>% mutate(
-      ExpectedNumberOfCasesInCommunity=InferredActiveCasePopRate*MonthlyArrivalsScaled*prob_infected_arr_reaches_community)
-  
-  
-  world_with_covid_data$InfActiveCasesPerMillion <- world_with_covid_data$InferredActiveCasePopRate*10^6
-  world_with_covid_data$InfActiveCasesPerThousand <- world_with_covid_data$InferredActiveCasePopRate*10^3
-  world_with_covid_data$ActiveCasesPerThousand <- world_with_covid_data$ActiveCasePopRate*10^3
-  world_with_covid_data$ActiveCasesPerMillion <- world_with_covid_data$ActiveCasePopRate*10^6
-
-  return(world_with_covid_data)
-}
-
-
 

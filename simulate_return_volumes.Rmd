@@ -1,0 +1,49 @@
+---
+title: "Notes on simulating return volumes"
+output: html_notebook
+---
+
+To understand risk from returning NZers under various scenarios, we need:
+
+ - Estimate of NZers returning from each country under the current regime (quarantine for returning NZ residents)
+ - Estimate of the NZers who would return from each country under a looser regime (e.g., short quarantines or business as usual)
+ - To expose overall risk when simulating opening a country to a looser regime, we need to
+    - Subtract the NZers currently returning from that country
+    - Add the NZers who would return under the looser regime, considered at the normal prevalence level for that country.
+
+```{r}
+nz_res_arrivals <- readr::read_csv("data/stats-nz-infoshare-nz-NZ-resident traveller arrivals by EVERY country of main destination and purpose (Monthly)_formatted.csv")
+colnames(nz_res_arrivals)[1]<-"Date"
+```
+
+
+
+## Estimate of NZers returning from each country under the current regime (quarantine for returning NZ residents)
+
+Most returnees are from Australia (Megan Woods at Government Press Conference, 24 July 2020, Radio NZ).
+
+I've filed an OIA to get this data. In the meantime, Stats NZ Infoshare's series "NZ-resident traveller arrivals by EVERY country of main destination and purpose (Monthly)” contains data for May 2020 that we can use.
+
+```{r}
+
+```
+
+
+## Estimate of the NZers who would return from each country under a looser regime (e.g., short quarantines or business as usual)
+
+We can use "NZ-resident traveller arrivals by EVERY country of main destination and purpose (Monthly)”.
+
+```{r}
+res_arrivals_may_2020 <-nz_res_arrivals %>% filter(Date=="2020M05") %>% select(-Date) %>% t %>% data.frame
+
+colnames(res_arrivals_may_2020)[1]<-"ArrivalCount"
+res_arrivals_may_2020%>% arrange(desc(ArrivalCount))
+```
+
+## Issues
+
+Some people may be considered both "non-resident" and "resident" and hence be double-counted.
+
+For instance, New Zealand citizens who are resident in Australia may be counted as "non resident" (and hence be included in the non-resident arrivals by country of residence) and "NZ resident" (by default, because they are NZ citizens; hence they are included in our NZ resident monthly arrivals count).
+
+

@@ -1,6 +1,7 @@
 
 library(DT)
 source("utils.R")
+source("simulation.R")
 source("country_classification_rules.R")
 library(ggrepel)
 
@@ -10,6 +11,7 @@ month_name <- format(run_date,"%B")
 
 geo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date)
 geo_world_with_covid_data <- get_analysis_covid_data(geo_world_basic_data)
+
 nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
 world_with_covid_data <- get_analysis_covid_data(nogeo_world_basic_data)
 
@@ -108,12 +110,12 @@ dql<-(
 dql[is.na(dql)]<-TRUE
 world_with_covid_data$DataQualityLow<-dql
 
-get_intsim_dt<-function(country_filter,selected_probs="bubble",world_w_covid_data#,quarantine_odds_override,travel_volume_weighting=1
+get_intsim_dt<-function(country_filter,selected_probs="bubble",world_w_covid_data#,quarantine_odds_override,general_travel_rate=1
                         ){
   # world_w_covid_data <- get_analysis_covid_data(
   #   geo_world_basic_data,
   #   quarantine_odds_override=quarantine_odds_override,
-  #   travel_volume_weighting=travel_volume_weighting)
+  #   general_travel_rate=general_travel_rate)
   filtered_df <- world_w_covid_data %>%
     data.frame %>%
     filter(LifeExp>=life_exp_thresh) %>%
@@ -123,23 +125,23 @@ get_intsim_dt<-function(country_filter,selected_probs="bubble",world_w_covid_dat
   if(selected_probs=="bubble"){
     df_to_return <- filtered_df %>%
       select(Location,ProbabilityOfMoreThanZeroCases,
-           ExpectedNumberOfCases
+           ExpectedNumberOfCasesAll,ExpectedNumberOfCasesUnderNZResidentQuarantine
     )
     percentage_cols <-c('ProbabilityOfMoreThanZeroCases')
-    rounding_cols <-c('ExpectedNumberOfCases')
+    rounding_cols <-c('ExpectedNumberOfCasesAll','ExpectedNumberOfCasesUnderNZResidentQuarantine')
     dt_colnames<-c("Territory","Probability of 1 or more cases","Expected cases")
   }
   
   if(selected_probs=="quarantine"){
     df_to_return<- filtered_df %>%
     select(Location,ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
-           ExpectedNumberOfCases,ExpectedNumberOfCasesInCommunity
+           ExpectedNumberOfCasesUnderNZResidentQuarantine,ExpectedNumberOfCasesAll,ExpectedNumberOfCasesInCommunity
     )
     percentage_cols <-c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases')
-    rounding_cols <-c('ExpectedNumberOfCases','ExpectedNumberOfCasesInCommunity')
+    rounding_cols <-c('ExpectedNumberOfCasesUnderNZResidentQuarantine','ExpectedNumberOfCasesAll','ExpectedNumberOfCasesInCommunity')
     dt_colnames<-c("Territory","Probability of 1 or more cases\n arriving in quarantine",
                    "Probability of 1 or more cases\n reaching community",
-                "Expected cases in quarantine", "Expected cases reaching community")
+                   "Expected cases in quarantine at status quo","Expected cases in quarantine", "Expected cases reaching community")
   }
 
   return(DT::datatable(df_to_return,colnames=dt_colnames)%>%
@@ -157,8 +159,9 @@ display_dt <- DT::datatable(
     arrange(InfActiveCasesPerMillion) %>%
     select(LocationCode, Location, Population, #total_cases,
            ActiveCases,InferredActiveCases,InfActiveCasesPerMillion,
-           MonthlyArrivals,ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
-           ExpectedNumberOfCases,ExpectedNumberOfCasesInCommunity
+           LocationResidentMonthlyArrivals,ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
+           ExpectedNumberOfCasesUnderNZResidentQuarantine,
+           ExpectedNumberOfCasesAll,ExpectedNumberOfCasesInCommunity
     ))
 
 
@@ -172,7 +175,7 @@ server <- function(input, output) {
     location_info <- world_with_covid_data %>% filter(Location==input$locprofile_Location)
     country_classification = classify_country(
       location_info$LifeExp,
-      location_info$ExpectedNumberOfCases
+      location_info$ExpectedNumberOfCasesAll
     )
     trust_classification <- classify_country_trust(
       location_info$LifeExp
@@ -243,8 +246,8 @@ server <- function(input, output) {
     display_dt %>%
       formatPercentage(c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases'),3) %>%
       formatRound(c('InferredActiveCases','InfActiveCasesPerMillion'),0,mark=",") %>%
-      formatRound(c('ExpectedNumberOfCases','ExpectedNumberOfCasesInCommunity'),2) %>%
-      formatRound(c('Population','ActiveCases','MonthlyArrivals'),0,mark=",")
+      formatRound(c('ExpectedNumberOfCasesAll','ExpectedNumberOfCasesInCommunity'),2) %>%
+      formatRound(c('Population','ActiveCases','LocationResidentMonthlyArrivals'),0,mark=",")
   )
   
   #intervention simulation page
@@ -265,7 +268,7 @@ Use the 'within our bubble' feature with caution.
     world_w_covid_data <- get_analysis_covid_data(
       nogeo_world_basic_data,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
-      travel_volume_weighting=input$intsim_percent_capacity/100)
+      general_travel_rate=input$intsim_percent_capacity/100)
     return(world_w_covid_data)
   })
   
@@ -273,7 +276,16 @@ Use the 'within our bubble' feature with caution.
     world_w_covid_data <- get_analysis_covid_data(
       nogeo_world_basic_data,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
-      travel_volume_weighting=input$intsim_percent_capacity_with_quarantine/100)
+      general_travel_rate=input$intsim_percent_capacity_with_quarantine/100)
+    return(world_w_covid_data)
+  })
+  
+  #basically NZ citizens only.
+  sim_geo_world_with_covid_data_statusquo <- reactive({
+    world_w_covid_data <- get_analysis_covid_data(
+      nogeo_world_basic_data,
+      quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
+      general_travel_rate=0)
     return(world_w_covid_data)
   })
   
@@ -307,76 +319,176 @@ Use the 'within our bubble' feature with caution.
     #use the lower "community cases" figure here because these are going through quarantine.
   })
   
-  get_foreign_risk <- reactive({
-    foreign_risk <- rbind(
-      get_countries_in_bubble_risks() %>%
-        select(Location,
-               "ExpectedCases"=ExpectedNumberOfCases),
-      get_countries_out_of_bubble_risks() %>%
-        select(Location,
-               "ExpectedCases"=ExpectedNumberOfCasesInCommunity)
-    )
-    
+  #these are untrusted countries, but NZ residents are ALWAYS allowed to return from these ones.
+  get_countries_out_of_bubble_untrusted_risks <- reactive({
+    #but only pass forward countries that we haven't actually selected
+    sim_geo_world_with_covid_data_statusquo() %>%
+      data.frame %>%
+      filter(
+        (LifeExp<life_exp_thresh) | 
+          (
+            ((Location %in% input$intsim_countries_quarantine)==FALSE) & 
+            ((Location %in% input$intsim_countries_bubble)==FALSE)
+          )
+        ) 
   })
   
-  get_nz_resident_risk <- reactive({
-    data.frame("Location"="Returning NZers",
-               "ExpectedCases"=39/input$intsim_quarantine_failure_odds)
+  get_status_quo_risk <- reactive({
+    #just all countries, but we'll only get expected cases from NZ Residents
+    status_quo_risk <- 
+      sim_geo_world_with_covid_data_statusquo() %>%
+      select(Location,
+             "ExpectedCases"=ExpectedNumberOfCasesInCommunity
+      )
   })
+  
+  get_intervention_risk <- reactive({
+    status_quo_risk <- rbind(
+      get_countries_in_bubble_risks() %>%
+        select(Location,
+               "ExpectedCases"=ExpectedNumberOfCasesAll,
+        ),
+      get_countries_out_of_bubble_risks() %>%
+        select(Location,
+               "ExpectedCases"=ExpectedNumberOfCasesInCommunity
+        ),
+      get_countries_out_of_bubble_untrusted_risks() %>%
+        select(Location,
+               "ExpectedCases"=ExpectedNumberOfCasesInCommunity
+        )
+    )
+  })
+  # get_foreign_risk <- reactive({
+  #   foreign_risk <- rbind(
+  #     get_countries_in_bubble_risks() %>%
+  #       select(Location,
+  #              "ExpectedCases"=ExpectedNumberOfCases),
+  #     get_countries_out_of_bubble_risks() %>%
+  #       select(Location,
+  #              "ExpectedCases"=ExpectedNumberOfCasesInCommunity)
+  #   )
+  #   
+  # })
+  # 
+  # get_universal_quarantine_nz_resident_risk <- reactive({
+  #   data.frame("Location"="Returning NZers",
+  #              "ExpectedCases"=39/input$intsim_quarantine_failure_odds)
+  # })
+  # 
+  # get_calculated_nz_resident_risk <- reactive({
+  #   
+  #   data.frame("OriginLocation" = "",
+  #              "ExpectedCases"=39/input$intsim_quarantine_failure_odds)
+  # })
   
   
   output$total_risk_graph <- renderPlot({
-    foreign_risk <- get_foreign_risk()
+    #foreign_risk <- get_foreign_risk()
+    status_quo_risk <- get_status_quo_risk()
+    intervention_risk <- get_intervention_risk()
     
-    
+    #OBSOLETE CODE
+    #we no longer use this method
+    #but should compare the new method against this one.
     #nz resident risk is the number of cases that have returned
     #roughly 39 - need to get a better figure
     #divided by our expected ratio of escaped cases
-    nz_resident_risk_df <- get_nz_resident_risk()
+    #nz_resident_risk_df <- get_nz_resident_risk()
     
-    nz_resident_risk_label <- nz_resident_risk_df$Location[[1]]
+    #nz_resident_risk_label <- nz_resident_risk_df$Location[[1]]
+    nz_res_only_label <- "NZ Resident Returnees Only Locations"
+    bubble_other_label <- "Other Bubble Locations"
+    quarantine_other_label <- "Other Quarantine Locations"
     
-    foreign_risk$Location <-
-      factor(foreign_risk$Location,
-             levels = c(unique(foreign_risk$Location),nz_resident_risk_label),
-             ordered=TRUE)
+    
+    #we'll pool risk from all countries that haven't been selected, for both status quo and intervention categories.
+    selected_locations <- unique(c(
+      input$intsim_countries_quarantine,
+      input$intsim_countries_bubble
+    ))
+    
+    # intervention_risk$Location <-
+    #   factor(intervention_risk$Location,
+    #          levels = c(selected_locations,other_label),
+    #          ordered=TRUE)
+    
+    intervention_risk$Condition<-"Intervention"
+    
+    
+    
+    status_quo_risk$Condition<-"Status Quo"
+    
+    #intervention_risk <- arrange(intervention_risk,desc(Location))
+    #intervention_risk$LabelPosition<-cumsum(intervention_risk$ExpectedCases)-intervention_risk$ExpectedCases/2
+    
+    #status_quo_risk <- arrange(status_quo_risk,desc(Location))
+    #status_quo_risk$LabelPosition<-cumsum(status_quo_risk$ExpectedCases)-status_quo_risk$ExpectedCases/2
+    
+    combined_risk_graph <- rbind(status_quo_risk,intervention_risk) %>% 
+      arrange(Location)
+    
+    warning(paste0(
+      "data incomplete for",
+      paste0(combined_risk_graph %>% filter(is.na(ExpectedCases)) %>% select(Location) %>% unique,collapse=", ")
+            ))
+    combined_risk_graph <- combined_risk_graph%>% filter(!is.na(ExpectedCases))
     
 
-      
+    #combined_risk_graph$Location[is.na(combined_risk_graph$Location)]<-nz_res_only_label
+    combined_risk_graph<- 
+      combined_risk_graph %>% 
+      mutate(LocationLabel = 
+        case_when(
+        is.na(Location) ~ nz_res_only_label,
+        (Location %in% input$intsim_countries_bubble) & (ExpectedCases<0.02) ~ bubble_other_label,
+        (Location %in% input$intsim_countries_quarantine) & (ExpectedCases<0.02) ~ quarantine_other_label,
+        TRUE ~ Location
+      ))
+    
+    combined_risk_graph$LocationLabel <-
+      factor(combined_risk_graph$LocationLabel,
+             levels = c(selected_locations,nz_res_only_label,bubble_other_label,quarantine_other_label),
+             ordered=TRUE)
     
     
+    #combine across "other location"
+    combined_risk_graph<-
+      combined_risk_graph %>% 
+      group_by(LocationLabel,Condition) %>%
+      summarise(ExpectedCases=sum(ExpectedCases)) %>%
+      arrange(Condition,desc(LocationLabel))
     
-    combined_risk_graph <- rbind(foreign_risk,nz_resident_risk_df)
+    #do the cumulative sum
+    combined_risk_graph <-
+      combined_risk_graph %>%
+      group_by(Condition) %>%
+      arrange(desc(LocationLabel)) %>%
+      mutate(LabelPosition=cumsum(ExpectedCases)-ExpectedCases/2)
     
-    combined_risk_graph <- arrange(combined_risk_graph,desc(Location))
-    combined_risk_graph$LabelPosition<-cumsum(combined_risk_graph$ExpectedCases)-combined_risk_graph$ExpectedCases/2
-    combined_risk_graph <- arrange(combined_risk_graph,Location)
     color_palette = c(
       rep(
         c('#1f78b4','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#6a3d9a','#b15928'),
-        ceiling(nrow(combined_risk_graph)/8))[1:nrow(foreign_risk)],
-      '#222222' #new zealand
+        ceiling(nrow(combined_risk_graph)/8))[length(selected_locations)],
+      '#333333' #OTHER
       )
     
-    ggplot(combined_risk_graph,aes(x=1,y=ExpectedCases,fill=Location,label=Location))+
+    ggplot(combined_risk_graph,aes(x=Condition,y=ExpectedCases,fill=LocationLabel,label=LocationLabel))+
       geom_bar(stat="identity",alpha=0.8)+
-      scale_x_continuous(name="",breaks=NULL)+
+      scale_x_discrete(name="")+
       scale_y_continuous(name="Expected cases per month",
                          breaks=0:10,minor_breaks = NULL, 
-                         limits = c(0,max(nz_resident_risk_df$ExpectedCases*3,sum(combined_risk_graph$ExpectedCases))),
+                         limits = c(0,max(combined_risk_graph$ExpectedCases*3,sum(combined_risk_graph$ExpectedCases))),
                          position="right")+
-      scale_fill_manual(values = color_palette)+
+      scale_fill_brewer(palette="Set3")+
+      #scale_fill_manual(values = color_palette)+
       theme(legend.position = "none",legend.box="vertical",legend.margin=margin(),text=element_text(face = "bold"),
             axis.text = element_text(size=16)
             )+
       #guides(fill=guide_legend(nrow=2,byrow=TRUE))+
-      geom_label_repel(aes(y=LabelPosition),color="white",fontface="bold")+
+      geom_label_repel(aes(y=LabelPosition),color="black",fontface="bold")+
       coord_flip()
   })
   
-  
-
-
   
   total_risk_text <- reactive({
     
@@ -391,34 +503,44 @@ Use the 'within our bubble' feature with caution.
     #for countries that are let in without quarantine, we want to add 
     countries_in_bubble_risks <- get_countries_in_bubble_risks()$ProbabilityOfMoreThanZeroCases
     countries_out_of_bubble_risks <- get_countries_out_of_bubble_risks()$ProbabilityOfMoreThanZeroCommunityCases
+    untrusted_countries_risks <- getCurrentOutputInfo()$ProbabilityOfMoreThanZeroCommunityCases
     
-    foreign_risk <- get_foreign_risk()
-    nz_resident_risk <- get_nz_resident_risk()
-    pct_nz_risk <- sum(nz_resident_risk$ExpectedCases)/(sum(foreign_risk$ExpectedCases)+sum(nz_resident_risk$ExpectedCases))
+    # foreign_risk <- get_foreign_risk()
+    # nz_resident_risk <- get_intervention_risk()
+    intervention_risk <- get_intervention_risk()
+    status_quo_risk <- get_intervention_risk()
+    increased_risk <- sum(intervention_risk$ExpectedCasesAll)/sum(status_quo_risk$ExpectedCasesAll)
     
     #now...
     #how do we combine these? 
     #it is not as simple as adding each up. 
     #I think we have to multiply the complements then get the complement again.
-    total_risk_prop<-1-prod(1-c(countries_in_bubble_risks,countries_out_of_bubble_risks))
+    total_risk_prop<-1-prod(1-c(countries_in_bubble_risks,countries_out_of_bubble_risks,untrusted_countries_risks))
     
     #now we need to add a warning for excluded countries.
-    
+    #total_risk_prop
     textout<-paste0(
-      "Returning NZ Residents make up ",
-      scales::percent(pct_nz_risk,accuracy=1),
-      " of all expected cases.",
+      "In the status quo where only NZ residents are allowed can enter, we estimate ",
+      sum(status_quo_risk$ExpectedCasesAll),
+      " cases per month will be exposed to the community.",
       "<br /> <br />",
-      "The total risk from non-New Zealanders of exposing the community to 1 or more cases over a 1-month period is ",
-                    scales::percent(total_risk_prop,accuracy = 0.01)
-                    ,".\n\n"
-                    
+      "In the specified intervention, we estimate",
+      sum(intervention_risk$ExpectedCasesAll),
+      " cases per month will be exposed to the community.",
+      "The intervention increases the expected amount of community exposure by ",
+      scales::percent(increased_risk,accuracy = 0.01),
+      ".<br /> <br />",
+      "In this intervention, the total risk of exposing the community to 1 or more cases over a 1-month period is ",
+      scales::percent(total_risk_prop,accuracy = 0.01)
+      ,".\n\n"
+      ,"<br /> <br />"
+      ,"Community exposure could be anything from one very brief encounter (e.g., stopping for directions) to an infected individual entering the community undetected"
                     )
     
     if(length(countries_excluded_due_to_data$Location)>0){
       textout<-paste0(textout,
 "<br /><br /> COVID-19 Data from the following countries is considered less reliable. 
-Risk from these countries cannot be estimated at this time:" ,
+NZ resident returnees from these countries are already allowed, but we caution against relying on this data for anything further: " ,
 paste0(countries_excluded_due_to_data$Location,collapse = ", "))
     }
     
@@ -502,8 +624,8 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
   output$graph4header<-renderText({"Figure 5: New Zealand visitor arrivals by month"})
   output$graph4<-renderLeaflet({
     
-    show_leaflet(data_to_show = inc_data_arrivals %>% filter(!is.na(MonthlyArrivals)),
-                 primary_col = "MonthlyArrivals",
+    show_leaflet(data_to_show = inc_data_arrivals %>% filter(!is.na(LocationResidentMonthlyArrivals)),
+                 primary_col = "LocationResidentMonthlyArrivals",
                  rounding_func = function(x){scales::comma(signif(x,3))},
                  legend_title =  "NZ Visitor arrivals by month",
                  quant_grades = 5,
@@ -572,6 +694,7 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
 
 ui <- navbarPage(
   "Opening the border: What's the risk?",
+  selected="Intervention simulation",
   tabPanel(
     "Location Profiles",
     fluidPage(
