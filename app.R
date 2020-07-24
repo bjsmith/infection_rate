@@ -9,11 +9,11 @@ life_exp_thresh <- 70
 run_date<-Sys.Date()
 month_name <- format(run_date,"%B")
 
-# geo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date)
-# geo_world_with_covid_data <- get_analysis_covid_data(geo_world_basic_data)
-# 
-# nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
-# world_with_covid_data <- get_analysis_covid_data(nogeo_world_basic_data)
+geo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date)
+geo_world_with_covid_data <- get_analysis_covid_data(geo_world_basic_data)
+
+nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
+world_with_covid_data <- get_analysis_covid_data(nogeo_world_basic_data)
 
 #save.image("environ.RData")
 #load("environ.RData")
