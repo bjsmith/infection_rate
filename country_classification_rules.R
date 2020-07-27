@@ -17,10 +17,12 @@ classify_country <-function(lifeExp,expectedCases){
   
 }
 
-classify_country_trust <-function(lifeExp){
+classify_country_trust <-function(lifeExp, country_name){
   if(lifeExp>=70){
     return("trustworthy")
-  }else{
+  }else if (country_name %in% c("Samoa","Cook Islands")){
+    return("trustworthy")
+  } else{
     return("untrustworthy")
   }
   

@@ -1,0 +1,43 @@
+---
+title: "Country Profile"
+output:
+  pdf_document: default
+#  html_document: default
+params:
+  nz_info: NA
+  location_profile: NA
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+options(scipen=10)
+locname <- params$location_profile
+```
+
+# `r locname`
+
+This is a location profile for `r locname`.
+
+
+### COVID-19 prevalence
+
+According to the Ministry of Health in `r locname`, there are no cases of COVID-19 in `r locname`. The border is very closely monitored and we can have a high degree of confidence that while current border control practices remain intact,  `r locname` will remain COVID free.
+
+### Quality of health data reporting
+
+New Zealand maintains close links with `r locname`. We believe the quality of data reporting in `r locname` can be directly corroborated through cooperation with `r locname`'s health ministry.
+
+## Travel to New Zealand
+
+`r locname` is a location of interest due to its close links to New Zealand, and there is likely to be a large amount of two-way travel between New Zealand and `r locname` if border restrictions are loosened.
+
+## Expected risk
+
+There is currently no risk in opening to `r locname`. 
+
+## Overall rating
+
+Opening to `r locname` currently has no risk associated with it. Risk should continually be monitored by working with the Ministry of Health in `r locname`.
+

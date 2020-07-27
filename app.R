@@ -94,23 +94,36 @@ server <- function(input, output) {
   
   generate_country_profile_report_params <-reactive({
     
-    location_info <- generate_world_with_covid_data() %>% filter(Location==input$locprofile_Location)
-    country_classification = classify_country(
-      location_info$LifeExp,
-      location_info$ExpectedNumberOfCasesAll
-    )
-    trust_classification <- classify_country_trust(
-      location_info$LifeExp
-    )
-    # Set up parameters to pass to Rmd document
-    params <- list(
-      location_profile = input$locprofile_Location,
-      location_info = location_info,
-      nz_info = generate_world_with_covid_data()  %>% filter(Location=="New Zealand"),
-      country_classification = country_classification,
-      trust_rating = trust_classification,
-      assumed_ifr = input$simsettings_ifr/100
-    )
+    print(input$locprofile_Location)
+    if(input$locprofile_Location %in% c("Cook Islands", "Samoa")){
+      print("generating abridged report")
+      params <- 
+        list(
+          location_profile = input$locprofile_Location,
+          nz_info = generate_world_with_covid_data()  %>% filter(Location=="New Zealand")
+      )
+      
+    }else{
+      print("generating full report")
+      location_info <- generate_world_with_covid_data() %>% filter(Location==input$locprofile_Location)
+      trust_classification <- classify_country_trust(
+        location_info$LifeExp,location_info$locprofile_Location
+      )
+      country_classification = classify_country(
+        location_info$LifeExp,
+        location_info$ExpectedNumberOfCasesAll
+      )
+      
+      # Set up parameters to pass to Rmd document
+      params <- list(
+        location_profile = input$locprofile_Location,
+        location_info = location_info,
+        nz_info = generate_world_with_covid_data()  %>% filter(Location=="New Zealand"),
+        country_classification = country_classification,
+        trust_rating = trust_classification,
+        assumed_ifr = input$simsettings_ifr/100
+      )
+    }
     
     return(params)
   })
@@ -134,12 +147,23 @@ server <- function(input, output) {
       filter(LifeExp>=life_exp_thresh)
   })
   
+  get_report_filename <- reactive({
+    
+    if(input$locprofile_Location %in% c("Cook Islands", "Samoa")){
+      template_filename <-"covidfree_country_profile_report.Rmd"
+    }else{
+      template_filename <-"country_profile_report.Rmd"
+    }
+    template_filename
+  })
+  
+  
   output$onscreen_report <- renderUI({
     #https://community.rstudio.com/t/generating-markdown-reports-from-shiny/8676/5
     print(paste0("generating report for ",input$locprofile_Location))
+    
+    template_filename <- get_report_filename()
     params <- generate_country_profile_report_params()
-    
-    
     
     #temp_dir = tempdir()
     #tempReport <- file.path(temp_dir, "country_profile_report.Rmd")
@@ -151,7 +175,7 @@ server <- function(input, output) {
     #output_filename="country_profile_report_temp.html"
     
     includeHTML(
-    rmarkdown::render("country_profile_report.Rmd", 
+    rmarkdown::render(template_filename, 
                       output_format = "html_document",
                       params = params,
                       envir = new.env(parent = globalenv())
@@ -166,10 +190,11 @@ server <- function(input, output) {
       print(paste0("generating report for ",input$locprofile_Location))
       params <- generate_country_profile_report_params()
       
+      template_filename <- get_report_filename()
       
       #temp_dir = tempdir()
       tempReport <- file.path(tempdir(), "report.Rmd")
-      file.copy("country_profile_report.Rmd", tempReport, overwrite = TRUE)
+      file.copy(template_filename, tempReport, overwrite = TRUE)
       
       # Knit the document, passing in the `params` list, and eval it in a
       # child of the global environment (this isolates the code in the document
@@ -181,8 +206,6 @@ server <- function(input, output) {
       )
     }
   )
-  
-  
   
   
   #country list page
