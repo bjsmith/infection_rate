@@ -99,6 +99,11 @@ get_world_with_supplements<-function(){
 get_owid <- function(){
 
 }
+
+#this function contains some calculation of derived statistics
+#this is deprecated and I am trying to separate out data import from data analysis
+#this function should exclude all analysis including calculation of rates of disease
+#focus should be on importing and cleaning data.
 get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),separate_aussie_states_and_hk=FALSE,include_geo_data=TRUE){
   #separate_aussie_states_and_hk<-TRUE
   #include_geo_data=FALSE
@@ -338,16 +343,7 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
 
   deaths_with_lagged_cases <- jh_dxc_7_day_cases_lagged %>% left_join(jh_dxc_7_day_deaths)
   
-  assumed_cfr<-0.005
-  deaths_with_lagged_cases<- 
-    deaths_with_lagged_cases %>% 
-    mutate(InferredDetectionRate = (assumed_cfr*LaggedNewCases/NewDeaths))
-  #if there are NO deaths then we infer detection rate is 100%
-  deaths_with_lagged_cases[deaths_with_lagged_cases$NewDeaths==0,"InferredDetectionRate"]<-1
-  
-  
-  
-  
+
   #deaths_with_lagged_cases$CountryPopulation<-deaths_with_lagged_cases$total_cases/deaths_with_lagged_cases$total_cases_per_million*10^6
   #we want the inferred case population rate
   #this has to come from the john hopkins data because we can get active cases from that.
@@ -358,9 +354,7 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
     summarise_all(mean)
   deaths_with_lagged_cases <- deaths_with_lagged_cases %>% left_join(jh_key_stats,by=c("CountryDivisionCodeMixed"="CountryDivisionCodeMixed"))
   
-  deaths_with_lagged_cases <-
-    deaths_with_lagged_cases %>% 
-    mutate(InferredActiveCases= (ActiveCases/InferredDetectionRate))
+
   
   world_with_covid_data<-
     #left_join(world,country_iso_2_to_3_map,by=c("iso_a2" = "ISO3166.1.Alpha.2"),name="iso_a2") %>%
@@ -395,18 +389,31 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
            ) %>% 
     ungroup
   
-  world_with_covid_data <- 
-    world_with_covid_data %>% 
-    mutate(InferredActiveCasePopRate = (InferredActiveCases/Population))
-  
-  world_with_covid_data <- 
-    world_with_covid_data %>% 
-    mutate(ActiveCasePopRate = ActiveCases/Population)
-  
-  
-  
-  
-  
+
   return(world_with_covid_data)
 }
 
+
+get_max_quantiles <- function(display_data,col_of_interest,max_quantiles=8){
+  
+  use_bin_value<-max_quantiles
+  
+  for (attempt_bin_value in 1:max_quantiles){
+    print("attempting...")
+    summary_bin_stats <- display_data %>%
+      data.frame %>%
+      mutate(bin=ntile(!!as.symbol(col_of_interest),attempt_bin_value)) %>% 
+      group_by(bin) %>% 
+      summarise(
+        minval=min(!!as.symbol(col_of_interest)),maxval=max(!!as.symbol(col_of_interest))
+      ) %>%
+      mutate(binnable = (lag(minval)!=minval) & (lead(maxval)!=maxval))
+    binnable<-all(summary_bin_stats$binnable,na.rm = TRUE)
+    if(!binnable){
+      use_bin_value<-attempt_bin_value-1
+      break
+    }
+  }
+  return(use_bin_value)
+  
+}

@@ -1,92 +1,97 @@
 
 library(DT)
-source("utils.R")
+debugSource("utils.R")
 source("simulation.R")
 source("country_classification_rules.R")
 library(ggrepel)
 
 life_exp_thresh <- 70
+default_assumed_ifr_percent<-0.5
+default_quarantine_failure_odds<-12
+
 run_date<-Sys.Date()
 month_name <- format(run_date,"%B")
 
 geo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date)
-geo_world_with_covid_data <- get_analysis_covid_data(geo_world_basic_data)
+geo_world_with_covid_data <- get_analysis_covid_data(geo_world_basic_data,assumed_ifr = default_assumed_ifr_percent/100,
+                                                     quarantine_odds_override=(1/default_quarantine_failure_odds))
 
 nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
-world_with_covid_data <- get_analysis_covid_data(nogeo_world_basic_data)
+# world_with_covid_data <- get_analysis_covid_data(nogeo_world_basic_data,assumed_ifr = default_assumed_ifr_percent/100,
+#                                                 quarantine_odds_override=(1/default_quarantine_failure_odds))
 
 #save.image("environ.RData")
 #load("environ.RData")
 
 ### now set up specific datasets for each output
+# 
+# 
+# vals_to_include <- (is.finite(geo_world_with_covid_data$InferredDetectionRate) & !is.na(geo_world_with_covid_data$InferredDetectionRate)
+#                     
+#                     & geo_world_with_covid_data$LifeExp>=life_exp_thresh
+# )
+# 
+# inc_data_inf_det_rate<-geo_world_with_covid_data[vals_to_include,]
+# 
+# 
+# 
+# 
+# 
+# vals_to_include <- (
+#   is.finite(geo_world_with_covid_data$ActiveCasesPerThousand) & !is.na(geo_world_with_covid_data$ActiveCasesPerThousand)
+#   
+#   & geo_world_with_covid_data$LifeExp>=life_exp_thresh
+# )
+# 
+# inc_data_inf_cases_per_m<-geo_world_with_covid_data[vals_to_include,]
+# #pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
+# 
+# #chloro_labels <- paste0(inc_data$name_long, ": ", as.character(round(inc_data$ActiveCasesPerThousand,1)))
+# 
+# 
+# 
+# vals_to_include <- (
+#   is.finite(geo_world_with_covid_data$ActiveCasesPerThousand) & !is.na(geo_world_with_covid_data$ActiveCasesPerThousand)
+#   
+#   & geo_world_with_covid_data$LifeExp>=life_exp_thresh
+# )
+# 
+# inc_data_cases_per_m<-geo_world_with_covid_data[vals_to_include,]
+# #pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
+# 
+# #chloro_labels <- paste0(inc_data$name_long, ": ", as.character(round(inc_data$ActiveCasesPerThousand,1)))
+# 
+# vals_to_include <- (
+#   is.finite(geo_world_with_covid_data$InferredActiveCases) & !is.na(geo_world_with_covid_data$InferredActiveCases)
+#   
+#   & geo_world_with_covid_data$LifeExp>=life_exp_thresh
+# )
+# 
+# inc_data_inf_active_cases<-geo_world_with_covid_data[vals_to_include,]
+# #pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
+# 
+# #chloro_labels <- paste0(inc_data$name_long, ": ", as.character(round(inc_data$ActiveCasesPerThousand,1)))
+# 
+# vals_to_include <- (
+#   is.finite(geo_world_with_covid_data$ActiveCases) & !is.na(geo_world_with_covid_data$ActiveCases)
+#   
+#   & geo_world_with_covid_data$LifeExp>=life_exp_thresh
+# )
+# 
+# 
+# inc_data_active_cases<-geo_world_with_covid_data[vals_to_include,]
+# 
+# inc_data_arrivals<-geo_world_with_covid_data
+# #pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
+# 
+# 
+# vals_to_include <- (
+#   
+#   world_with_covid_data$LifeExp>=life_exp_thresh
+# )
 
 
-vals_to_include <- (is.finite(geo_world_with_covid_data$InferredDetectionRate) & !is.na(geo_world_with_covid_data$InferredDetectionRate)
-                    
-                    & geo_world_with_covid_data$LifeExp>=life_exp_thresh
-)
-
-inc_data_inf_det_rate<-geo_world_with_covid_data[vals_to_include,]
-
-
-
-
-
-vals_to_include <- (
-  is.finite(geo_world_with_covid_data$ActiveCasesPerThousand) & !is.na(geo_world_with_covid_data$ActiveCasesPerThousand)
-  
-  & geo_world_with_covid_data$LifeExp>=life_exp_thresh
-)
-
-inc_data_inf_cases_per_m<-geo_world_with_covid_data[vals_to_include,]
-#pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
-
-#chloro_labels <- paste0(inc_data$name_long, ": ", as.character(round(inc_data$ActiveCasesPerThousand,1)))
-
-
-
-vals_to_include <- (
-  is.finite(geo_world_with_covid_data$ActiveCasesPerThousand) & !is.na(geo_world_with_covid_data$ActiveCasesPerThousand)
-  
-  & geo_world_with_covid_data$LifeExp>=life_exp_thresh
-)
-
-inc_data_cases_per_m<-geo_world_with_covid_data[vals_to_include,]
-#pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
-
-#chloro_labels <- paste0(inc_data$name_long, ": ", as.character(round(inc_data$ActiveCasesPerThousand,1)))
-
-vals_to_include <- (
-  is.finite(geo_world_with_covid_data$InferredActiveCases) & !is.na(geo_world_with_covid_data$InferredActiveCases)
-  
-  & geo_world_with_covid_data$LifeExp>=life_exp_thresh
-)
-
-inc_data_inf_active_cases<-geo_world_with_covid_data[vals_to_include,]
-#pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
-
-#chloro_labels <- paste0(inc_data$name_long, ": ", as.character(round(inc_data$ActiveCasesPerThousand,1)))
-
-vals_to_include <- (
-  is.finite(geo_world_with_covid_data$ActiveCases) & !is.na(geo_world_with_covid_data$ActiveCases)
-  
-  & geo_world_with_covid_data$LifeExp>=life_exp_thresh
-)
-
-
-inc_data_active_cases<-geo_world_with_covid_data[vals_to_include,]
-
-inc_data_arrivals<-geo_world_with_covid_data
-#pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
-
-
-vals_to_include <- (
-  
-  world_with_covid_data$LifeExp>=life_exp_thresh
-)
-
-
-display_table<-world_with_covid_data[vals_to_include,]
+# display_table<-world_with_covid_data[vals_to_include,]
 ######set up general simulator
 
 countries_to_choose_from<-
@@ -102,15 +107,18 @@ key_interest_countries <- c("US","China (mainland)","Fiji","United Kingdom",
                             "Thailand","Philippines",
                             "Malaysia","France")
 
-dql<-(
-  is.finite(world_with_covid_data$ActiveCases) & !is.na(world_with_covid_data$ActiveCases) &
-    is.finite(world_with_covid_data$ProbabilityOfMoreThanZeroCases) & !is.na(world_with_covid_data$ProbabilityOfMoreThanZeroCases) &
-    world_with_covid_data$LifeExp>=life_exp_thresh
-)
-dql[is.na(dql)]<-TRUE
-world_with_covid_data$DataQualityLow<-dql
+# dql<-(
+#   is.finite(world_with_covid_data$ActiveCases) & !is.na(world_with_covid_data$ActiveCases) &
+#     is.finite(world_with_covid_data$ProbabilityOfMoreThanZeroCases) & !is.na(world_with_covid_data$ProbabilityOfMoreThanZeroCases) &
+#     world_with_covid_data$LifeExp>=life_exp_thresh
+# )
+# dql[is.na(dql)]<-TRUE
+# world_with_covid_data$DataQualityLow<-dql
 
-get_intsim_dt<-function(country_filter,selected_probs="bubble",world_w_covid_data#,quarantine_odds_override,general_travel_rate=1
+get_intsim_dt<-function(
+  country_filter,
+  selected_probs="bubble",
+  world_w_covid_data#,quarantine_odds_override,general_travel_rate=1
                         ){
   # world_w_covid_data <- get_analysis_covid_data(
   #   geo_world_basic_data,
@@ -153,16 +161,7 @@ get_intsim_dt<-function(country_filter,selected_probs="bubble",world_w_covid_dat
 
 #lose geometry info and convert to datatable. note: not the same as data.table!
 
-display_dt <- DT::datatable(
-  display_table %>% 
-    data.frame %>%
-    arrange(InfActiveCasesPerMillion) %>%
-    select(LocationCode, Location, Population, #total_cases,
-           ActiveCases,InferredActiveCases,InfActiveCasesPerMillion,
-           LocationResidentMonthlyArrivals,ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
-           ExpectedNumberOfCasesUnderNZResidentQuarantine,
-           ExpectedNumberOfCasesAll,ExpectedNumberOfCasesInCommunity
-    ))
+
 
 
 ###########main dashboard.
@@ -192,11 +191,30 @@ server <- function(input, output) {
     return(params)
   })
   
+  generate_world_with_covid_data <- reactive({
+    get_analysis_covid_data(
+      nogeo_world_basic_data,
+      quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
+      assumed_ifr = input$simsettings_ifr/100)
+  })
+  
+  generate_mapped_world_with_covid_data <- reactive({
+    get_analysis_covid_data(
+      geo_world_basic_data,
+      quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
+      assumed_ifr = input$simsettings_ifr/100)
+  })
+  
+  get_filtered_mapped_world_with_covid_data <- reactive({
+    generate_mapped_world_with_covid_data() %>% 
+      filter(LifeExp>=life_exp_thresh)
+  })
   
   output$onscreen_report <- renderUI({
     #https://community.rstudio.com/t/generating-markdown-reports-from-shiny/8676/5
     print(paste0("generating report for ",input$locprofile_Location))
     params <- generate_country_profile_report_params()
+    
     
     
     #temp_dir = tempdir()
@@ -241,13 +259,38 @@ server <- function(input, output) {
   )
   
   
+  
+  
   #country list page
-  output$country_table<-DT::renderDataTable(
-    display_dt %>%
+  output$country_table<-DT::renderDataTable({
+    
+    wwcd <- generate_world_with_covid_data()
+    
+    display_df <- 
+      wwcd %>% 
+      filter(LifeExp>=life_exp_thresh) %>%
+      data.frame %>%
+      arrange(InfActiveCasesPerMillion) %>%
+      select(LocationCode, Location, Population, #total_cases,
+             ActiveCases,InferredActiveCases,InfActiveCasesPerMillion,
+             LocationResidentMonthlyArrivals,ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
+             ExpectedNumberOfCasesUnderNZResidentQuarantine,
+             ExpectedNumberOfCasesAll,ExpectedNumberOfCasesInCommunity
+      )
+      
+    display_dt <- DT::datatable(display_df)
+      
+  
+    display_dt_formatted <- (
+      display_dt %>%
       formatPercentage(c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases'),3) %>%
       formatRound(c('InferredActiveCases','InfActiveCasesPerMillion'),0,mark=",") %>%
       formatRound(c('ExpectedNumberOfCasesAll','ExpectedNumberOfCasesInCommunity'),2) %>%
       formatRound(c('Population','ActiveCases','LocationResidentMonthlyArrivals'),0,mark=",")
+    )
+    
+    display_dt_formatted
+  }
   )
   
   #intervention simulation page
@@ -257,9 +300,7 @@ server <- function(input, output) {
       withMathJax(HTML(paste0("
 <h4>Notes:</h4>
 <br /><br />
-Excludes impact from NZ residents returning.
-Thus, current calculations doesn't take into account increased risk from NZ residents returning from countries allowed within our bubble.
-Use the 'within our bubble' feature with caution.
+Refer to the 'Simulation settings' tab for more options.
 
 ")))})
   
@@ -268,7 +309,8 @@ Use the 'within our bubble' feature with caution.
     world_w_covid_data <- get_analysis_covid_data(
       nogeo_world_basic_data,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
-      general_travel_rate=input$intsim_percent_capacity/100)
+      general_travel_rate=input$intsim_percent_capacity/100,
+      assumed_ifr = input$simsettings_ifr/100)
     return(world_w_covid_data)
   })
   
@@ -276,7 +318,8 @@ Use the 'within our bubble' feature with caution.
     world_w_covid_data <- get_analysis_covid_data(
       nogeo_world_basic_data,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
-      general_travel_rate=input$intsim_percent_capacity_with_quarantine/100)
+      general_travel_rate=input$intsim_percent_capacity_with_quarantine/100,
+      assumed_ifr = input$simsettings_ifr/100)
     return(world_w_covid_data)
   })
   
@@ -285,7 +328,8 @@ Use the 'within our bubble' feature with caution.
     world_w_covid_data <- get_analysis_covid_data(
       nogeo_world_basic_data,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
-      general_travel_rate=0)
+      general_travel_rate=0,
+      assumed_ifr = input$simsettings_ifr/100)
     return(world_w_covid_data)
   })
   
@@ -475,12 +519,13 @@ Use the 'within our bubble' feature with caution.
       '#222222' #OTHER
       )
     
+    plot_max <- sum(combined_risk_graph$ExpectedCases)
     ggplot(combined_risk_graph,aes(x=Condition,y=ExpectedCases,fill=LocationLabel,label=LocationLabel))+
       geom_bar(stat="identity",alpha=0.8)+
       scale_x_discrete(name="")+
       scale_y_continuous(name="Expected cases per month",
-                         breaks=0:10,minor_breaks = NULL, 
-                         limits = c(0,max(combined_risk_graph$ExpectedCases*3,sum(combined_risk_graph$ExpectedCases))),
+                         breaks=0:plot_max,minor_breaks = NULL, 
+                         limits = c(0,plot_max),
                          #limits=c(0,20),
                          position="right")+
       #scale_fill_brewer(palette="Set3")+
@@ -584,7 +629,7 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
   
   output$graph0header<-renderText({"Figure 1: Reported active cases now (average past 7 days)"})
   output$graph0 <- renderLeaflet({
-    show_leaflet(data_to_show = inc_data_active_cases %>% filter(!is.na(ActiveCases)),
+    show_leaflet(data_to_show = get_filtered_mapped_world_with_covid_data() %>% filter(!is.na(ActiveCases)),
                  primary_col = "ActiveCases",
                  rounding_func = function(x){scales::comma(round(x,1))},
                  legend_title =  "Observed active cases",
@@ -595,7 +640,7 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
   })
   output$graph1header<-renderText({"Figure 2: Hit rate or inferred case detection rate"})
   output$graph1 <- renderLeaflet({
-    show_leaflet(data_to_show = inc_data_inf_det_rate %>% filter(!is.na(InferredDetectionRate)),
+    show_leaflet(data_to_show = get_filtered_mapped_world_with_covid_data() %>% filter(!is.na(InferredDetectionRate)),
                  primary_col = "InferredDetectionRate",
                  rounding_func = function(x){scales::percent(x,accuracy = 0.1)},
                  quant_grades = 3,
@@ -604,7 +649,7 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
   })
   output$graph2header<-renderText({"Figure 3: Inferred active cases today"})
   output$graph2 <- renderLeaflet({
-    show_leaflet(data_to_show = inc_data_inf_active_cases %>% filter(!is.na(InferredActiveCases)),
+    show_leaflet(data_to_show = get_filtered_mapped_world_with_covid_data() %>% filter(!is.na(InferredActiveCases)),
                  primary_col = "InferredActiveCases",
                  rounding_func = function(x){scales::comma(round(x,1))},
                  legend_title =  "Inferred active cases<br /> (likely to underestimate in countries<br /> with poor death recording)",
@@ -616,7 +661,7 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
   output$graph3header<-renderText({"Figure 4: Active cases per million"})
   output$graph3<-renderLeaflet({
     
-    show_leaflet(data_to_show = inc_data_inf_cases_per_m %>% filter(!is.na(InfActiveCasesPerMillion)),
+    show_leaflet(data_to_show = get_filtered_mapped_world_with_covid_data() %>% filter(!is.na(InfActiveCasesPerMillion)),
                  primary_col = "InfActiveCasesPerMillion",
                  rounding_func = function(x){scales::comma(signif(x,2))},
                  legend_title =  "Inferred active cases per million people <br /> (likely to underestimate in countries<br /> with poor death recording)",
@@ -628,7 +673,7 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
   output$graph4header<-renderText({"Figure 5: New Zealand visitor arrivals by month"})
   output$graph4<-renderLeaflet({
     
-    show_leaflet(data_to_show = inc_data_arrivals %>% filter(!is.na(LocationResidentMonthlyArrivals)),
+    show_leaflet(data_to_show = get_filtered_mapped_world_with_covid_data() %>% filter(!is.na(LocationResidentMonthlyArrivals)),
                  primary_col = "LocationResidentMonthlyArrivals",
                  rounding_func = function(x){scales::comma(signif(x,3))},
                  legend_title =  "NZ Visitor arrivals by month",
@@ -639,57 +684,80 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
   output$graph5header<-renderText({paste0(
     "Figure 6: Probability of one or more cases arriving each month from residents of each country, based on arrival figures from this country in ",
     month_name,
-    " 2019 by country of usual residence.")})
+    " 2019.")})
   output$graph5<-renderLeaflet({
     
-    show_leaflet(data_to_show = inc_data_active_cases %>% filter(!is.na(ProbabilityOfMoreThanZeroCases)),
-                 primary_col = "ProbabilityOfMoreThanZeroCases",
+    #get the maximum number of bins we can have, considering the distribution of the data
+    display_data <- get_filtered_mapped_world_with_covid_data() %>% filter(!is.na(ProbabilityOfMoreThanZeroCases))
+    col_of_interest <-"ProbabilityOfMoreThanZeroCases"
+      
+    show_leaflet(data_to_show =  display_data ,
+                 primary_col = col_of_interest,
                  rounding_func = function(x){scales::percent(x,accuracy = 0.01)},
                  legend_title =  "insert legend title",
-                 quant_grades = 5,
+                 quant_grades = get_max_quantiles(display_data,col_of_interest,max_quantiles=8),
                  pal_reverse = FALSE
     )
   })
   output$graph6header<-renderText({paste0(
     "Figure 7: Expected number of cases to arrive each month from residents of each country, based on arrival figures from this country in ",
     month_name,
-    "2019 by country of usual residence.")})
+    "2019.")})
   output$graph6<-renderLeaflet({
     
-    show_leaflet(data_to_show = inc_data_active_cases %>% filter(!is.na(ExpectedNumberOfCases)),
-                 primary_col = "ExpectedNumberOfCases",
+    display_data <- get_filtered_mapped_world_with_covid_data() %>% filter(!is.na(ExpectedNumberOfCasesAll))
+    col_of_interest <-"ExpectedNumberOfCasesAll"
+    
+    
+    show_leaflet(data_to_show = display_data,
+                 primary_col = col_of_interest,
                  rounding_func = function(x){scales::comma(signif(x,2))},
                  legend_title =  "Expected number of cases to arrive each month",
-                 quant_grades = 6,
+                 quant_grades = get_max_quantiles(display_data,col_of_interest,max_quantiles=8),
                  pal_reverse = FALSE
     )
   })
   output$graph7header<-renderText({paste0(
     "Figure 8: Probability of one or more cases arrives and is quarantined but reaches the community, based on arrival figures from this country in ",
     month_name,
-    " 2019 by country of usual residence.")})
+    " 2019.")})
   output$graph7<-renderLeaflet({
     
-    show_leaflet(data_to_show = inc_data_active_cases %>% filter(!is.na(ProbabilityOfMoreThanZeroCommunityCases)),
-                 primary_col = "ProbabilityOfMoreThanZeroCommunityCases",
+    display_data <- get_filtered_mapped_world_with_covid_data() %>% filter(!is.na(ProbabilityOfMoreThanZeroCommunityCases))
+    col_of_interest <- "ProbabilityOfMoreThanZeroCommunityCases"
+    show_leaflet(data_to_show = display_data,
+                 primary_col = col_of_interest,
                  rounding_func = function(x){scales::percent(x,accuracy = 0.01)},
                  legend_title =  "insert legend title",
-                 quant_grades = 5,
+                 quant_grades = get_max_quantiles(display_data,col_of_interest,max_quantiles=8),
                  pal_reverse = FALSE
     )
   })
   output$graph8header<-renderText({paste0(
     "Figure 9: Expected number of cases to arrive and be quarantined but still reach the community, based on arrival figures from this country in ",
     month_name,
-    "2019 by country of usual residence.")})
+    "2019.")})
   output$graph8<-renderLeaflet({
     
-    show_leaflet(data_to_show = inc_data_active_cases %>% filter(!is.na(ExpectedNumberOfCasesInCommunity)),
-                 primary_col = "ExpectedNumberOfCasesInCommunity",
+    display_data <- get_filtered_mapped_world_with_covid_data() %>% filter(!is.na(ExpectedNumberOfCasesInCommunity))
+    col_of_interest <- "ExpectedNumberOfCasesInCommunity"
+    
+    show_leaflet(data_to_show = display_data,
+                 primary_col = col_of_interest,
                  rounding_func = function(x){scales::comma(signif(x,2))},
                  legend_title =  "Expected number of cases to arrive each month",
-                 quant_grades = 6,
+                 quant_grades = get_max_quantiles(display_data,col_of_interest,max_quantiles=8),
                  pal_reverse = FALSE
+    )
+  })
+  
+  output$ifr_explanation <- renderText({
+    paste0(
+      "Where there are recent COVID fatalities, this is compared to confirmed cases two weeks prior. ",
+      "If the number of cases look too low, then a 'hit rate' is calculated by comparing those cases two weeks prior to fatalities now.",
+      "Then, inferred active cases now is caclculted by dividing the confirmed active cases by the hit rate.",
+      "To do this we need to assume an infection fatality rate (IFR)."
+      
     )
   })
   
@@ -753,11 +821,7 @@ ui <- navbarPage(
                        min=1,
                        max=100,step=1,
                        value = 40),
-          numericInput("intsim_quarantine_failure_odds",
-                       "If someone who arrives in NZ with COVID19 and is quarantined,\nand they exit quarantine, the odds they are still contagious are 1 in ",
-                       min=5,
-                       max=10000,step=10,
-                       value = 12),
+
           
           uiOutput("intsim_notes")
           
@@ -826,7 +890,26 @@ ui <- navbarPage(
          leafletOutput("graph8")
        )
      )
-   ))
+   )),
+  tabPanel(
+    "Simulation settings",
+    fluidPage(
+      titlePanel("Simulation Settings"),
+      mainPanel(
+        numericInput("intsim_quarantine_failure_odds",
+                     "If someone who arrives in NZ with COVID19 and is quarantined,\nand they exit quarantine, the odds they are still contagious are 1 in ",
+                     min=5,
+                     max=10000,step=10,
+                     value = default_quarantine_failure_odds),
+        textOutput("ifr_explanation"),
+        numericInput("simsettings_ifr",
+                     "Assumed Infection Fatality Rate (%):",
+                     min=0,
+                     max=5,step=0.1,
+                     value = default_assumed_ifr_percent)
+      )
+    )
+  )
 
 
 )

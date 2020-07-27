@@ -1,5 +1,32 @@
 ## Over time, move all functionality to calculate statistics and simulation out of app.R into here.
-get_analysis_covid_data <- function(world_with_covid_data,quarantine_odds_override=NULL,general_travel_rate=1){
+get_analysis_covid_data <- function(world_with_covid_data,quarantine_odds_override=NULL,general_travel_rate=1,assumed_ifr=0.005){
+  
+  
+  #assumed_cfr<-0.005
+  world_with_covid_data<- 
+    world_with_covid_data %>% 
+    mutate(InferredDetectionRate = (assumed_ifr*LaggedNewCases/NewDeaths))
+  
+  #if there are NO deaths then we infer detection rate is 100%
+  world_with_covid_data <- 
+    world_with_covid_data %>% 
+    mutate(InferredDetectionRate = ifelse(NewDeaths==0,1,InferredDetectionRate)
+    )
+  
+  world_with_covid_data <-
+    world_with_covid_data %>% 
+    mutate(InferredActiveCases= (ActiveCases/InferredDetectionRate))
+  
+  
+  world_with_covid_data <- 
+    world_with_covid_data %>% 
+    mutate(InferredActiveCasePopRate = (InferredActiveCases/Population))
+  
+  world_with_covid_data <- 
+    world_with_covid_data %>% 
+    mutate(ActiveCasePopRate = ActiveCases/Population)
+  
+  
   print(quarantine_odds_override)
   print(general_travel_rate)
   

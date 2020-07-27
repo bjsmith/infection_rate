@@ -40,9 +40,15 @@ However, it is actually helpful to use this data because it excludes arrivals by
 arriving from each source country in a month (Figure 6), 
 using population size \\(p\\), 
 the estimated number of active cases in that source country \\(i\\), 
-and the number of residents of that country who arrived in NZ in "
+and the number of people of that country who arrived in NZ in "
   ,month_name,
-  " 2019, \\(a\\) . If we assume cases are independent, we can use the following formula:
+  " 2019, \\(a\\) . 
+  
+  Arrivals are estimated as the number of that countries' residents arriving in NZ this time last year (as in the prevous step), plus 
+  New Zealanders returning from overseas where that country was their 'main destination'.
+  
+  
+  If we assume cases are independent, we can use the following formula:
 
 $$P(c>0) = 1-(\\frac{p-i_{estimated, today}}{p})^a$$
 
