@@ -56,10 +56,10 @@ get_intsim_dt<-function(
   if(selected_probs=="bubble"){
     df_to_return <- filtered_df %>%
       select(Location,ProbabilityOfMoreThanZeroCases,
-           ExpectedNumberOfCasesAll,ExpectedNumberOfCasesUnderNZResidentQuarantine
+           ExpectedNumberOfCasesAll
     )
     percentage_cols <-c('ProbabilityOfMoreThanZeroCases')
-    rounding_cols <-c('ExpectedNumberOfCasesAll','ExpectedNumberOfCasesUnderNZResidentQuarantine')
+    rounding_cols <-c('ExpectedNumberOfCasesAll')#,'ExpectedNumberOfCasesUnderNZResidentQuarantine')
     dt_colnames<-c("Territory","Probability of 1 or more cases","Expected cases")
   }
   
