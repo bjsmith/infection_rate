@@ -330,7 +330,7 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   
   
   jh_dxc_7_day_deaths <- jh_dxc %>%
-    filter(Date>=date_period_begin) %>%
+    filter(Date>=date_period_begin & Date<latest_date) %>%
     select(CountryDivisionCodeMixed, Location, contains("Deaths")) %>%
     group_by(CountryDivisionCodeMixed, Location) %>%
     summarise_all(mean,na.rm=TRUE) %>%
@@ -347,8 +347,14 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   #deaths_with_lagged_cases$CountryPopulation<-deaths_with_lagged_cases$total_cases/deaths_with_lagged_cases$total_cases_per_million*10^6
   #we want the inferred case population rate
   #this has to come from the john hopkins data because we can get active cases from that.
-  jh_key_stats<-jh_dxc %>% ungroup %>% 
-    filter(Date>=date_period_begin) %>% 
+  # jh_key_stats<-jh_dxc %>% ungroup %>% 
+  #   filter(Date>=date_period_begin  & Date<latest_date) %>% 
+  #   select(CasesConfirmed,Recoveries,ActiveCases, CountryDivisionCodeMixed,Alpha3CountryOnly) %>%
+  #   group_by(CountryDivisionCodeMixed,Alpha3CountryOnly) %>%
+  #   summarise_all(mean)
+  #for these stats, we're going to use the very latest day's data, not the average over the time.
+  jh_key_stats<-jh_dxc %>% ungroup %>%
+    filter(Date==latest_date) %>%
     select(CasesConfirmed,Recoveries,ActiveCases, CountryDivisionCodeMixed,Alpha3CountryOnly) %>%
     group_by(CountryDivisionCodeMixed,Alpha3CountryOnly) %>%
     summarise_all(mean)

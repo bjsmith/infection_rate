@@ -9,7 +9,10 @@ params:
   location_info: NA
   nz_info: NA
   country_classification: NA
+  assumed_ifr: NA
 ---
+
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 
@@ -42,21 +45,26 @@ This is a location profile for `r locname`.
 ## Internal risk
 
 ```{r}
-scale_signif <- function(x){
+scale_signif <- function(x,figures=2){
   if(x<1){
-    return(as.character(signif(x,2)))
+    return(as.character(signif(x,figures)))
   }else{
-    return(as.character(scales::comma(signif(x,2))))
+    return(as.character(scales::comma(signif(x,figures))))
   }
 }
 ```
 
 
-### COVID-19 prevalance
+### COVID-19 prevalence
 
-Prevalence of COVID-19 in `r locname` is estimated at `r scale_signif(params$location_info$InfActiveCasesPerMillion)` active infections per million. Compare this to the current New Zealand case rate of `r signif(params$nz_info$InfActiveCasesPerMillion,2) ` active infections per million. 
 
-This is the "inferred" infection rate. It accounts for the likely number of undetected cases by starting with the detected case rate, and adjusting upward depending on the number of fatalities in the relevant country.
+
+`r locname` currently has `r scale_signif(params$location_info$ActiveCases)` official active confirmed cases. 
+
+Two weeks ago, `r locname` had `r scale_signif(params$location_info$LaggedNewCases*7,2)` new cases over a seven day period. Over the last week, there have been `r signif(params$location_info$NewDeaths*7)` new deaths. This is a case fatality rate of `r signif(params$location_info$NewDeaths/params$location_info$LaggedNewCases*100,2)`%. We assume the actual infection to fatality rate, including undetected infections, is actually `r params$assumed_ifr*100`%, so we estimate that `r locname` is officially detecting `r signif(params$location_info$InferredDetectionRate*100,2)`% of their cases. Considering this detection rate, and the current number of official active confirmed cases, we estimate the true number of infections currently in `r locname` is closer to `r scale_signif(params$location_info$InferredActiveCases)`.
+
+Prevalence of COVID-19 in `r locname` is therefore estimated at `r scale_signif(params$location_info$InfActiveCasesPerMillion,3)` active infections per million, in a population of `r scale_signif(params$location_info$Population/10^6,2)` million. Compare this to the current New Zealand case rate of `r signif(params$nz_info$InfActiveCasesPerMillion,2) ` active infections per million. 
+<!--This is the "inferred" infection rate. It accounts for the likely number of undetected cases by starting with the detected case rate, and adjusting upward depending on the number of fatalities in the relevant country.-->
 
 ### Quality of health data reporting
 
@@ -64,11 +72,9 @@ Health data reporting in `r locname` has a trust rating of **`r params$trust_rat
 
 ## Travel to New Zealand
 
-This month last year, New Zealand received `r scale_signif(params$location_info$MonthlyArrivals) ` arrivals who were _resident_ in `r locname`. This would include both citizens of that country residing there, and citizens of New Zealand and other countries who reside in `r locname`.
+This month last year, New Zealand received `r scale_signif(params$location_info$LocationResidentMonthlyArrivalsWeighted) ` arrivals who were _resident_ in `r locname`. This includes citizens of that country residing there, and citizens of New Zealand and other countries who reside in `r locname`. Over the same time there were also `r scale_signif(params$location_info$NZResidentMonthlyArrivalsWeighted) ` New Zealand residents returning to New Zealand whose main destination while away was `r locname`. By adding these figures together we can roughly estimate the number of people who arrive in New Zealand per month after being in `r locname` in the previous 14 days at `r scale_signif(params$location_info$TotalExpectedMonthlyArrivals) `.
 
-Although arrivals' residency status is not a perfect measure of the _actual_ number of arrivals coming a particular country, it is indicative of the rough number of arrivals.
-
-It is also indicative of the number of arrivals likely to come into NZ as a result of any border restrictions, because NZ residents and citizens can already enter NZ under the current rules.
+New Zealand citizens and residents are always permitted to return home to New Zealand from `r locname`. Very few return while there is a mandatory quarantine in place, but we expect that greater numbers will return from there if quarantine restrictions were to be loosened.
 
 ## Expected risk
 
@@ -86,11 +92,11 @@ if(params$trust_rating=="trustworthy"){
       ", the expected number of cases arriving from ",
       locname,
       " would be ",
-      as.character(signif(params$location_info$ExpectedNumberOfCases,1)),
+      as.character(signif(params$location_info$ExpectedNumberOfCasesAll,1)),
       " every month.",
-      "\n<br /><br />  Considering New Zealand's quarantine system as it has existed over the last few months, a quarantine system could ensure that only 0.5% to 1% (",
-      as.character(signif(params$location_info$ExpectedNumberOfCases*0.005,1)), " to ", as.character(signif(params$location_info$ExpectedNumberOfCases*0.01,1)),
-      ") of those cases would reach the community.")
+      "\n<br /><br />  Considering New Zealand's quarantine system as it has existed over the last few months, a quarantine system could ensure that only around ",
+      as.character(signif(params$location_info$ExpectedNumberOfCasesInCommunity,1)),
+      " of those cases would reach the community.")
 }else
 {
   risk_statement <- (

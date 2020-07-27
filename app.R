@@ -1,6 +1,6 @@
 
 library(DT)
-debugSource("utils.R")
+source("utils.R")
 source("simulation.R")
 source("country_classification_rules.R")
 library(ggrepel)
@@ -18,7 +18,7 @@ geo_world_with_covid_data <- get_analysis_covid_data(geo_world_basic_data,assume
 
 nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
 # world_with_covid_data <- get_analysis_covid_data(nogeo_world_basic_data,assumed_ifr = default_assumed_ifr_percent/100,
-#                                                 quarantine_odds_override=(1/default_quarantine_failure_odds))
+#                                                   quarantine_odds_override=(1/default_quarantine_failure_odds))
 
 #save.image("environ.RData")
 #load("environ.RData")
@@ -95,7 +95,7 @@ nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,sepa
 ######set up general simulator
 
 countries_to_choose_from<-
-  world_with_covid_data$Location %>%
+  nogeo_world_basic_data$Location %>%
   sort %>%
   .[.!="New Zealand"]
 
@@ -171,7 +171,7 @@ server <- function(input, output) {
   
   generate_country_profile_report_params <-reactive({
     
-    location_info <- world_with_covid_data %>% filter(Location==input$locprofile_Location)
+    location_info <- generate_world_with_covid_data() %>% filter(Location==input$locprofile_Location)
     country_classification = classify_country(
       location_info$LifeExp,
       location_info$ExpectedNumberOfCasesAll
@@ -183,9 +183,10 @@ server <- function(input, output) {
     params <- list(
       location_profile = input$locprofile_Location,
       location_info = location_info,
-      nz_info = world_with_covid_data %>% filter(Location=="New Zealand"),
+      nz_info = generate_world_with_covid_data()  %>% filter(Location=="New Zealand"),
       country_classification = country_classification,
-      trust_rating = trust_classification
+      trust_rating = trust_classification,
+      assumed_ifr = input$simsettings_ifr/100
     )
     
     return(params)
