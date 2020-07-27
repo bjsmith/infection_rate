@@ -6,6 +6,7 @@ output:
 params:
   nz_info: NA
   location_profile: NA
+  health_furtherinfo: NA
 ---
 
 
@@ -23,7 +24,9 @@ This is a location profile for `r locname`.
 
 ### COVID-19 prevalence
 
-According to the Ministry of Health in `r locname`, there are no cases of COVID-19 in `r locname`. The border is very closely monitored and we can have a high degree of confidence that while current border control practices remain intact,  `r locname` will remain COVID free.
+According to the Ministry of Health in `r locname`, there are no cases of COVID-19 in `r locname`. The border is very closely monitored and we can have a high degree of confidence that while current border control practices remain intact,  `r locname` will remain COVID free. There little or no travel from any nation except New Zealand in `r locname`.
+
+For more information, visit [`r params$health_furtherinfo `](`r params$health_furtherinfo `).
 
 ### Quality of health data reporting
 

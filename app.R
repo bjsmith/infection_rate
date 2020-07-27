@@ -23,6 +23,11 @@ nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,sepa
 #save.image("environ.RData")
 #load("environ.RData")
 
+small_country_health_data <-data.frame(
+  "Country"=c("Samoa", "Cook Islands"),
+  "Website"=c("https://www.health.gov.ws/", "https://www.health.gov.ck/")
+)
+
 
 # display_table<-world_with_covid_data[vals_to_include,]
 ######set up general simulator
@@ -38,7 +43,15 @@ key_interest_countries <- c("US","China (mainland)","Fiji","United Kingdom",
                             "Germany","Indonesia","Taiwan*",
                             "Singapore","Hong Kong, China",
                             "Thailand","Philippines",
-                            "Malaysia","France")
+                            "Malaysia","France",
+                            #australian states, listed separately.
+                            "New South Wales, Australia",
+                            "Victoria, Australia","Queensland, Australia",
+                            "South Australia, Australia","Western Australia, Australia",
+                            "Tasmania, Australia","Northern Territory, Australia",
+                            "Australian Capital Territory, Australia"
+                            
+                            )
 
 get_intsim_dt<-function(
   country_filter,
@@ -90,7 +103,7 @@ get_intsim_dt<-function(
 ###########main dashboard.
 source("map_page.R")
 # Define server logic required to draw a histogram
-server <- function(input, output) {
+server <- function(input, output, session) {
   
   generate_country_profile_report_params <-reactive({
     
@@ -100,7 +113,8 @@ server <- function(input, output) {
       params <- 
         list(
           location_profile = input$locprofile_Location,
-          nz_info = generate_world_with_covid_data()  %>% filter(Location=="New Zealand")
+          nz_info = generate_world_with_covid_data()  %>% filter(Location=="New Zealand"),
+          health_furtherinfo = small_country_health_data %>% filter(Country==input$locprofile_Location) %>% .$Website
       )
       
     }else{
@@ -471,7 +485,8 @@ Refer to the 'Simulation settings' tab for more options.
       geom_bar(stat="identity",alpha=0.8)+
       scale_x_discrete(name="")+
       scale_y_continuous(name="Expected cases per month",
-                         breaks=0:plot_max,minor_breaks = NULL, 
+                         #breaks=0:plot_max,
+                         minor_breaks = NULL, 
                          limits = c(0,plot_max),
                          #limits=c(0,20),
                          position="right")+
@@ -558,6 +573,7 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
     #   formatPercentage(c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases'),3) %>%
     #   formatRound(c('ExpectedNumberOfCases','ExpectedNumberOfCasesInCommunity'),2)
   )
+  
   output$intsim_totalrisk<-
     renderUI({
       withMathJax(HTML(paste0(
@@ -565,6 +581,21 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
       )))
     })
 
+  
+  observeEvent(input$intsim_20countries,{
+    print("reacting")
+    updateSelectInput(
+      session=session,
+      inputId="intsim_countries_bubble",
+      selected = character(0))
+    
+    updateSelectInput(
+      session=session,
+      inputId="intsim_countries_quarantine",
+      selected = key_interest_countries)
+    
+    })
+  
   
   #map page
   output$testt<-
@@ -768,9 +799,11 @@ ui <- navbarPage(
                        min=1,
                        max=100,step=1,
                        value = 40),
-
+          actionButton("intsim_20countries",
+                       "Set to 20 country reference list",
+                       class="btn btn-primary"),
+          uiOutput("intsim_notes"),
           
-          uiOutput("intsim_notes")
           
         ),
         mainPanel(
