@@ -23,73 +23,6 @@ nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,sepa
 #save.image("environ.RData")
 #load("environ.RData")
 
-### now set up specific datasets for each output
-# 
-# 
-# vals_to_include <- (is.finite(geo_world_with_covid_data$InferredDetectionRate) & !is.na(geo_world_with_covid_data$InferredDetectionRate)
-#                     
-#                     & geo_world_with_covid_data$LifeExp>=life_exp_thresh
-# )
-# 
-# inc_data_inf_det_rate<-geo_world_with_covid_data[vals_to_include,]
-# 
-# 
-# 
-# 
-# 
-# vals_to_include <- (
-#   is.finite(geo_world_with_covid_data$ActiveCasesPerThousand) & !is.na(geo_world_with_covid_data$ActiveCasesPerThousand)
-#   
-#   & geo_world_with_covid_data$LifeExp>=life_exp_thresh
-# )
-# 
-# inc_data_inf_cases_per_m<-geo_world_with_covid_data[vals_to_include,]
-# #pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
-# 
-# #chloro_labels <- paste0(inc_data$name_long, ": ", as.character(round(inc_data$ActiveCasesPerThousand,1)))
-# 
-# 
-# 
-# vals_to_include <- (
-#   is.finite(geo_world_with_covid_data$ActiveCasesPerThousand) & !is.na(geo_world_with_covid_data$ActiveCasesPerThousand)
-#   
-#   & geo_world_with_covid_data$LifeExp>=life_exp_thresh
-# )
-# 
-# inc_data_cases_per_m<-geo_world_with_covid_data[vals_to_include,]
-# #pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
-# 
-# #chloro_labels <- paste0(inc_data$name_long, ": ", as.character(round(inc_data$ActiveCasesPerThousand,1)))
-# 
-# vals_to_include <- (
-#   is.finite(geo_world_with_covid_data$InferredActiveCases) & !is.na(geo_world_with_covid_data$InferredActiveCases)
-#   
-#   & geo_world_with_covid_data$LifeExp>=life_exp_thresh
-# )
-# 
-# inc_data_inf_active_cases<-geo_world_with_covid_data[vals_to_include,]
-# #pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
-# 
-# #chloro_labels <- paste0(inc_data$name_long, ": ", as.character(round(inc_data$ActiveCasesPerThousand,1)))
-# 
-# vals_to_include <- (
-#   is.finite(geo_world_with_covid_data$ActiveCases) & !is.na(geo_world_with_covid_data$ActiveCases)
-#   
-#   & geo_world_with_covid_data$LifeExp>=life_exp_thresh
-# )
-# 
-# 
-# inc_data_active_cases<-geo_world_with_covid_data[vals_to_include,]
-# 
-# inc_data_arrivals<-geo_world_with_covid_data
-# #pal<-colorQuantile(palette="Blues",domain= inc_data$ActiveCasesPerThousand,n=4)
-# 
-# 
-# vals_to_include <- (
-#   
-#   world_with_covid_data$LifeExp>=life_exp_thresh
-# )
-
 
 # display_table<-world_with_covid_data[vals_to_include,]
 ######set up general simulator
@@ -107,23 +40,13 @@ key_interest_countries <- c("US","China (mainland)","Fiji","United Kingdom",
                             "Thailand","Philippines",
                             "Malaysia","France")
 
-# dql<-(
-#   is.finite(world_with_covid_data$ActiveCases) & !is.na(world_with_covid_data$ActiveCases) &
-#     is.finite(world_with_covid_data$ProbabilityOfMoreThanZeroCases) & !is.na(world_with_covid_data$ProbabilityOfMoreThanZeroCases) &
-#     world_with_covid_data$LifeExp>=life_exp_thresh
-# )
-# dql[is.na(dql)]<-TRUE
-# world_with_covid_data$DataQualityLow<-dql
-
 get_intsim_dt<-function(
   country_filter,
   selected_probs="bubble",
   world_w_covid_data#,quarantine_odds_override,general_travel_rate=1
                         ){
-  # world_w_covid_data <- get_analysis_covid_data(
-  #   geo_world_basic_data,
-  #   quarantine_odds_override=quarantine_odds_override,
-  #   general_travel_rate=general_travel_rate)
+
+  
   filtered_df <- world_w_covid_data %>%
     data.frame %>%
     filter(LifeExp>=life_exp_thresh) %>%
