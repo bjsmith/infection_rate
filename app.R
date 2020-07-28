@@ -6,7 +6,7 @@ source("country_classification_rules.R")
 library(ggrepel)
 
 life_exp_thresh <- 70
-default_assumed_ifr_percent<-0.5
+default_assumed_ifr_percent<-0.6
 default_quarantine_failure_odds<-12
 
 run_date<-Sys.Date()
@@ -241,17 +241,26 @@ server <- function(input, output, session) {
     display_df <- 
       wwcd %>% 
       filter(LifeExp>=life_exp_thresh) %>%
+      filter(TotalExpectedMonthlyArrivals>=input$countrylist_travelerfilter)%>%
       data.frame %>%
       arrange(InfActiveCasesPerMillion) %>%
       select(LocationCode, Location, Population, #total_cases,
              ActiveCases,InferredActiveCases,InfActiveCasesPerMillion,
-             LocationResidentMonthlyArrivals,#ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
+             TotalExpectedMonthlyArrivals,#ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
              ExpectedNumberOfCasesAll,
              ExpectedNumberOfCasesEscapingOneScreen,
              ExpectedNumberOfCasesInCommunity
       )
       
-    display_dt <- DT::datatable(display_df,filter="top")
+    display_dt <- DT::datatable(
+      display_df,
+      #filter="top",
+      colnames=c("ISO","Location","Population","Active Cases","Estimated Active Infections","Est. Active Infections per million",
+                 "Est. arrivals per month (2019)", 
+                 "Expected number of cases arriving",
+                 "Expected number of cases escaping screening",
+                 "Expected number of cases lasting through quarantine"
+                 ))
       
   
     display_dt_formatted <- (
@@ -259,7 +268,7 @@ server <- function(input, output, session) {
       #formatPercentage(c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases'),3) %>%
       formatRound(c('InferredActiveCases','InfActiveCasesPerMillion'),0,mark=",") %>%
       formatRound(c('ExpectedNumberOfCasesAll','ExpectedNumberOfCasesInCommunity','ExpectedNumberOfCasesEscapingOneScreen'),2) %>%
-      formatRound(c('Population','ActiveCases','LocationResidentMonthlyArrivals'),0,mark=",")
+      formatRound(c('Population','ActiveCases','TotalExpectedMonthlyArrivals'),0,mark=",")
     )
     
     display_dt_formatted
@@ -606,6 +615,8 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
     
     
     
+    textout<-paste0(textout, "<br /> <br />Cook Islands and Western Samoa are not explicitly modeled. These are currently rated zero-risk, due to their COVID-free status and low or zero inbound travel. The situation should be continually monitored for any changes to their current zero-risk status.")
+    
     return(textout)
   })
   
@@ -725,7 +736,7 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
     show_leaflet(data_to_show =  display_data ,
                  primary_col = col_of_interest,
                  rounding_func = function(x){scales::percent(x,accuracy = 0.01)},
-                 legend_title =  "insert legend title",
+                 legend_title =  "Probability of more than zero cases arriving to New Zealand",
                  quant_grades = get_max_quantiles(display_data,col_of_interest,max_quantiles=8),
                  pal_reverse = FALSE
     )
@@ -863,9 +874,7 @@ ui <- navbarPage(
           actionButton("intsim_20countries",
                        "Set to 20 country reference list",
                        class="btn btn-primary"),
-          uiOutput("intsim_notes"),
-          
-          
+          uiOutput("intsim_notes")
         ),
         mainPanel(
           titlePanel("Total risk per month"),
@@ -886,8 +895,22 @@ ui <- navbarPage(
     "Country List",
     fluidPage(
       titlePanel("COVID-19: List of countries and locations"),
-      mainPanel(
-        DT::dataTableOutput("country_table")
+      fluidRow(
+        column(6,
+               h4("View settings")),
+        column(6,
+               numericInput("countrylist_travelerfilter",
+                            "Show countries with at least this number of travelers per month:",
+                            min=0,max=100000,
+                            step=500,
+                            value=1000)
+               )
+      ),
+      hr(),
+      fluidRow(
+        column(12,
+               DT::dataTableOutput("country_table")
+               )
       )
     )
   ),
