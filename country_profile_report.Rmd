@@ -16,6 +16,17 @@ params:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 
+country_classification_names <- function(country_classification){
+  if (country_classification==2){
+    return("safe")
+  }else if (country_classification==3){
+    return("low to moderate risk")
+  }else if(country_classification==4){
+    return("high risk")
+  }else{
+    return("unknown risk")
+  }
+}
 options(scipen=10)
 ```
 
@@ -92,30 +103,36 @@ if(params$trust_rating=="trustworthy"){
       ", the expected number of cases arriving from ",
       locname,
       " would be ",
-      as.character(signif(params$location_info$ExpectedNumberOfCasesAll,1)),
-      " every month.",
-      "\n<br /><br />  Considering New Zealand's quarantine system as it has existed over the last few months, a quarantine system could ensure that only around ",
-      as.character(signif(params$location_info$ExpectedNumberOfCasesInCommunity,1)),
-      " of those cases would reach the community.")
+      as.character(signif(params$location_info$ExpectedNumberOfCasesAll,2)),
+      " every month. <br />\n",
+      "If the border were open, with all travelers from ",locname, " screened before entry, the expected case numbers exposed to the community would be reduced to ",
+      as.character(signif(params$location_info$ExpectedNumberOfCasesEscapingOneScreen,2)),". ",
+      "If two independent tests were run before releasing travelers, this could be reduced to ",
+      as.character(signif(params$location_info$ExpectedNumberOfCasesEscapingTwoScreens,2)),
+      ".\n<br /><br /> A 14 day quarantine provides even lower risk. Considering New Zealand's quarantine system as it has existed over the last few months, a quarantine system could ensure that only around ",
+      as.character(signif(params$location_info$ExpectedNumberOfCasesInCommunity,2)),
+      " cases would be exposed to the community. Actual cases under quarantine would be lower still due to the suppression of travel in response to a quarantine system.")
 }else
 {
   risk_statement <- (
     paste0("Due to the trust rating for health data reporting in ",
            locname, ", rated ", params$trust_rating,
-           "an overall expected risk cannot be calculated.",
-           "On that basis it is assumed that ", locname, " is a high-risk location."
+           " an overall expected risk cannot be calculated.",
+           " On that basis it is assumed that ", locname, " is a high-risk location."
            )
   )
 }
 
 ```
 
+These figures do NOT take into account the reduction in travel likely to result from the implementation of border control measures such as quarantine.
+
 `r risk_statement`
 
 
-## Overall rating: `r as.character(params$country_classification)`
+## Overall rating: `r country_classification_names(params$country_classification)`
 
-The overall rating for `r locname` is `r as.character(params$country_classification)`.
+The overall rating for `r locname` is `r country_classification_names(params$country_classification)`.
 
 
 

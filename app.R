@@ -132,7 +132,7 @@ server <- function(input, output, session) {
       print("generating full report")
       location_info <- generate_world_with_covid_data() %>% filter(Location==input$locprofile_Location)
       trust_classification <- classify_country_trust(
-        location_info$LifeExp,location_info$locprofile_Location
+        location_info$LifeExp,input$locprofile_Location
       )
       country_classification = classify_country(
         location_info$LifeExp,
@@ -245,25 +245,25 @@ server <- function(input, output, session) {
       arrange(InfActiveCasesPerMillion) %>%
       select(LocationCode, Location, Population, #total_cases,
              ActiveCases,InferredActiveCases,InfActiveCasesPerMillion,
-             LocationResidentMonthlyArrivals,ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
-             ExpectedNumberOfCasesUnderNZResidentQuarantine,
-             ExpectedNumberOfCasesAll,ExpectedNumberOfCasesInCommunity
+             LocationResidentMonthlyArrivals,#ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
+             ExpectedNumberOfCasesAll,
+             ExpectedNumberOfCasesEscapingOneScreen,
+             ExpectedNumberOfCasesInCommunity
       )
       
-    display_dt <- DT::datatable(display_df)
+    display_dt <- DT::datatable(display_df,filter="top")
       
   
     display_dt_formatted <- (
       display_dt %>%
-      formatPercentage(c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases'),3) %>%
+      #formatPercentage(c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases'),3) %>%
       formatRound(c('InferredActiveCases','InfActiveCasesPerMillion'),0,mark=",") %>%
-      formatRound(c('ExpectedNumberOfCasesAll','ExpectedNumberOfCasesInCommunity'),2) %>%
+      formatRound(c('ExpectedNumberOfCasesAll','ExpectedNumberOfCasesInCommunity','ExpectedNumberOfCasesEscapingOneScreen'),2) %>%
       formatRound(c('Population','ActiveCases','LocationResidentMonthlyArrivals'),0,mark=",")
     )
     
     display_dt_formatted
-  }
-  )
+  })
   
   #intervention simulation page
   
@@ -450,6 +450,7 @@ Refer to the 'Simulation settings' tab for more options.
     #we'll pool risk from all countries that haven't been selected, for both status quo and intervention categories.
     selected_locations <- unique(c(
       input$intsim_countries_quarantine,
+      input$intsim_countries_level2_control,
       input$intsim_countries_bubble
     ))
     
