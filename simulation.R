@@ -1,7 +1,55 @@
 ## Over time, move all functionality to calculate statistics and simulation out of app.R into here.
-get_analysis_covid_data <- function(world_with_covid_data,quarantine_odds_override=NULL,general_travel_rate=1,assumed_ifr=0.005){
+
+
+
+
+#helper function for structuring data about the travel rate.
+set_general_travel_rate <- function(l1_bubble,l2_screeners,l3_quarantine,l4_statusquo){
   
+  return(data.frame(
+    "condition"=c("l1_bubble","l2_screeners","l3_quarantine","l4_statusquo"),
+    "travel_rate"=c(l1_bubble,l2_screeners,l3_quarantine,l4_statusquo)
+  ))
+}
+
+#wraps get_analysis_covid_data
+#breaks out locations into different risk categories and summarizes depending on their risk level.
+#we don't need this yet, though.
+# get_differential_analysis_covid_data <- function(
+#   world_with_covid_data,
+#   main_country_filter,
+#   countries_bubble,
+#   countries_screener,
+#   countries_quarantine,
+#   general_travel_rate){
+#   if(length(general_travel_rate)==1){
+#     travel_rate <- set_general_travel_rate(general_travel_rate,general_travel_rate,general_travel_rate,general_travel_rate)
+#   }else if(nrow(general_travel_rate)==4){
+#     #4 levels are:
+#     #1. within our bubble (no controls at all on country)
+#     #2. allow travelers in with screener
+#     #3. allow travelers in with 14 day quarantine
+#     #4. allow only NZ resident travelers (status quo)
+#     travel_rate <- general_travel_rate
+#   }else{
+#     stop("general_travel_rate must be either a single value or a data frame of length 4")
+#   }
+#   
+#   #bubble
+#   get_analysis_covid_data(world_with_covid_data %>% )
+#   #screener
+#   
+#   #quarantine
+#   #status quo
+# }
+
+get_analysis_covid_data <- function(
+  world_with_covid_data,
+  quarantine_odds_override=NULL,
+  general_travel_rate=1,
+  assumed_ifr=0.005){
   
+
   #assumed_cfr<-0.005
   world_with_covid_data<- 
     world_with_covid_data %>% 
@@ -81,6 +129,9 @@ get_analysis_covid_data <- function(world_with_covid_data,quarantine_odds_overri
   
   
   
+  ######### QUARANTINE TREATMENT
+  ### EXCLUDES the dampening effect of quarantine on travel - this is taken into account above.
+  
   #odds that a detainee in quarantine with COVID-19 leaves before being COVID-19
   if(is.null(quarantine_odds_override)){
     probability_an_infected_arrival_escapes_quarantine <- 1/50
@@ -99,6 +150,54 @@ get_analysis_covid_data <- function(world_with_covid_data,quarantine_odds_overri
   world_with_covid_data <- 
     world_with_covid_data %>% mutate(
       ExpectedNumberOfCasesInCommunity=ExpectedNumberOfCasesAll*prob_infected_arr_reaches_community)
+  
+  
+  ######### SCREENING TREATMENT
+  ### EXCLUDES the dampening effect of quarantine on travel - this is taken into account above.
+  screening_sensitivity <- 0.7
+  screening_specificity <- 0.999
+  #I think we need negative predictive value as well as positive predictive value.
+  #https://en.wikipedia.org/wiki/Positive_and_negative_predictive_values#Positive_predictive_value
+  #https://en.wikipedia.org/wiki/Positive_and_negative_predictive_values#Negative_predictive_value
+  prevalence <- world_with_covid_data$InferredActiveCasePopRate
+  #this is the "detection rate" or how many true positives we catch for the total number of calls
+  positive_predictive_value <- (
+    (screening_sensitivity * (prevalence))/
+      (screening_sensitivity*screening_specificity + (1-screening_specificity)*(1-prevalence))
+  )
+  #this is the the proportion of true negatives we catch out of the total number of negatives
+  negative_predictive_value <- (
+    (screening_specificity * (1-prevalence))/
+      ((1-screening_sensitivity)*prevalence+screening_specificity*(1-prevalence))
+  )
+  #so then we can:
+  #(a) from an expected number of true positive cases arriving (ExpectedNumberOfCasesAll), calculate the number we'll catch by
+  #     number of positive test results = N(true positives)/PPV
+  #(b) we can get the False Omission Rate which is just the complement of NPV (FOR = 1-NPV) which is the rate of 
+  
+  #or are we really just interested in SENSITIVITY for now?
+  #sensitivity tells us how much we'll correctly identify those with the disease - what proportion of positive patients we'll catch
+  #so this is actually a lot easier than all the above...
+  world_with_covid_data <- 
+    world_with_covid_data %>% mutate(
+      ExpectedNumberOfCasesEscapingOneScreen=ExpectedNumberOfCasesAll*(1-screening_sensitivity))
+  world_with_covid_data <- 
+    world_with_covid_data %>% mutate(
+      ExpectedNumberOfCasesEscapingTwoScreens=ExpectedNumberOfCasesAll*(1-screening_sensitivity)^2)
+      
+    
+  
+  world_with_covid_data <- 
+    world_with_covid_data %>% mutate(
+      ProbabilityOfMoreThanZeroCommunityCases=
+        1-((Population-InferredActiveCases*prob_infected_arr_reaches_community)/Population)^TotalExpectedMonthlyArrivals)
+  
+  world_with_covid_data <- 
+    world_with_covid_data %>% mutate(
+      ExpectedNumberOfCasesInCommunity=ExpectedNumberOfCasesAll*prob_infected_arr_reaches_community)
+  
+  
+  
   
   
   world_with_covid_data$InfActiveCasesPerMillion <- world_with_covid_data$InferredActiveCasePopRate*10^6
