@@ -84,7 +84,7 @@ get_intsim_dt<-function(
       )
     percentage_cols <-c('ProbabilityOfMoreThanZeroCases')
     rounding_cols <-c('ExpectedNumberOfCasesAll',"ExpectedNumberOfCasesEscapingOneScreen","ExpectedNumberOfCasesEscapingTwoScreens")#,'ExpectedNumberOfCasesUnderNZResidentQuarantine')
-    dt_colnames<-c("Territory","Probability of 1 or more cases","Expected cases")
+    dt_colnames<-c("Territory","Probability of 1 or more cases","Expected cases at border","Expected cases passing a screening","Expected cases passing two independent screenings")
   }
   
   if(selected_probs=="quarantine"){
@@ -281,7 +281,7 @@ Refer to the 'Simulation settings' tab for more options.
     world_w_covid_data <- get_analysis_covid_data(
       nogeo_world_basic_data,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
-      general_travel_rate=input$intsim_percent_capacity/100,
+      general_travel_rate=input$intsim_percent_tvolume/100,
       assumed_ifr = input$simsettings_ifr/100)
     return(world_w_covid_data)
   })
@@ -290,7 +290,7 @@ Refer to the 'Simulation settings' tab for more options.
     world_w_covid_data <- get_analysis_covid_data(
       nogeo_world_basic_data,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
-      general_travel_rate=input$intsim_percent_capacity_level2_control/100,
+      general_travel_rate=input$intsim_percent_tvolume_level2_control/100,
       assumed_ifr = input$simsettings_ifr/100)
     return(world_w_covid_data)
   })
@@ -299,7 +299,7 @@ Refer to the 'Simulation settings' tab for more options.
     world_w_covid_data <- get_analysis_covid_data(
       nogeo_world_basic_data,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
-      general_travel_rate=input$intsim_percent_capacity_with_quarantine/100,
+      general_travel_rate=input$intsim_percent_tvolume_with_quarantine/100,
       assumed_ifr = input$simsettings_ifr/100)
     return(world_w_covid_data)
   })
@@ -500,15 +500,28 @@ Refer to the 'Simulation settings' tab for more options.
       mutate(LabelPosition=cumsum(ExpectedCases)-ExpectedCases/2)
     
     location_labels_in_use <- length(intersect(selected_locations,combined_risk_graph$LocationLabel))
+    
+    #create color palette
+    color_palette<- c()
+    if (bubble_other_label %in% combined_risk_graph$LocationLabel){
+      color_palette <- c(color_palette ,'#999999')
+    }
+    if (l2_screener_other_label %in% combined_risk_graph$LocationLabel){
+      color_palette <- c(color_palette ,'#777777')
+    }
+    if (quarantine_other_label %in% combined_risk_graph$LocationLabel){
+      color_palette <- c(color_palette ,'#555555')
+    }
     color_palette = c(
-      '#999999',
-      '#777777',
-      '#555555',
+      color_palette,
       rep(
         c('#1f78b4','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#6a3d9a','#b15928'),
         ceiling(location_labels_in_use/8))[1:location_labels_in_use],
-      '#222222' #OTHER
+      '#222222' #NZ residents only
       )
+    
+  
+    
     
     plot_max <- sum(combined_risk_graph$ExpectedCases)
     ggplot(combined_risk_graph,aes(x=Condition,y=ExpectedCases,fill=LocationLabel,label=LocationLabel))+
@@ -821,7 +834,7 @@ ui <- navbarPage(
                                    #"Malaysia","Cambodia","Sri Lanka"
                       ),
                       multiple=TRUE),
-          numericInput("intsim_percent_capacity",
+          numericInput("intsim_percent_tvolume",
                        "Expected incoming traveler volume for level 1 (% of 2019 levels):",
                        min=1,
                        max=100,step=1,
@@ -831,7 +844,7 @@ ui <- navbarPage(
                       choices = countries_to_choose_from,
                       selected = c(),
                       multiple=TRUE),
-          numericInput("intsim_percent_level2_control",
+          numericInput("intsim_percent_tvolume_level2_control",
                        "Expected incoming traveler volume for level 2 (% of 2019 levels):",
                        min=1,
                        max=100,step=1,
@@ -841,7 +854,7 @@ ui <- navbarPage(
                       choices = countries_to_choose_from,
                       multiple=TRUE,
                       selected = c("Korea, South")),
-          numericInput("intsim_percent_capacity_with_quarantine",
+          numericInput("intsim_percent_tvolume_with_quarantine",
                        "Expected incoming traveler volume for level 3 (% of 2019 levels):",
                        min=1,
                        max=100,step=1,
