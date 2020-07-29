@@ -45,9 +45,11 @@ set_general_travel_rate <- function(l1_bubble,l2_screeners,l3_quarantine,l4_stat
 
 get_analysis_covid_data <- function(
   world_with_covid_data,
+  screening_sensitivity,
   quarantine_odds_override=NULL,
   general_travel_rate=1,
-  assumed_ifr=0.005){
+  assumed_ifr=0.005
+  ){
   
 
   #assumed_cfr<-0.005
@@ -154,22 +156,22 @@ get_analysis_covid_data <- function(
   
   ######### SCREENING TREATMENT
   ### EXCLUDES the dampening effect of quarantine on travel - this is taken into account above.
-  screening_sensitivity <- 0.7
-  screening_specificity <- 0.999
+  #screening_sensitivity <- 0.7
+  # screening_specificity <- 0.999
   #I think we need negative predictive value as well as positive predictive value.
   #https://en.wikipedia.org/wiki/Positive_and_negative_predictive_values#Positive_predictive_value
   #https://en.wikipedia.org/wiki/Positive_and_negative_predictive_values#Negative_predictive_value
   prevalence <- world_with_covid_data$InferredActiveCasePopRate
   #this is the "detection rate" or how many true positives we catch for the total number of calls
-  positive_predictive_value <- (
-    (screening_sensitivity * (prevalence))/
-      (screening_sensitivity*screening_specificity + (1-screening_specificity)*(1-prevalence))
-  )
+  # positive_predictive_value <- (
+  #   (screening_sensitivity * (prevalence))/
+  #     (screening_sensitivity*screening_specificity + (1-screening_specificity)*(1-prevalence))
+  # )
   #this is the the proportion of true negatives we catch out of the total number of negatives
-  negative_predictive_value <- (
-    (screening_specificity * (1-prevalence))/
-      ((1-screening_sensitivity)*prevalence+screening_specificity*(1-prevalence))
-  )
+  # negative_predictive_value <- (
+  #   (screening_specificity * (1-prevalence))/
+  #     ((1-screening_sensitivity)*prevalence+screening_specificity*(1-prevalence))
+  # )
   #so then we can:
   #(a) from an expected number of true positive cases arriving (ExpectedNumberOfCasesAll), calculate the number we'll catch by
   #     number of positive test results = N(true positives)/PPV

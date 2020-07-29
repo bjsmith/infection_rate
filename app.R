@@ -8,12 +8,15 @@ library(ggrepel)
 life_exp_thresh <- 70
 default_assumed_ifr_percent<-0.6
 default_quarantine_failure_odds<-12
+default_assumed_sensitivity <- 0.3
 
 run_date<-Sys.Date()
 month_name <- format(run_date,"%B")
 
 geo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date)
-geo_world_with_covid_data <- get_analysis_covid_data(geo_world_basic_data,assumed_ifr = default_assumed_ifr_percent/100,
+geo_world_with_covid_data <- get_analysis_covid_data(geo_world_basic_data,
+                                                     screening_sensitivity = default_assumed_sensitivity,
+                                                     assumed_ifr = default_assumed_ifr_percent/100,
                                                      quarantine_odds_override=(1/default_quarantine_failure_odds))
 
 nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
@@ -156,6 +159,7 @@ server <- function(input, output, session) {
   generate_world_with_covid_data <- reactive({
     get_analysis_covid_data(
       nogeo_world_basic_data,
+      screening_sensitivity = input$intsim_sensitivity_level2_control,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
       assumed_ifr = input$simsettings_ifr/100)
   })
@@ -163,6 +167,7 @@ server <- function(input, output, session) {
   generate_mapped_world_with_covid_data <- reactive({
     get_analysis_covid_data(
       geo_world_basic_data,
+      screening_sensitivity = input$intsim_sensitivity_level2_control,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
       assumed_ifr = input$simsettings_ifr/100)
   })
@@ -289,6 +294,7 @@ Refer to the 'Simulation settings' tab for more options.
   sim_geo_world_with_covid_data_bubble <- reactive({
     world_w_covid_data <- get_analysis_covid_data(
       nogeo_world_basic_data,
+      screening_sensitivity = input$intsim_sensitivity_level2_control,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
       general_travel_rate=input$intsim_percent_tvolume/100,
       assumed_ifr = input$simsettings_ifr/100)
@@ -298,6 +304,7 @@ Refer to the 'Simulation settings' tab for more options.
   sim_geo_world_with_covid_data_level2 <- reactive({
     world_w_covid_data <- get_analysis_covid_data(
       nogeo_world_basic_data,
+      screening_sensitivity = input$intsim_sensitivity_level2_control,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
       general_travel_rate=input$intsim_percent_tvolume_level2_control/100,
       assumed_ifr = input$simsettings_ifr/100)
@@ -307,6 +314,7 @@ Refer to the 'Simulation settings' tab for more options.
   sim_geo_world_with_covid_data_quarantine <- reactive({
     world_w_covid_data <- get_analysis_covid_data(
       nogeo_world_basic_data,
+      screening_sensitivity = input$intsim_sensitivity_level2_control,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
       general_travel_rate=input$intsim_percent_tvolume_with_quarantine/100,
       assumed_ifr = input$simsettings_ifr/100)
@@ -317,6 +325,7 @@ Refer to the 'Simulation settings' tab for more options.
   sim_geo_world_with_covid_data_statusquo <- reactive({
     world_w_covid_data <- get_analysis_covid_data(
       nogeo_world_basic_data,
+      screening_sensitivity = input$intsim_sensitivity_level2_control,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
       general_travel_rate=0,
       assumed_ifr = input$simsettings_ifr/100)
@@ -861,6 +870,11 @@ ui <- navbarPage(
                        min=1,
                        max=100,step=1,
                        value = 70),
+          numericInput("intsim_sensitivity_level2_control",
+                       "Sensitivity (NB: this setting is used to calculate sensitivity for ALL tabs):",
+                       min=0,
+                       max=1,step=0.1,
+                       value = default_assumed_sensitivity),
           selectInput("intsim_countries_quarantine",
                       "3. Level 3 locations (full 14 day quarantine):",
                       choices = countries_to_choose_from,
@@ -972,7 +986,8 @@ ui <- navbarPage(
                      "Assumed Infection Fatality Rate (%):",
                      min=0,
                      max=5,step=0.1,
-                     value = default_assumed_ifr_percent)
+                     value = default_assumed_ifr_percent),
+        
       )
     )
   )
