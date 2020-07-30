@@ -922,12 +922,12 @@ ui <- navbarPage(
   ),
 
     tabPanel(
-    "Country List",
+    "Risk Matrix",
     fluidPage(
       
       fluidRow(
         column(6,
-               titlePanel("COVID-19: List of countries and locations")),
+               titlePanel("COVID-19: Location Risk Matrix")),
         column(3,
                h4("View settings")),
         column(3,
