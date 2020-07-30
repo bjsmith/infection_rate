@@ -307,7 +307,7 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   jh_dxc <- jh_dxc %>%
     group_by(CountryDivisionCodeMixed) %>%
     arrange(Date) %>% mutate(ActiveCases1 = CasesConfirmed-Deaths-Recoveries) %>%
-    mutate(ActiveCases2 = rollapply(NewCases,28,sum,align='right',fill=NA)) %>% 
+    mutate(ActiveCases2 = rollapply(NewCases,21,sum,align='right',fill=NA)) %>% 
     mutate(ActiveCases = pmin(ActiveCases1,ActiveCases2,na.rm=TRUE)) %>%
     ungroup
   #some locations don't reliably report recoveries.

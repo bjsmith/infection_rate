@@ -9,6 +9,7 @@ life_exp_thresh <- 70
 default_assumed_ifr_percent<-0.6
 default_quarantine_failure_odds<-12
 default_assumed_sensitivity <- 0.3
+default_general_travel_rate <- 0.2
 
 run_date<-Sys.Date()
 month_name <- format(run_date,"%B")
@@ -161,6 +162,7 @@ server <- function(input, output, session) {
       nogeo_world_basic_data,
       screening_sensitivity = input$intsim_sensitivity_level2_control,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
+      general_travel_rate = default_general_travel_rate,
       assumed_ifr = input$simsettings_ifr/100)
   })
   
@@ -249,8 +251,10 @@ server <- function(input, output, session) {
       filter(TotalExpectedMonthlyArrivals>=input$countrylist_travelerfilter)%>%
       data.frame %>%
       arrange(InfActiveCasesPerMillion) %>%
-      select(LocationCode, Location, Population, #total_cases,
-             ActiveCases,InferredActiveCases,InfActiveCasesPerMillion,
+      select(#LocationCode, 
+            Location, #Population, #total_cases,
+             ActiveCases,#InferredActiveCases,
+            InfActiveCasesPerMillion,
              TotalExpectedMonthlyArrivals,#ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
              ExpectedNumberOfCasesAll,
              ExpectedNumberOfCasesEscapingOneScreen,
@@ -259,26 +263,38 @@ server <- function(input, output, session) {
       
     display_dt <- DT::datatable(
       display_df,
+      rownames=FALSE,
       #filter="top",
-      colnames=c("ISO","Location","Population","Active Cases","Estimated Active Infections","Est. Active Infections per million",
-                 "Est. arrivals per month (2019)", 
-                 "Expected number of cases arriving",
-                 "Expected number of cases escaping screening",
-                 "Expected number of cases lasting through quarantine"
+      colnames=c(#"ISO",
+                 "Location",
+                 #"Population",
+                 "Active Cases",
+                 "Est. Active Infections per million",
+                 "Est. arrivals per month (based on 2019)", 
+                 "Expected number of cases arriving per month",
+                 "Expected number of cases escaping screening per month",
+                 "Expected number of cases lasting through quarantine per month"
                  ))
       
   
     display_dt_formatted <- (
       display_dt %>%
       #formatPercentage(c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases'),3) %>%
-      formatRound(c('InferredActiveCases','InfActiveCasesPerMillion'),0,mark=",") %>%
+      formatRound(c('InfActiveCasesPerMillion'),0,mark=",") %>%
       formatRound(c('ExpectedNumberOfCasesAll','ExpectedNumberOfCasesInCommunity','ExpectedNumberOfCasesEscapingOneScreen'),2) %>%
-      formatRound(c('Population','ActiveCases','TotalExpectedMonthlyArrivals'),0,mark=",")
+      formatRound(c('ActiveCases','TotalExpectedMonthlyArrivals'),0,mark=",")
     )
     
     display_dt_formatted
   })
   
+  output$country_table_notes <- renderUI({HTML(paste0(
+"Estimated arrivals per month are calculated assuming arrivals under existing quarantine regime, plus ", scales::percent(default_general_travel_rate), 
+  "% of 2019 arrivals. In reality these will differ from treatment to treatment.<br/> <br/> ",
+"Cook Islands and Western Samoa currently report COVID-free status, are rated zero risk, and are not listed above.<br /><br />",
+"Assumes screening sensitivity of ",scales::percent(input$intsim_sensitivity_level2_control),
+" and quarantine failure rate of 1 in ", as.character(input$intsim_quarantine_failure_odds), "."
+  ))})
   #intervention simulation page
   
   output$intsim_notes<-
@@ -908,11 +924,13 @@ ui <- navbarPage(
     tabPanel(
     "Country List",
     fluidPage(
-      titlePanel("COVID-19: List of countries and locations"),
+      
       fluidRow(
         column(6,
+               titlePanel("COVID-19: List of countries and locations")),
+        column(3,
                h4("View settings")),
-        column(6,
+        column(3,
                numericInput("countrylist_travelerfilter",
                             "Show countries with at least this number of travelers per month:",
                             min=0,max=100000,
@@ -925,6 +943,11 @@ ui <- navbarPage(
         column(12,
                DT::dataTableOutput("country_table")
                )
+      ),
+      fluidRow(
+        column(12,
+               uiOutput("country_table_notes")
+        )
       )
     )
   ),
