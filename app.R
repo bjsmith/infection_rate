@@ -247,7 +247,8 @@ server <- function(input, output, session) {
     
     display_df <- 
       wwcd %>% 
-      filter(LifeExp>=life_exp_thresh) %>%
+      #filter(LifeExp>=life_exp_thresh) %>%
+      filter(Location!="New Zealand") %>% #doesn't make sense to display New Zealand here.
       filter(TotalExpectedMonthlyArrivals>=input$countrylist_travelerfilter)%>%
       data.frame %>%
       arrange(InfActiveCasesPerMillion) %>%
@@ -291,7 +292,7 @@ server <- function(input, output, session) {
   output$country_table_notes <- renderUI({HTML(paste0(
 "Estimated arrivals per month are calculated assuming arrivals under existing quarantine regime, plus ", scales::percent(default_general_travel_rate), 
   "% of 2019 arrivals. In reality these will differ from treatment to treatment.<br/> <br/> ",
-"Cook Islands and Western Samoa currently report COVID-free status, are rated zero risk, and are not listed above.<br /><br />",
+"Cook Islands and Western Samoa currently report COVID-free status, are rated zero risk. Due to their zero-risk status, it hasn't been necessary to include them in the dataset and they are not listed above.<br /><br />",
 "Assumes screening sensitivity of ",scales::percent(input$intsim_sensitivity_level2_control),
 " and quarantine failure rate of 1 in ", as.character(input$intsim_quarantine_failure_odds), "."
   ))})
