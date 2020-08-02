@@ -319,7 +319,6 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   #This is used for calculating "Active Cases"
   #in practice this is mainly useful where acountry has had few or no local cases
   #and we can show that the country is therefore covid-free
-
   
   #############
   
@@ -349,7 +348,10 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   library(zoo)
   jh_dxc <- jh_dxc %>%
     group_by(CountryDivisionCodeMixed) %>%
-    arrange(Date) %>% mutate(ActiveCases1 = CasesConfirmed-Deaths-Recoveries) %>%
+    arrange(Date) %>% mutate(ActiveCases1Raw = CasesConfirmed-Deaths-Recoveries) %>%
+    mutate(ActiveCases1 = ifelse(ActiveCases1Raw>=0,ActiveCases1Raw,NA)) %>%  
+      #do not use this if it's returning a negative value.
+      #when countries or states change their reporting, there is sometimes a discontinuity in CasesConfirmed that leads to a negative value.
     mutate(ActiveCases2 = rollapply(NewCasesImportAdjusted,21,sum,align='right',fill=NA)) %>% 
     mutate(ActiveCases = pmin(ActiveCases1,ActiveCases2,na.rm=TRUE)) %>%
     ungroup

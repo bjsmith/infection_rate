@@ -546,15 +546,17 @@ Refer to the 'Simulation settings' tab for more options.
     
     
     plot_max <- sum(combined_risk_graph$ExpectedCases)
-    ggplot(combined_risk_graph,aes(x=Condition,y=ExpectedCases,fill=LocationLabel,label=LocationLabel))+
+    ggplot(combined_risk_graph,aes(x=Condition,y=ExpectedCases,fill=LocationLabel,label=LocationLabel
+                                   ))+
       geom_bar(stat="identity",alpha=0.8)+
       scale_x_discrete(name="")+
       scale_y_continuous(name="Expected cases per month",
                          #breaks=0:plot_max,
                          minor_breaks = NULL, 
-                         limits = c(0,plot_max),
+                         limits = c(0,plot_max)#,
                          #limits=c(0,20),
-                         position="right")+
+                         #position="right"
+                         )+
       #scale_fill_brewer(palette="Set3")+
       scale_fill_manual(values = color_palette)+
       theme(legend.position = "none",legend.box="vertical",legend.margin=margin(),text=element_text(face = "bold"),
@@ -854,7 +856,8 @@ ui <- navbarPage(
                                    "Australian Capital Territory, Australia",
                                    "Western Australia, Australia","South Australia, Australia",
                                    "Northern Territory, Australia",
-                                   "Vietnam","Taiwan*","Thailand"
+                                   #"Vietnam",
+                                   "Taiwan*","Thailand"
                                    #"Malaysia","Cambodia","Sri Lanka"
                       ),
                       multiple=TRUE),
@@ -922,7 +925,7 @@ ui <- navbarPage(
                             "Show countries with at least this number of travelers per month:",
                             min=0,max=100000,
                             step=500,
-                            value=1000)
+                            value=500)
                )
       ),
       hr(),

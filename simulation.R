@@ -63,6 +63,12 @@ get_analysis_covid_data <- function(
     mutate(InferredDetectionRate = ifelse(NewDeaths==0,1,InferredDetectionRate)
     )
   
+  #if there are NO cases then we set InferredDetectionRate to NA--we infer that the detection rate is completely unknown
+  world_with_covid_data <- 
+    world_with_covid_data %>% 
+    mutate(InferredDetectionRate = ifelse(LaggedNewCases==0,NA,InferredDetectionRate)
+    )
+  
   world_with_covid_data <-
     world_with_covid_data %>% 
     mutate(InferredActiveCases= (ActiveCases/InferredDetectionRate))
