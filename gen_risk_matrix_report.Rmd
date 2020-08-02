@@ -120,7 +120,20 @@ write_csv(covid_data_to_save,"../../data/covid_data_risk_matrix.csv")
 ```
 ```{r}
 #library(ggplot2)
-ggplot(covid_data_to_save %>% filter(Location %in% key_interest_countries) %>% filter(Population>10^6 & `Life Expectancy`>=70),aes(x=`Estimated Prevalence (per million)`,y=slope_7days,label=Location))+
+ggplot(covid_data_to_save %>% filter(Population>10^6 & `Life Expectancy`>=70),aes(x=`Estimated Prevalence (per million)`,y=slope_7days,label=Location))+
   geom_point()+geom_label()+scale_y_log10(limits=c(0.1,1000))+scale_x_log10()
+
+#### TO DO NEXT: draw 7-day slopes of:
+ #- new cases
+#- confirmed cases
+# - log of confirmed cases
+# - log of new cases
+# and see which is PREDICTIVE of a substantial increase in prevalence 7 days later
+# I expect that...
+# log(confirmed cases) is not going to be very good at picking up a "second wave" because the new cases are a smaller proportion of all cases
+# log(new cases) will be quite sensitive to rising numbers of new cases, won't ignore second waves, and will be more sensitive to small numbers (possible emerging pandemic)
+# new cases will be sensitive to rising numbers, won't ignore second waves, but will focus on larger trends. This might be better?
+# confirmed cases as an absolute measure will not distinguish between a larger country with steady numbers of new cases and a small country with rising cases.
+# so it should be either new cases or log(new cases)
 ```
 
