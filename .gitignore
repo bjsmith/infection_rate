@@ -16,3 +16,5 @@ infection_rate/data/*
 
 READI-SCRUB/
 READI-SCRUB/*
+
+.httr-oauth*

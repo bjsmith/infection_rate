@@ -53,4 +53,12 @@ View(jh_bycountry_activecases[,c(1:2,120:ncol(jh_bycountry_activecases))])
 
 ```
 
+## read from google sheets
+
+```{r}
+library(googlesheets4)
+gs4_deauth()
+manual_corrections<-read_sheet("1hkpfinHpxT1KcTI8umh55aaiFug12jKKSMZoae4ttlA")
+
+```
 

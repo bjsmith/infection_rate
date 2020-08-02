@@ -283,6 +283,46 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   jh_dxc <- jh_dxc %>% group_by(CountryDivisionCodeMixed) %>%
     arrange(Date) %>% mutate(NewCases = CasesConfirmed-lag(CasesConfirmed)) %>% ungroup
   
+  #adjust new cases to subtract cases that have been manually validated as imported
+  #this will help us to reduce our prevalence estimate for a few Locations with mostly imported cases.
+  #only works for our "active cases 2" definition, but that's OK.
+  
+  #what we can do is:
+  #get a manually corrected "Active Cases" on a certain day
+  #For ActiveCases1, which is confirmed minus recoveries minus deaths,
+  #we just reset the total counts from the specified day
+  #For days after that, for the ActiveCases2, 
+  
+  library(googlesheets4)
+  gs4_deauth()
+  manual_corrections<-read_sheet("1hkpfinHpxT1KcTI8umh55aaiFug12jKKSMZoae4ttlA")
+  mc_merge <- manual_corrections%>%
+    select(Code,`Date recorded`,`Active local cases on date override`,`Recent local fatalities on date override`)
+  mc_merge <- mc_merge %>% rename("ManualCorrectDate" = "Date recorded")
+  
+  jh_dxc <- jh_dxc%>% 
+    left_join(mc_merge,by = c(
+      "CountryDivisionCodeMixed"="Code"
+    ))
+  
+  #But it will "reset" the new cases on particular days where we have a manual measure
+  #once each country only!
+  #then counting new cases from that date is useful for calculating active cases.
+  jh_dxc <- jh_dxc %>% mutate(OnBeforeManualCorrectDate=Date<=ManualCorrectDate)
+  jh_dxc <- jh_dxc %>% 
+    mutate(NewCasesImportAdjusted = 
+             case_when(
+               is.na(OnBeforeManualCorrectDate) ~ NewCases,
+               OnBeforeManualCorrectDate ~ `Active local cases on date override`,
+               OnBeforeManualCorrectDate==FALSE ~ NewCases
+             ))
+  #This is used for calculating "Active Cases"
+  #in practice this is mainly useful where acountry has had few or no local cases
+  #and we can show that the country is therefore covid-free
+
+  
+  #############
+  
   if (separate_aussie_states_and_hk){
     #move the Ruby princess cases from 3 July to 19 March
     ruby_princess_category<-"AU-NSW"
@@ -302,12 +342,15 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
     jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-03-19")),"NewCases"] + 189
   )
   
+    
+  
+  ########### calculate active cases.
   
   library(zoo)
   jh_dxc <- jh_dxc %>%
     group_by(CountryDivisionCodeMixed) %>%
     arrange(Date) %>% mutate(ActiveCases1 = CasesConfirmed-Deaths-Recoveries) %>%
-    mutate(ActiveCases2 = rollapply(NewCases,21,sum,align='right',fill=NA)) %>% 
+    mutate(ActiveCases2 = rollapply(NewCasesImportAdjusted,21,sum,align='right',fill=NA)) %>% 
     mutate(ActiveCases = pmin(ActiveCases1,ActiveCases2,na.rm=TRUE)) %>%
     ungroup
   #some locations don't reliably report recoveries.

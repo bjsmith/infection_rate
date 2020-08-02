@@ -1,0 +1,116 @@
+---
+title: "Get manual risk matrix report"
+output: html_notebook
+---
+
+This notebook is for manually generating a risk matrix report.
+
+```{r}
+
+
+library(DT)
+debugSource("utils.R")
+source("simulation.R")
+source("country_classification_rules.R")
+library(ggrepel)
+
+life_exp_thresh <- 70
+default_assumed_ifr_percent<-0.6
+default_quarantine_failure_odds<-12
+default_assumed_sensitivity <- 0.3
+default_general_travel_rate <- 0.2
+
+run_date<-Sys.Date()
+month_name <- format(run_date,"%B")
+
+
+
+
+```
+```{r}
+nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
+```
+
+
+
+
+```{r}
+
+
+covid_data <- get_analysis_covid_data(
+      nogeo_world_basic_data,
+      screening_sensitivity = 0.5,
+      quarantine_odds_override=1/12,
+      general_travel_rate = 0.2,
+      assumed_ifr = 0.0065)
+
+```
+
+
+
+
+```{r}
+source("key_interest_countries.R")
+#prettify the column names
+covid_data_to_save<-
+covid_data %>% 
+  filter(Location %in% key_interest_countries) %>%
+  arrange(LocationCode) %>%
+  select(
+    #location info
+    `Location Code` = `LocationCode`,
+    `Location` = `Location`,
+    `Population` = `Population`,
+    #assessing expected cases
+    `Total Confirmed Cases` = `CasesConfirmed`,
+    `Total Fatalities` = `Deaths`,
+    `Total Recoveries` = `Recoveries`,
+    `Active Cases` = `ActiveCases`,
+    #health data trust
+    `Life Expectancy` = `LifeExp`,
+    
+    #assessing expected prevalence
+    `Mean daily fatalities in last 7 days` = `NewDeaths`,
+    `Mean daily cases in last 7 days of two weeks prior`=LaggedActiveCases,
+    `Infection detection ratio` = `InferredDetectionRate`,
+    `Estimated active infections` = `InferredActiveCases`,
+    `Estimated Prevalence (per million)` = `InfActiveCasesPerMillion`,
+    
+    #risk to new zealand
+    #`Monthly arrivals of residents from location to NZ in 2019` = `LocationResidentMonthlyArrivals`,
+    #`Monthly arrivals of returning NZ residents from location in 2019` = `NZResMonthlyArrivals`,
+    
+    `Expected monthly arrivals` = `TotalExpectedMonthlyArrivals`,
+    `Expected monthly arrivals with active infection` = `ExpectedNumberOfCasesAll`,
+    `Expected monthly arrivals with active infection passing screening` = `ExpectedNumberOfCasesEscapingOneScreen`,
+    `Expected monthly active cases leaking from quarantine` = `ExpectedNumberOfCasesInCommunity`
+  )
+  
+
+```
+
+```{r}
+covid_data_to_save %>% View
+```
+
+
+```{r}
+write_csv(covid_data_to_save,"../../data/covid_data_risk_matrix.csv")
+```
+
+
+
+```{r}
+library(googledrive)
+
+
+
+drive_ls()
+file <- drive_upload(
+  drive_example("chicken.csv"),
+  type = "spreadsheet"
+  )
+
+drive_upload(covid_data)
+```
+
