@@ -405,12 +405,29 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
     summarise_all(mean)
   deaths_with_lagged_cases <- deaths_with_lagged_cases %>% left_join(jh_key_stats,by=c("CountryDivisionCodeMixed"="CountryDivisionCodeMixed"))
   
+  
+  get_slope_lastn<-function(y,lastn){
+    
+    test_series<-y[(length(y)-lastn+1):length(y)]
+    x<-(1:lastn)
 
+    slope <- lm(test_series~x)$coefficients[[2]]
+    return(slope)
+  }
+  slopes <- jh_dxc %>% ungroup %>% 
+    group_by(CountryDivisionCodeMixed) %>%
+    #filter(Alpha2CountrySubdivision=="VN") %>% 
+      summarise(
+        slope_7days=get_slope_lastn(NewCases,7),
+        slope_14days=get_slope_lastn(NewCases,14)
+      )
+      
   
   world_with_covid_data<-
     #left_join(world,country_iso_2_to_3_map,by=c("iso_a2" = "ISO3166.1.Alpha.2"),name="iso_a2") %>%
     world_health %>%
     left_join(deaths_with_lagged_cases,by=c("LocationCode" = "CountryDivisionCodeMixed")) %>%
+    left_join(slopes,by=c("LocationCode" = "CountryDivisionCodeMixed")) %>%
     left_join(
       statsnz_arr %>% 
         filter(`ISO3166-1-Alpha-3`!="") %>% 

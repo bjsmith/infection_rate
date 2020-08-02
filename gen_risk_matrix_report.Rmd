@@ -63,6 +63,9 @@ covid_data %>%
     `Location Code` = `LocationCode`,
     `Location` = `Location`,
     `Population` = `Population`,
+    
+    
+    
     #assessing expected cases
     `Total Confirmed Cases` = `CasesConfirmed`,
     `Total Fatalities` = `Deaths`,
@@ -78,6 +81,9 @@ covid_data %>%
     `Estimated active infections` = `InferredActiveCases`,
     `Estimated Prevalence (per million)` = `InfActiveCasesPerMillion`,
     
+    #assess any recent increase in cases,
+    slope_7days,
+    slope_14days,
     #risk to new zealand
     #`Monthly arrivals of residents from location to NZ in 2019` = `LocationResidentMonthlyArrivals`,
     #`Monthly arrivals of returning NZ residents from location in 2019` = `NZResMonthlyArrivals`,
@@ -111,5 +117,10 @@ write_csv(covid_data_to_save,"../../data/covid_data_risk_matrix.csv")
 #   )
 # 
 # drive_upload(covid_data)
+```
+```{r}
+#library(ggplot2)
+ggplot(covid_data_to_save %>% filter(Location %in% key_interest_countries) %>% filter(Population>10^6 & `Life Expectancy`>=70),aes(x=`Estimated Prevalence (per million)`,y=slope_7days,label=Location))+
+  geom_point()+geom_label()+scale_y_log10(limits=c(0.1,1000))+scale_x_log10()
 ```
 

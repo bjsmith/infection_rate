@@ -213,6 +213,9 @@ get_analysis_covid_data <- function(
   world_with_covid_data$ActiveCasesPerThousand <- world_with_covid_data$ActiveCasePopRate*10^3
   world_with_covid_data$ActiveCasesPerMillion <- world_with_covid_data$ActiveCasePopRate*10^6
   
+  
+  
+  
   return(world_with_covid_data)
 }
 
