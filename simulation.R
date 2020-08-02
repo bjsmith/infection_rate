@@ -52,22 +52,22 @@ get_analysis_covid_data <- function(
   ){
   
 
-  #assumed_cfr<-0.005
-  world_with_covid_data<- 
-    world_with_covid_data %>% 
-    mutate(InferredDetectionRate = (assumed_ifr*LaggedNewCases/NewDeaths))
+  #assumed_cfr<-0.00
   
-  #if there are NO deaths then we infer detection rate is 100%
   world_with_covid_data <- 
     world_with_covid_data %>% 
-    mutate(InferredDetectionRate = ifelse(NewDeaths==0,1,InferredDetectionRate)
+    mutate(InferredDetectionRate = case_when(
+      #if there are NO deaths then we infer detection rate is 100%
+      NewDeaths==0~1.0,
+      #if there are NO cases but there ARE deaths then we set InferredDetectionRate to NA--
+      #we infer that the detection rate is completely unknown
+      #this indicates probably quite severe under-reporting
+      (NewDeaths>0) & (LaggedNewCases==0) ~ as.double(NA),
+      #otherwise we set it using our formula
+      TRUE~(assumed_ifr*LaggedNewCases/NewDeaths)
+      )
     )
-  
-  #if there are NO cases then we set InferredDetectionRate to NA--we infer that the detection rate is completely unknown
-  world_with_covid_data <- 
-    world_with_covid_data %>% 
-    mutate(InferredDetectionRate = ifelse(LaggedNewCases==0,NA,InferredDetectionRate)
-    )
+
   
   world_with_covid_data <-
     world_with_covid_data %>% 

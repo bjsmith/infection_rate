@@ -9,8 +9,8 @@ This notebook is for manually generating a risk matrix report.
 
 
 library(DT)
-debugSource("utils.R")
-debugSource("simulation.R")
+source("utils.R")
+source("simulation.R")
 source("country_classification_rules.R")
 library(ggrepel)
 
@@ -91,9 +91,6 @@ covid_data %>%
 
 ```
 
-```{r}
-covid_data_to_save %>% View
-```
 
 
 ```{r}
@@ -103,16 +100,16 @@ write_csv(covid_data_to_save,"../../data/covid_data_risk_matrix.csv")
 
 
 ```{r}
-library(googledrive)
-
-
-
-drive_ls()
-file <- drive_upload(
-  drive_example("chicken.csv"),
-  type = "spreadsheet"
-  )
-
-drive_upload(covid_data)
+# library(googledrive)
+# 
+# 
+# 
+# drive_ls()
+# file <- drive_upload(
+#   drive_example("chicken.csv"),
+#   type = "spreadsheet"
+#   )
+# 
+# drive_upload(covid_data)
 ```
 
