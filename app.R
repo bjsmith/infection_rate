@@ -1,6 +1,6 @@
 
 library(DT)
-debugSource("utils.R")
+source("utils.R")
 source("simulation.R")
 source("country_classification_rules.R")
 library(ggrepel)

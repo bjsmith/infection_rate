@@ -101,7 +101,7 @@ covid_data %>%
 
 
 ```{r}
-write_csv(covid_data_to_save,"../../data/covid_data_risk_matrix.csv")
+  write_csv(covid_data_to_save,"../../data/covid_data_risk_matrix.csv")
 ```
 
 

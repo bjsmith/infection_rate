@@ -352,13 +352,13 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   #But it will "reset" the new cases on particular days where we have a manual measure
   #once each country only!
   #then counting new cases from that date is useful for calculating active cases.
-  jh_dxc <- jh_dxc %>% mutate(OnBeforeManualCorrectDate=Date<=ManualCorrectDate)
   jh_dxc <- jh_dxc %>% 
     mutate(NewCasesImportAdjusted = 
              case_when(
-               is.na(OnBeforeManualCorrectDate) ~ NewCases,
-               OnBeforeManualCorrectDate ~ `Active local cases on date override`,
-               OnBeforeManualCorrectDate==FALSE ~ NewCases
+               is.na(`Active local cases on date override`) ~ NewCases,
+               Date < ManualCorrectDate ~ 0,
+               Date == ManualCorrectDate ~ `Active local cases on date override`,
+               Date > ManualCorrectDate ~ NewCases
              ))
   #This is used for calculating "Active Cases"
   #in practice this is mainly useful where acountry has had few or no local cases
