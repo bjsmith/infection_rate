@@ -52,8 +52,6 @@ get_analysis_covid_data <- function(
   ){
   
 
-  #assumed_cfr<-0.00
-  
   world_with_covid_data <- 
     world_with_covid_data %>% 
     mutate(InferredDetectionRate = case_when(
@@ -65,9 +63,14 @@ get_analysis_covid_data <- function(
       (NewDeaths>0) & (LaggedNewCases==0) ~ as.double(NA),
       #otherwise we set it using our formula
       TRUE~(assumed_ifr*LaggedNewCases/NewDeaths)
-      )
     )
-
+    )
+  
+  # world_with_covid_data$InferredDetectionRate[is.infinite(world_with_covid_data$InferredDetectionRate)]<-1
+  # #can't be infinite
+  # world_with_covid_data$InferredDetectionRate[world_with_covid_data$InferredDetectionRate>1]<-1
+  # #can't be more than 1
+  # 
   
   world_with_covid_data <-
     world_with_covid_data %>% 
@@ -86,15 +89,10 @@ get_analysis_covid_data <- function(
   print(quarantine_odds_override)
   print(general_travel_rate)
   
-  world_with_covid_data$InferredDetectionRate[is.infinite(world_with_covid_data$InferredDetectionRate)]<-1
-  #can't be infinite
-  world_with_covid_data$InferredDetectionRate[world_with_covid_data$InferredDetectionRate>1]<-1
-  #can't be more than 1
   
   
   ### calculate the probability of at least one COVID-19 case
   
-  #world_with_covid_data$LocationResidentMonthlyArrivals<-as.numeric(world_with_covid_data$LocationResidentMonthlyArrivals)
   world_with_covid_data$LocationResidentMonthlyArrivalsWeighted<-(
     world_with_covid_data$LocationResidentMonthlyArrivalsScaled1*general_travel_rate
   )
@@ -104,15 +102,16 @@ get_analysis_covid_data <- function(
       NZResidentMonthlyArrivalsWeighted = (
         NZResMonthlyArrivalsLatest + pmax(0,NZResMonthlyArrivalsScaled1-NZResMonthlyArrivalsLatest)*general_travel_rate
       )
-    )
-  )
-  
-  world_with_covid_data <- (
-    world_with_covid_data %>% mutate(
+    )%>% mutate(
       TotalExpectedMonthlyArrivals = (
         NZResidentMonthlyArrivalsWeighted + LocationResidentMonthlyArrivalsWeighted
       )
-    )
+      )%>% 
+        mutate(
+        Total2019MonthlyArrivals = (
+          NZResMonthlyArrivalsScaled1+LocationResidentMonthlyArrivalsScaled1
+        )
+      )
   )
   
   #assume that each new person has an independent chance of carrying COVID-19
@@ -212,9 +211,6 @@ get_analysis_covid_data <- function(
   world_with_covid_data$InfActiveCasesPerThousand <- world_with_covid_data$InferredActiveCasePopRate*10^3
   world_with_covid_data$ActiveCasesPerThousand <- world_with_covid_data$ActiveCasePopRate*10^3
   world_with_covid_data$ActiveCasesPerMillion <- world_with_covid_data$ActiveCasePopRate*10^6
-  
-  
-  
   
   return(world_with_covid_data)
 }

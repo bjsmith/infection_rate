@@ -36,6 +36,7 @@ nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,sepa
 
 
 
+
 ```{r}
 
 

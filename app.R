@@ -1,6 +1,6 @@
 
 library(DT)
-source("utils.R")
+debugSource("utils.R")
 source("simulation.R")
 source("country_classification_rules.R")
 library(ggrepel)
@@ -225,13 +225,9 @@ server <- function(input, output, session) {
     }
   )
   
-  
-  #country list page
-  output$country_table<-DT::renderDataTable({
-    
+  get_country_table <- reactive({
     wwcd <- generate_world_with_covid_data()
-    
-    display_df <- 
+    display_tibble <- 
       wwcd %>% 
       #filter(LifeExp>=life_exp_thresh) %>%
       filter(Location!="New Zealand") %>% #doesn't make sense to display New Zealand here.
@@ -239,41 +235,69 @@ server <- function(input, output, session) {
       data.frame %>%
       arrange(InfActiveCasesPerMillion) %>%
       select(#LocationCode, 
-            Location, #Population, #total_cases,
-             ActiveCases,#InferredActiveCases,
-            InfActiveCasesPerMillion,
-             TotalExpectedMonthlyArrivals,#ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
-             ExpectedNumberOfCasesAll,
-             ExpectedNumberOfCasesEscapingOneScreen,
-             ExpectedNumberOfCasesInCommunity
-      )
+        Location, #Population, #total_cases,
+        ActiveCases,#InferredActiveCases,
+        InfActiveCasesPerMillion,
+        Total2019MonthlyArrivals,
+        TotalExpectedMonthlyArrivals,#ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
+        ExpectedNumberOfCasesAll,
+        ExpectedNumberOfCasesEscapingOneScreen,
+        ExpectedNumberOfCasesInCommunity
+      ) %>% as_tibble()
+    
+    colnames(display_tibble) <- c(#"ISO",
+      "Location",
+      #"Population",
+      "Active Cases",
+      "Est. Active Infections per million",
+      "2019 Monthly arrivals",
+      "Est. arrivals per month (based on 2019)", 
+      "Expected number of cases arriving per month",
+      "Expected number of cases escaping screening per month",
+      "Expected number of cases lasting through quarantine per month"
+    )
+    
+    display_tibble
+  }
+    
+  )
+  
+  
+  #country list page
+  output$country_table<-DT::renderDataTable({
+    
+    
+    
+    display_tibble<- get_country_table()
       
     display_dt <- DT::datatable(
-      display_df,
-      rownames=FALSE,
+      display_tibble,
+      rownames=FALSE
       #filter="top",
-      colnames=c(#"ISO",
-                 "Location",
-                 #"Population",
-                 "Active Cases",
-                 "Est. Active Infections per million",
-                 "Est. arrivals per month (based on 2019)", 
-                 "Expected number of cases arriving per month",
-                 "Expected number of cases escaping screening per month",
-                 "Expected number of cases lasting through quarantine per month"
-                 ))
+      )
       
   
     display_dt_formatted <- (
       display_dt %>%
       #formatPercentage(c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases'),3) %>%
-      formatRound(c('InfActiveCasesPerMillion'),0,mark=",") %>%
-      formatRound(c('ExpectedNumberOfCasesAll','ExpectedNumberOfCasesInCommunity','ExpectedNumberOfCasesEscapingOneScreen'),2) %>%
-      formatRound(c('ActiveCases','TotalExpectedMonthlyArrivals'),0,mark=",")
+      formatRound(c('Est. Active Infections per million'),1,mark=",") %>%
+      formatRound(c('Expected number of cases arriving per month',
+                    'Expected number of cases escaping screening per month',
+                    'Expected number of cases lasting through quarantine per month'),2) %>%
+      formatRound(c('Active Cases','Est. arrivals per month (based on 2019)',"2019 Monthly arrivals"),0,mark=",")
     )
     
     display_dt_formatted
   })
+  
+  output$countrylist_downloadcsv <- downloadHandler(
+    filename = function() {
+      paste("risk_matrix_", run_date, ".csv", sep = "")
+    },
+    content = function(file) {
+      write.csv(get_country_table(), file, row.names = FALSE)
+    }
+  )
   
   output$country_table_notes <- renderUI({HTML(paste0(
 "Estimated arrivals per month are calculated assuming arrivals under existing quarantine regime, plus ", scales::percent(default_general_travel_rate), 
@@ -916,7 +940,7 @@ ui <- navbarPage(
     fluidPage(
       
       fluidRow(
-        column(6,
+        column(3,
                titlePanel("COVID-19: Location Risk Matrix")),
         column(3,
                h4("View settings")),
@@ -926,7 +950,15 @@ ui <- navbarPage(
                             min=0,max=100000,
                             step=500,
                             value=500)
-               )
+               ),
+        column(3,
+               # Button
+               downloadButton("countrylist_downloadcsv", "Download")
+        )
+        
+        
+        
+        
       ),
       hr(),
       fluidRow(

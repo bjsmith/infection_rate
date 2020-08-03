@@ -14,6 +14,8 @@ library(rnaturalearth)
 library(rnaturalearthdata)
 library(data.table)
 library(magrittr)
+library(googlesheets4)
+
 
 
 show_leaflet <- function(data_to_show,primary_col,rounding_func,legend_title,
@@ -100,6 +102,48 @@ get_owid <- function(){
 
 }
 
+get_data_closure <- function() {
+  #initialize
+  data_list <- NULL
+  f <- function() {
+    
+    if(is.null(data_list)){
+      print("Fetching data...")
+      dl_local<-list()
+      jh_cases_recovered<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")
+      jh_cases_recovered$EventType<-"Recoveries"
+      jh_cases_confirmed <- readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+      jh_cases_confirmed$EventType<-"CasesConfirmed"
+      jh_deaths<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
+      jh_deaths$EventType<-"Deaths"
+      jh_data<-rbind(jh_cases_confirmed,jh_cases_recovered,jh_deaths)
+      
+      
+      dl_local[["jh_data"]] <- jh_data
+      
+      world_pop <- readr::read_csv("data/mapping/world_population/API_SP.POP.TOTL_DS2_en_csv_v2_1217749.csv") %>%
+        select(`Country Code`,`Country Name`,`2019`)
+      
+      dl_local[["world_pop"]] <- world_pop
+      
+      gs4_deauth()
+      
+      manual_corrections<-read_sheet("1hkpfinHpxT1KcTI8umh55aaiFug12jKKSMZoae4ttlA")
+      
+      dl_local[["manual_corrections"]] <- manual_corrections
+      data_list <<- dl_local
+    }else{
+      print("returning cached data")
+    }
+    
+    return(data_list)
+  }
+  return(f)
+}
+get_data <- get_data_closure()
+
+
+
 #this function contains some calculation of derived statistics
 #this is deprecated and I am trying to separate out data import from data analysis
 #this function should exclude all analysis including calculation of rates of disease
@@ -119,14 +163,16 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
     stop("Cannot include geo data and separate australian states; don't have polygons for Australian states.")
   }
 
-  jh_cases_recovered<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")
-  jh_cases_recovered$EventType<-"Recoveries"
-  jh_cases_confirmed <- readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
-  jh_cases_confirmed$EventType<-"CasesConfirmed"
-  jh_deaths<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
-  jh_deaths$EventType<-"Deaths"
-  jh_data<-rbind(jh_cases_confirmed,jh_cases_recovered,jh_deaths)
+  # jh_cases_recovered<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")
+  # jh_cases_recovered$EventType<-"Recoveries"
+  # jh_cases_confirmed <- readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+  # jh_cases_confirmed$EventType<-"CasesConfirmed"
+  # jh_deaths<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
+  # jh_deaths$EventType<-"Deaths"
+  # jh_data<-rbind(jh_cases_confirmed,jh_cases_recovered,jh_deaths)
   
+  data_list <- get_data()
+  jh_data <- data_list[["jh_data"]]
   
   if (separate_aussie_states_and_hk){
     jh_data %<>% 
@@ -159,8 +205,7 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   jh_dxc <- left_join(jh_dxc,jh_country_mapping,by=c("Location" = "John_Hopkins_Name"))
   
   #world pop
-  world_pop <- readr::read_csv("data/mapping/world_population/API_SP.POP.TOTL_DS2_en_csv_v2_1217749.csv") %>%
-    select(`Country Code`,`Country Name`,`2019`)
+  world_pop <- data_list[["world_pop"]]
   
   
   #now get life expectancy
@@ -293,9 +338,8 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   #we just reset the total counts from the specified day
   #For days after that, for the ActiveCases2, 
   
-  library(googlesheets4)
-  gs4_deauth()
-  manual_corrections<-read_sheet("1hkpfinHpxT1KcTI8umh55aaiFug12jKKSMZoae4ttlA")
+  
+  manual_corrections<-data_list[["manual_corrections"]]
   mc_merge <- manual_corrections%>%
     select(Code,`Date recorded`,`Active local cases on date override`,`Recent local fatalities on date override`)
   mc_merge <- mc_merge %>% rename("ManualCorrectDate" = "Date recorded")

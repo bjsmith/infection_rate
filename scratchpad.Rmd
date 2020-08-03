@@ -3,6 +3,13 @@ title: "R Notebook"
 output: html_notebook
 ---
 
+
+
+
+$$
+\text{arrivals}_{predicted} = \text{arrivals}_{May2020} + 20\% \times (\text{arrivals}_{August2019}-\text{arrivals}_{May2020}) 
+$$
+
 ```{r}
 library(magrittr)
 jh_cases_recovered<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")
