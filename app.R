@@ -1,7 +1,7 @@
 
 library(DT)
 source("utils.R")
-source("simulation.R")
+debugSource("simulation.R")
 source("country_classification_rules.R")
 library(ggrepel)
 
@@ -238,6 +238,8 @@ server <- function(input, output, session) {
         Location, #Population, #total_cases,
         ActiveCases,#InferredActiveCases,
         InfActiveCasesPerMillion,
+        PrevalenceRating,
+        OutlookRating,
         Total2019MonthlyArrivals,
         TotalExpectedMonthlyArrivals,#ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
         ExpectedNumberOfCasesAll,
@@ -249,7 +251,9 @@ server <- function(input, output, session) {
       "Location",
       #"Population",
       "Active Cases",
-      "Est. Active Infections per million",
+      "Prevalence (infections / mil)",
+      "Prevalence Rating",
+      "Outlook Rating",
       "2019 Monthly arrivals",
       "Est. arrivals per month (based on 2019)", 
       "Expected number of cases arriving per month",
@@ -280,7 +284,7 @@ server <- function(input, output, session) {
     display_dt_formatted <- (
       display_dt %>%
       #formatPercentage(c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases'),3) %>%
-      formatRound(c('Est. Active Infections per million'),1,mark=",") %>%
+      formatRound(c('Prevalence (infections / mil)'),1,mark=",") %>%
       formatRound(c('Expected number of cases arriving per month',
                     'Expected number of cases escaping screening per month',
                     'Expected number of cases lasting through quarantine per month'),2) %>%
@@ -963,7 +967,7 @@ ui <- navbarPage(
       hr(),
       fluidRow(
         column(12,
-               DT::dataTableOutput("country_table")
+               div(DT::dataTableOutput("country_table"), style = "font-size:80%")
                )
       ),
       fluidRow(

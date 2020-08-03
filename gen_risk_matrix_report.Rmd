@@ -57,7 +57,7 @@ source("key_interest_countries.R")
 #prettify the column names
 covid_data_to_save<-
 covid_data %>% 
-  #filter(Location %in% key_interest_countries) %>%
+  filter(Location %in% key_interest_countries) %>%
   arrange(LocationCode) %>%
   mutate(
     InfActiveCasesPerMillion = round(InfActiveCasesPerMillion,1),
@@ -106,9 +106,6 @@ covid_data %>%
 
 ```
 
-```{r}
-View(covid_data_to_save)
-```
 
 
 ```{r}
