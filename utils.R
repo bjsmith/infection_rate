@@ -458,20 +458,20 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
     slope <- lm(test_series~x)$coefficients[[2]]
     return(slope)
   }
-  slopes <- jh_dxc %>% ungroup %>% 
+  predictions <- jh_dxc %>% ungroup %>% 
     group_by(CountryDivisionCodeMixed) %>%
     #filter(Alpha2CountrySubdivision=="VN") %>% 
       summarise(
         slope_7days=get_slope_lastn(NewCases,7),
-        slope_14days=get_slope_lastn(NewCases,14)
+        slope_14days=get_slope_lastn(NewCases,14),
+        next_two_weeks_cases = get_new_case_prediction(NewCases)
       )
-      
   
   world_with_covid_data<-
     #left_join(world,country_iso_2_to_3_map,by=c("iso_a2" = "ISO3166.1.Alpha.2"),name="iso_a2") %>%
     world_health %>%
     left_join(deaths_with_lagged_cases,by=c("LocationCode" = "CountryDivisionCodeMixed")) %>%
-    left_join(slopes,by=c("LocationCode" = "CountryDivisionCodeMixed")) %>%
+    left_join(predictions,by=c("LocationCode" = "CountryDivisionCodeMixed")) %>%
     left_join(
       statsnz_arr %>% 
         filter(`ISO3166-1-Alpha-3`!="") %>% 
@@ -487,6 +487,8 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
         filter(`ISO3166-1-Alpha-3`!="") %>% 
         select(NZResMonthlyArrivalsLatest,`ISO3166-1-Alpha-3`),
       by=c("Alpha3CountryOnly" =  "ISO3166-1-Alpha-3"))
+  
+
   
   world_with_covid_data$LocationResidentMonthlyArrivals<-as.numeric(world_with_covid_data$LocationResidentMonthlyArrivals)
   
@@ -504,6 +506,26 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
 
   return(world_with_covid_data)
 }
+
+get_new_case_prediction <- function(x){
+  #use the last 3 weeks of data to predict
+  new_case_training_data <- x[(length(x)-21+1):length(x)]
+    linear_model <- lm(
+      data.frame("NewCases"=new_case_training_data,
+                 Day=1:length(new_case_training_data)
+                 ),formula = NewCases~Day)
+    
+    predict_model<-linear_model
+    
+    #predict 2 weeks of cases
+    prediction_day_ids<-(length(new_case_training_data)+1):(length(new_case_training_data)+14)
+
+    
+    predict_tb<-data.table("Day"=prediction_day_ids)
+    new_cases_period<- predict(predict_model,predict_tb,type="response")
+    #just sum up the number of cases we expect
+    return(sum(new_cases_period))
+  }
 
 
 get_max_quantiles <- function(display_data,col_of_interest,max_quantiles=8){

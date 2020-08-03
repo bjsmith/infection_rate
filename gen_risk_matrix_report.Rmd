@@ -57,8 +57,14 @@ source("key_interest_countries.R")
 #prettify the column names
 covid_data_to_save<-
 covid_data %>% 
-  filter(Location %in% key_interest_countries) %>%
+  #filter(Location %in% key_interest_countries) %>%
   arrange(LocationCode) %>%
+  mutate(
+    InfActiveCasesPerMillion = round(InfActiveCasesPerMillion,1),
+    PredictedActiveCasesPerMillion = round(PredictedActiveCasesPerMillion,1),
+    PredictedActiveCases = round(PredictedActiveCases,0),
+    
+  ) %>% 
   select(
     #location info
     `Location Code` = `LocationCode`,
@@ -72,6 +78,7 @@ covid_data %>%
     `Total Fatalities` = `Deaths`,
     `Total Recoveries` = `Recoveries`,
     `Active Cases` = `ActiveCases`,
+    PredictedActiveCases = PredictedActiveCases,
     #health data trust
     `Life Expectancy` = `LifeExp`,
     
@@ -83,8 +90,9 @@ covid_data %>%
     `Estimated Prevalence (per million)` = `InfActiveCasesPerMillion`,
     
     #assess any recent increase in cases,
-    slope_7days,
-    slope_14days,
+    `Estimated Predicted Prevalence (per million)` = PredictedInfActiveCasesPerMillion,
+    
+    
     #risk to new zealand
     #`Monthly arrivals of residents from location to NZ in 2019` = `LocationResidentMonthlyArrivals`,
     #`Monthly arrivals of returning NZ residents from location in 2019` = `NZResMonthlyArrivals`,
@@ -98,6 +106,9 @@ covid_data %>%
 
 ```
 
+```{r}
+View(covid_data_to_save)
+```
 
 
 ```{r}

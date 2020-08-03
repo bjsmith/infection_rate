@@ -206,6 +206,20 @@ get_analysis_covid_data <- function(
   
   
   
+  #get the predicted two-week prevalence
+  #this is quite rough - is just hte predicted cases over the next two weeks
+  world_with_covid_data <- world_with_covid_data %>% ungroup %>%
+    group_by(LocationCode) %>% 
+    mutate(PredictedActiveCases = next_two_weeks_cases,
+           PredictedActiveCasesPerMillion = next_two_weeks_cases / Population * 10^6
+           
+    ) %>% 
+    mutate(
+      PredictedInfActiveCases = PredictedActiveCases/InferredDetectionRate,
+      PredictedInfActiveCasesPerMillion = PredictedActiveCasesPerMillion/InferredDetectionRate,
+      
+    ) %>%
+    ungroup
   
   world_with_covid_data$InfActiveCasesPerMillion <- world_with_covid_data$InferredActiveCasePopRate*10^6
   world_with_covid_data$InfActiveCasesPerThousand <- world_with_covid_data$InferredActiveCasePopRate*10^3
