@@ -98,8 +98,29 @@ get_world_with_supplements<-function(){
   return(worldc)
 }
 
-get_owid <- function(){
-
+preprocess_owid_test_data <- function(owid_fullset){
+  
+  owid_fullset$date<-as.Date(as.character(owid_fullset$date))
+  
+  #work out the most recent date that testing is actually available
+  test_data_availability<-owid_fullset %>% group_by(date) %>% summarise(datacount=sum(!is.na(new_tests)))
+  latest_date <- max(owid_fullset$date)
+  date_period_begin<- latest_date - days(7)
+  most_complete_testing_date<-filter(test_data_availability,datacount==max(test_data_availability$datacount))$date
+  
+  #let's try 7-day averages
+  owid_7_day_average_testing_observable<-owid_fullset %>% 
+    filter(date>=date_period_begin) %>% 
+    select(-contains("total"))%>%select(-contains("tests_units"))%>%
+    select(-continent) %>%
+    group_by(iso_code,location) %>%
+    summarise_all(mean,na.rm=TRUE)
+  
+  owid_7_day_average_testing_observable$TestsPerCase <- owid_7_day_average_testing_observable$new_tests/owid_7_day_average_testing_observable$new_cases
+  
+  colnames(owid_7_day_average_testing_observable) <- paste0("owid_",colnames(owid_7_day_average_testing_observable))
+  
+  return(owid_7_day_average_testing_observable)
 }
 
 get_data_closure <- function() {
@@ -108,7 +129,7 @@ get_data_closure <- function() {
   f <- function() {
     
     if(is.null(data_list)){
-      print("Fetching data...")
+      print("Fetching JH data...")
       dl_local<-list()
       jh_cases_recovered<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")
       jh_cases_recovered$EventType<-"Recoveries"
@@ -121,16 +142,25 @@ get_data_closure <- function() {
       
       dl_local[["jh_data"]] <- jh_data
       
+      print("Fetching local data...")
       world_pop <- readr::read_csv("data/mapping/world_population/API_SP.POP.TOTL_DS2_en_csv_v2_1217749.csv") %>%
         select(`Country Code`,`Country Name`,`2019`)
       
       dl_local[["world_pop"]] <- world_pop
       
+      
+      print("fetching google sheets data...")
       gs4_deauth()
       
       manual_corrections<-read_sheet("1hkpfinHpxT1KcTI8umh55aaiFug12jKKSMZoae4ttlA")
       
       dl_local[["manual_corrections"]] <- manual_corrections
+      
+      print("fetching ourworldindata data...")
+      
+      owid_fullset<-readr::read_csv("https://github.com/owid/covid-19-data/raw/master/public/data/owid-covid-data.csv")
+      dl_local[["owid_fullset"]] <- owid_fullset
+      
       data_list <<- dl_local
     }else{
       print("returning cached data")
@@ -285,7 +315,8 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
     tidyr::gather("NZRArrivalsMainDestination","NZResMonthlyArrivalsLatest")
   statsnz_nzres_latest_arr <- left_join(nz_res_arrivals_latest,country_mapping_stats_nz,by=c("NZRArrivalsMainDestination" = "Stats_NZ_Arrivals_Name"))
   
-  
+  ##### testing data
+  owid_7_day_average_testing_observable <- preprocess_owid_test_data(data_list[["owid_fullset"]])
   
   
   if(include_geo_data){
@@ -298,23 +329,6 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   }else{
     world_health<-world_data
   }
-  
-  
-  #merge it in
-  world_with_covid_data<-
-    #left_join(world,country_iso_2_to_3_map,by=c("iso_a2" = "ISO3166.1.Alpha.2"),name="iso_a2") %>%
-    world_health #%>%
-    # left_join(owid_7_day_average_testing_observable,by=c("ISO3166.1.Alpha.3" = "iso_code"))
-  
-  vals_to_include <- 
-    (
-      #is.finite(world_with_covid_data$TestsPerCase) & !is.na(world_with_covid_data$TestsPerCase)
-    # & 
-    world_with_covid_data$LifeExp>=life_exp_thresh
-    )
-  
-  
-  world_with_covid_data_inc<-world_with_covid_data[vals_to_include,]
   
   
   
@@ -467,9 +481,13 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
         next_two_weeks_cases = get_new_case_prediction(NewCases)
       )
   
+  
+  
+  #merge it in
   world_with_covid_data<-
     #left_join(world,country_iso_2_to_3_map,by=c("iso_a2" = "ISO3166.1.Alpha.2"),name="iso_a2") %>%
     world_health %>%
+    left_join(owid_7_day_average_testing_observable,by=c("LocationCode" = "owid_iso_code")) %>%
     left_join(deaths_with_lagged_cases,by=c("LocationCode" = "CountryDivisionCodeMixed")) %>%
     left_join(predictions,by=c("LocationCode" = "CountryDivisionCodeMixed")) %>%
     left_join(

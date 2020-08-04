@@ -1,7 +1,7 @@
 
 library(DT)
 source("utils.R")
-debugSource("simulation.R")
+source("simulation.R")
 source("country_classification_rules.R")
 library(ggrepel)
 
@@ -10,6 +10,13 @@ default_assumed_ifr_percent<-0.6
 default_quarantine_failure_odds<-12
 default_assumed_sensitivity <- 0.3
 default_general_travel_rate <- 0.2
+
+#Ben J:
+#Assume 0.5% transmission risk without mask (it’s a conservative worst case rate)
+#If mask use reduces risk by 90% as per Arthur’s email then in-flight transmission risk reduced to 0.05%
+#Therefore one case expected to be acquired ‘in-flight’ for every 125 infectious cases carried
+default_aircraft_infection_rate <- 0.005 #without mask
+default_aircraft_mask_effectiveness_percent <- 90
 
 run_date<-Sys.Date()
 month_name <- format(run_date,"%B")
@@ -944,18 +951,29 @@ ui <- navbarPage(
     fluidPage(
       
       fluidRow(
-        column(3,
+        column(4,
                titlePanel("COVID-19: Location Risk Matrix")),
         column(3,
                h4("View settings")),
-        column(3,
+        column(2,
+               radioButtons("countrylist_type", "List Type:", 
+                            choices = c(
+                              "Classic",
+                              "Comprehensive high-level",
+                              "Custom"), selected = "Classic",
+                            inline = TRUE#, width = NULL, choiceNames = NULL,choiceValues = NULL
+                            ),
+               selectInput("countrylist_typecustom",
+                           "")
+               ),
+        column(2,
                numericInput("countrylist_travelerfilter",
                             "Show countries with at least this number of travelers per month:",
                             min=0,max=100000,
                             step=500,
                             value=500)
                ),
-        column(3,
+        column(1,
                # Button
                downloadButton("countrylist_downloadcsv", "Download")
         )
@@ -1036,6 +1054,16 @@ ui <- navbarPage(
                      min=0,
                      max=5,step=0.1,
                      value = default_assumed_ifr_percent),
+        numericInput("simsettings_ifr",
+                     "Aircraft infection rate (expected number of cases acquired 'in-flight' per pre-existing case):",
+                     min=0,
+                     max=10,step=0.001,
+                     value = default_aircraft_infection_rate),
+        numericInput("simsettings_ifr",
+                     "Reduction in aircraft infections from mask use (%):",
+                     min=0,
+                     max=100,step=1,
+                     value = default_aircraft_mask_effectiveness_percent)
         
       )
     )

@@ -9,7 +9,7 @@ This notebook is for manually generating a risk matrix report.
 
 
 library(DT)
-source("utils.R")
+debugSource("utils.R")
 source("simulation.R")
 source("country_classification_rules.R")
 library(ggrepel)
@@ -32,9 +32,6 @@ month_name <- format(run_date,"%B")
 ```{r}
 nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
 ```
-
-
-
 
 
 ```{r}
