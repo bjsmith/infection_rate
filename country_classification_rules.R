@@ -45,6 +45,9 @@ classify_country_prevalence <-function(lifeExp,prevalence_p_m){
 
 
 classify_country_trust <-function(lifeExp, country_name){
+  if(is.na(lifeExp)){
+    return("untrustworthy")
+  }
   if(lifeExp>=70){
     return("trustworthy")
   }else if (country_name %in% c("Samoa","Cook Islands")){

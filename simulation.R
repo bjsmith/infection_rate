@@ -231,7 +231,8 @@ get_analysis_covid_data <- function(
     world_with_covid_data %>% 
     rowwise() %>%
     mutate(PrevalenceRating=classify_country_prevalence(LifeExp, InfActiveCasesPerMillion),
-           OutlookRating=classify_country_prevalence(LifeExp, PredictedInfActiveCasesPerMillion)
+           OutlookRating=classify_country_prevalence(LifeExp, PredictedInfActiveCasesPerMillion),
+           DataReliablityRating = classify_country_trust(LifeExp,Location)
            ) %>%
     ungroup()
     

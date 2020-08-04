@@ -1,7 +1,7 @@
 
 library(DT)
 source("utils.R")
-source("simulation.R")
+debugSource("simulation.R")
 source("country_classification_rules.R")
 library(ggrepel)
 
@@ -104,9 +104,6 @@ get_intsim_dt<-function(
 ###########create data table for table tab
 
 #lose geometry info and convert to datatable. note: not the same as data.table!
-
-
-
 
 ###########main dashboard.
 source("map_page.R")
@@ -233,40 +230,133 @@ server <- function(input, output, session) {
   )
   
   get_country_table <- reactive({
+    
+    
     wwcd <- generate_world_with_covid_data()
-    display_tibble <- 
-      wwcd %>% 
+    
+    wwcd1 <- wwcd %>% 
       #filter(LifeExp>=life_exp_thresh) %>%
       filter(Location!="New Zealand") %>% #doesn't make sense to display New Zealand here.
-      filter(TotalExpectedMonthlyArrivals>=input$countrylist_travelerfilter)%>%
+      filter(TotalExpectedMonthlyArrivals>=input$countrylist_travelerfilter) %>%
       data.frame %>%
-      arrange(InfActiveCasesPerMillion) %>%
-      select(#LocationCode, 
-        Location, #Population, #total_cases,
-        ActiveCases,#InferredActiveCases,
-        InfActiveCasesPerMillion,
-        PrevalenceRating,
-        OutlookRating,
-        Total2019MonthlyArrivals,
-        TotalExpectedMonthlyArrivals,#ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
-        ExpectedNumberOfCasesAll,
-        ExpectedNumberOfCasesEscapingOneScreen,
-        ExpectedNumberOfCasesInCommunity
-      ) %>% as_tibble()
+      arrange(InfActiveCasesPerMillion)
+
+    #classic version
+    if(input$countrylist_type=="Classic"){
+      display_tibble <- 
+        wwcd1 %>%
+        select(#LocationCode, 
+          Location, #Population, #total_cases,
+          ActiveCases,#InferredActiveCases,
+          InfActiveCasesPerMillion,
+          PrevalenceRating,
+          OutlookRating,
+          Total2019MonthlyArrivals,
+          TotalExpectedMonthlyArrivals,#ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
+          ExpectedNumberOfCasesAll,
+          ExpectedNumberOfCasesEscapingOneScreen,
+          ExpectedNumberOfCasesInCommunity
+        ) %>% as_tibble()
+      
+      colnames(display_tibble) <- c(#"ISO",
+        "Location",
+        #"Population",
+        "Active Cases",
+        "Prevalence (infections / mil)",
+        "Prevalence Rating",
+        "Outlook Rating",
+        "2019 Monthly arrivals",
+        "Est. arrivals per month (based on 2019)", 
+        "Expected number of cases arriving per month",
+        "Expected number of cases escaping screening per month",
+        "Expected number of cases lasting through quarantine per month"
+      )
+    }else if(input$countrylist_type=="Comprehensive high-level"){
+    #comprehensive
+    #designed to show as much detail as Arthur asked for at a high-level.
+      display_tibble <- 
+        wwcd1 %>%
+        select(
+          Location,
+          owid_population_density, #add
+          owid_new_tests_per_million, #add
+          owid_tests_per_case, #add
+          ActiveCases,
+          NewDeaths, #add
+          InfActiveCasesPerMillion,
+          PrevalenceRating,
+          OutlookRating,
+          DataReliablityRating,#add
+          Total2019MonthlyArrivals,
+          TotalExpectedMonthlyArrivals,
+          ExpectedNumberOfCasesAll,
+          ExpectedNumberOfCasesEscapingOneScreen,
+          ExpectedNumberOfCasesInCommunity
+        ) %>% as_tibble()
+      
+      colnames(display_tibble) <- c(#"ISO",
+        "Location",
+        "Population density",
+        "New tests / mil (last 7 days average)",
+        "New tests / Case (last 7 days average)",
+        "Active Cases",
+        "New deaths (last 7 days average)",
+        "Prevalence (infections / mil)",
+        "Prevalence Rating",
+        "Outlook Rating",
+        "Data Reliability",
+        "2019 Monthly arrivals",
+        "Est. arrivals per month (based on 2019)", 
+        "Expected number of cases arriving per month",
+        "Expected number of cases escaping screening per month",
+        "Expected number of cases lasting through quarantine per month"
+      )
+    }else if(input$countrylist_type=="Prevalence detail"){
+    #prevalence detail
+      display_tibble <- 
+        wwcd1 %>%
+        select(
+          Location,
+          Population,
+          LaggedNewCases,
+          NewDeaths,
+          InferredDetectionRate,
+          ActiveCases,
+          InferredActiveCases,
+          InfActiveCasesPerMillion,
+          PrevalenceRating,
+          PredictedInfActiveCasesPerMillion,
+          OutlookRating,
+          LifeExp,
+          DataReliablityRating
+        ) %>% as_tibble()
+      
+      colnames(display_tibble) <- c(#"ISO",
+        "Location",
+        "Population",
+        "Cases confirmed 14-21 days ago (daily average)",
+        "Deaths last 7 days (daily average)",
+        "Inferred detection rate",
+        "Active cases",
+        "Est. active infections",
+        "Prevalence (infections / mil)",
+        "Prevalence Rating",
+        "Predicted prevalence in 14 days (infections / mil)",
+        "Outlook Rating",
+        "Life expectancy",
+        "Data Reliability"
+      )
+    }else if(input$countrylist_type=="Raw"){
+      #raw
+      display_tibble <- 
+        wwcd1
+      #all the columns. chaos!
+    }else{
+      stop("unknown list type")
+    }
     
-    colnames(display_tibble) <- c(#"ISO",
-      "Location",
-      #"Population",
-      "Active Cases",
-      "Prevalence (infections / mil)",
-      "Prevalence Rating",
-      "Outlook Rating",
-      "2019 Monthly arrivals",
-      "Est. arrivals per month (based on 2019)", 
-      "Expected number of cases arriving per month",
-      "Expected number of cases escaping screening per month",
-      "Expected number of cases lasting through quarantine per month"
-    )
+    
+    
     
     display_tibble
   }
@@ -280,25 +370,63 @@ server <- function(input, output, session) {
     
     
     display_tibble<- get_country_table()
-      
+    
     display_dt <- DT::datatable(
       display_tibble,
       rownames=FALSE
       #filter="top",
       )
-      
-  
-    display_dt_formatted <- (
-      display_dt %>%
-      #formatPercentage(c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases'),3) %>%
-      formatRound(c('Prevalence (infections / mil)'),1,mark=",") %>%
-      formatRound(c('Expected number of cases arriving per month',
-                    'Expected number of cases escaping screening per month',
-                    'Expected number of cases lasting through quarantine per month'),2) %>%
-      formatRound(c('Active Cases','Est. arrivals per month (based on 2019)',"2019 Monthly arrivals"),0,mark=",")
-    )
     
-    display_dt_formatted
+    #round some columns by 1 dp
+    cols_1_dp <- intersect(colnames(display_tibble),c(
+      'Prevalence (infections / mil)',
+      "New tests / mil (last 7 days average)",
+      "New tests / Case (last 7 days average)",
+      "Predicted prevalence in 14 days (infections / mil)"))
+    #and some by 2dp
+    cols_2_dp <- intersect(colnames(display_tibble),
+                           c('Expected number of cases arriving per month',
+                             'Expected number of cases escaping screening per month',
+                             'Expected number of cases lasting through quarantine per month',
+                             "Inferred detection rate",
+                             "Population density"
+                             ))
+    #and others by other amounts.
+    cols_0_dp <- intersect(colnames(display_tibble),
+                           c("2019 Monthly arrivals",
+                             'Active Cases','Active cases',
+                             "New deaths (last 7 days average)",
+                             "Cases confirmed 14-21 days ago (daily average)",
+                             "Deaths last 7 days (daily average)",
+                             "Est. active infections",
+                             'Est. arrivals per month (based on 2019)',
+                             "Life expectancy",
+                             "Population"
+                             ))
+    
+    #if we're using the raw table, then round ALL numeric columns
+    # if(input$countrylist_type=="Raw"){
+    #   display_tibble <- 
+    #     display_tibble %>%
+    #     mutate(across(is.numeric, formatRound, 1, mark=","))
+    # }
+
+    if(length(cols_1_dp)>0){
+      display_dt <- 
+        display_dt %>% 
+        formatRound(cols_1_dp,1,mark=",")
+    }
+    if(length(cols_2_dp)>0){
+      display_dt <- 
+        display_dt %>% 
+        formatRound(cols_2_dp,2)
+    }
+    if(length(cols_0_dp)>0){
+      display_dt <- 
+        display_dt %>% 
+        formatRound(cols_0_dp,0,mark=",")
+    }
+    display_dt
   })
   
   output$countrylist_downloadcsv <- downloadHandler(
@@ -459,29 +587,7 @@ Refer to the 'Simulation settings' tab for more options.
         )
     )
   })
-  # get_foreign_risk <- reactive({
-  #   foreign_risk <- rbind(
-  #     get_countries_in_bubble_risks() %>%
-  #       select(Location,
-  #              "ExpectedCases"=ExpectedNumberOfCases),
-  #     get_countries_out_of_bubble_risks() %>%
-  #       select(Location,
-  #              "ExpectedCases"=ExpectedNumberOfCasesInCommunity)
-  #   )
-  #   
-  # })
-  # 
-  # get_universal_quarantine_nz_resident_risk <- reactive({
-  #   data.frame("Location"="Returning NZers",
-  #              "ExpectedCases"=39/input$intsim_quarantine_failure_odds)
-  # })
-  # 
-  # get_calculated_nz_resident_risk <- reactive({
-  #   
-  #   data.frame("OriginLocation" = "",
-  #              "ExpectedCases"=39/input$intsim_quarantine_failure_odds)
-  # })
-  
+
   
   output$total_risk_graph <- renderPlot({
     #foreign_risk <- get_foreign_risk()
@@ -949,22 +1055,22 @@ ui <- navbarPage(
     tabPanel(
     "Risk Matrix",
     fluidPage(
-      
       fluidRow(
         column(4,
                titlePanel("COVID-19: Location Risk Matrix")),
-        column(3,
-               h4("View settings")),
         column(2,
-               radioButtons("countrylist_type", "List Type:", 
+               h4("View settings")),
+        column(3,
+               radioButtons("countrylist_type", 
+                            "List Type:", 
                             choices = c(
                               "Classic",
                               "Comprehensive high-level",
-                              "Custom"), selected = "Classic",
-                            inline = TRUE#, width = NULL, choiceNames = NULL,choiceValues = NULL
-                            ),
-               selectInput("countrylist_typecustom",
-                           "")
+                              "Prevalence detail",
+                              "Raw"), 
+                            selected = "Classic",
+                            inline = FALSE
+                            )
                ),
         column(2,
                numericInput("countrylist_travelerfilter",
@@ -977,10 +1083,6 @@ ui <- navbarPage(
                # Button
                downloadButton("countrylist_downloadcsv", "Download")
         )
-        
-        
-        
-        
       ),
       hr(),
       fluidRow(
@@ -1005,13 +1107,7 @@ ui <- navbarPage(
      # Sidebar with a slider input for number of bins 
      sidebarLayout(
        sidebarPanel(
-         # sliderInput("bins",
-         #             "Number of bins:",
-         #             min = 1,
-         #             max = 50,
-         #             value = 30),
          uiOutput("testt")
-         #textOutput("")
          
        ),
        

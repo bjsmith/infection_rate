@@ -117,6 +117,7 @@ preprocess_owid_test_data <- function(owid_fullset){
     summarise_all(mean,na.rm=TRUE)
   
   owid_7_day_average_testing_observable$TestsPerCase <- owid_7_day_average_testing_observable$new_tests/owid_7_day_average_testing_observable$new_cases
+  owid_7_day_average_testing_observable$new_tests_per_million <- owid_7_day_average_testing_observable$new_tests_per_thousand*1000
   
   colnames(owid_7_day_average_testing_observable) <- paste0("owid_",colnames(owid_7_day_average_testing_observable))
   
