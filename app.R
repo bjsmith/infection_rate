@@ -562,7 +562,8 @@ Refer to the 'Simulation settings' tab for more options.
     status_quo_risk <- 
       sim_geo_world_with_covid_data_statusquo() %>%
       select(Location,
-             "ExpectedCases"=ExpectedNumberOfCasesInCommunity
+             "ExpectedCases"=ExpectedNumberOfCasesInCommunity,
+             "ExpectedCasesAtBorder"=ExpectedNumberOfCasesAll
       )
   })
   
@@ -587,11 +588,86 @@ Refer to the 'Simulation settings' tab for more options.
         )
     )
   })
+  
+  output$cases_at_border_graph <- renderPlot({
+    status_quo_risk <- get_status_quo_risk()
+    status_quo_risk$Condition<-"Status Quo"
+    
+    combined_risk_graph <- status_quo_risk
+    combined_risk_graph <- combined_risk_graph%>% filter(!is.na(ExpectedCases))
+    
+    misc_countries_label <- "Other locations"
+    
+    combined_risk_graph<- 
+      combined_risk_graph %>% 
+      mutate(LocationLabel = 
+               case_when(
+                 (ExpectedCasesAtBorder<0.1) ~ misc_countries_label,
+                 TRUE ~ Location
+               ))
+    
+    
+    
+    combined_risk_graph$LocationLabel <-
+      factor(combined_risk_graph$LocationLabel,
+             levels = unique(combined_risk_graph$LocationLabel),
+             ordered=TRUE)
+    
+    #combine across grouped categories
+    combined_risk_graph<-
+      combined_risk_graph %>% 
+      group_by(LocationLabel,Condition) %>%
+      summarise(ExpectedCasesAtBorder=sum(ExpectedCasesAtBorder)) %>%
+      arrange(Condition,desc(LocationLabel))
+    
+    #do the cumulative sum
+    combined_risk_graph <-
+      combined_risk_graph %>%
+      group_by(Condition) %>%
+      arrange(desc(LocationLabel)) %>%
+      mutate(LabelPosition=cumsum(ExpectedCasesAtBorder)-ExpectedCasesAtBorder/2)
+    
+    location_labels_in_use <- length(unique(combined_risk_graph$LocationLabel))
+    
+    #create color palette
+    color_palette<- c()
+    if (misc_countries_label %in% combined_risk_graph$LocationLabel){
+      color_palette <- c(color_palette ,'#555555')
+    }
+    color_palette = c(
+      color_palette,
+      rep(
+        c('#1f78b4','#33a02c','#fb9a99','#e31a1c','#fdbf6f','#ff7f00','#6a3d9a','#b15928'),
+        ceiling(location_labels_in_use/8))[1:location_labels_in_use]
+    )
+    
+    plot_max <- sum(combined_risk_graph$ExpectedCasesAtBorder)
+    ggplot(combined_risk_graph,aes(x=Condition,y=ExpectedCasesAtBorder,fill=LocationLabel,label=LocationLabel
+    ))+
+      geom_bar(stat="identity",alpha=0.8)+
+      scale_x_discrete(name="")+
+      scale_y_continuous(name="Expected cases per month at border",
+                         #breaks=0:plot_max,
+                         minor_breaks = NULL, 
+                         limits = c(0,plot_max)#,
+                         #limits=c(0,20),
+                         #position="right"
+      )+
+      scale_fill_manual(values = color_palette)+
+      theme(legend.position = "none",legend.box="vertical",legend.margin=margin(),text=element_text(face = "bold"),
+            axis.text = element_text(size=16)
+      )+
+      geom_label_repel(aes(y=LabelPosition),color="white",fontface="bold")+
+      coord_flip()
+    
+    
+  })
 
   
   output$total_risk_graph <- renderPlot({
     #foreign_risk <- get_foreign_risk()
     status_quo_risk <- get_status_quo_risk()
+    status_quo_risk <- status_quo_risk %>% select(-ExpectedCasesAtBorder) #we won't be using this in the total risk graph.
     intervention_risk <- get_intervention_risk()
     
     #OBSOLETE CODE
@@ -682,9 +758,6 @@ Refer to the 'Simulation settings' tab for more options.
         ceiling(location_labels_in_use/8))[1:location_labels_in_use],
       '#222222' #NZ residents only
       )
-    
-  
-    
     
     plot_max <- sum(combined_risk_graph$ExpectedCases)
     ggplot(combined_risk_graph,aes(x=Condition,y=ExpectedCases,fill=LocationLabel,label=LocationLabel
@@ -1040,6 +1113,7 @@ ui <- navbarPage(
         mainPanel(
           titlePanel("Total risk per month"),
           uiOutput("intsim_totalrisk"),
+          plotOutput("cases_at_border_graph"),
           plotOutput("total_risk_graph"),
           titlePanel("Risk from travelers from Level 1 countries (in our bubble)"),
           DT::dataTableOutput("dt_countries_bubble"),

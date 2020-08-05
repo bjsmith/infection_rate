@@ -127,8 +127,12 @@ preprocess_owid_test_data <- function(owid_fullset){
 get_data_closure <- function() {
   #initialize
   data_list <- NULL
+  
   f <- function() {
-    
+    warning("loading data from cache for testing purposes")
+    #save(data_list,file="../../data/data-snapshot.RData")
+    load(file = "../../data/data-snapshot.RData")
+    return(data_list)
     if(is.null(data_list)){
       print("Fetching JH data...")
       dl_local<-list()
@@ -201,8 +205,7 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   # jh_deaths<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
   # jh_deaths$EventType<-"Deaths"
   # jh_data<-rbind(jh_cases_confirmed,jh_cases_recovered,jh_deaths)
-  #save(data_list,file="../../data/data-snapshot.RData")
-  #load(file = "../../data/data-snapshot.RData")
+  
   data_list <- get_data()
   jh_data <- data_list[["jh_data"]]
   
@@ -332,6 +335,8 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
     full_join(nz_res_arrivals_lockdown,by=c("Country"="NZRArrivalsMainDestination")) %>%
     left_join(country_mapping_stats_nz %>% select(Stats_NZ_Arrivals_Name,`ISO3166-1-Alpha-3`),by=c("Country" = "Stats_NZ_Arrivals_Name"))
 
+  #exclude new zealand; it doesn't make sense to include it because returning NZers are allocated to other categories
+  arrivals_data <- arrivals_data %>% filter(`ISO3166-1-Alpha-3`!="NZL")
   ##### testing data
   owid_7_day_average_testing_observable <- preprocess_owid_test_data(data_list[["owid_fullset"]])
   
