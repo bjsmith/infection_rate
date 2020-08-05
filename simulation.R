@@ -99,20 +99,21 @@ get_analysis_covid_data <- function(
   
   world_with_covid_data <- (
     world_with_covid_data %>% mutate(
-      NZResidentMonthlyArrivalsWeighted = (
-        NZResMonthlyArrivalsLatestScaled1 + pmax(0,NZResMonthlyArrivalsScaled1-NZResMonthlyArrivalsLatestScaled1)*general_travel_rate
+      MonthlyArrivalsWeighted = (
+        MonthlyArrivalsLockdownScaled1 + pmax(0,MonthlyArrivalsScaled1-MonthlyArrivalsLockdownScaled1)*general_travel_rate
       )
     )%>% mutate(
-      TotalExpectedMonthlyArrivals = (
-        NZResidentMonthlyArrivalsWeighted + LocationResidentMonthlyArrivalsWeighted
+      StatusQuoMonthlyArrivals = (
+        MonthlyArrivalsLockdownScaled1
       )
       )%>% 
         mutate(
         Total2019MonthlyArrivals = (
-          NZResMonthlyArrivalsScaled1+LocationResidentMonthlyArrivalsScaled1
+          MonthlyArrivalsScaled1
         )
       )
   )
+  
   
   #assume that each new person has an independent chance of carrying COVID-19
   #this is conservative when we are trying to work out the probability of at least one case
@@ -122,16 +123,18 @@ get_analysis_covid_data <- function(
   #1-((5000-500)/5000)^20
   #1-(4500/5000)^20
   #0.8784233
-  world_with_covid_data <- 
-    world_with_covid_data %>% mutate(
-      ProbabilityOfMoreThanZeroCases=1-((Population-InferredActiveCases)/Population)^TotalExpectedMonthlyArrivals)
   
   world_with_covid_data <- 
     world_with_covid_data %>% mutate(
-      ExpectedNumberOfCasesAll=InferredActiveCasePopRate*TotalExpectedMonthlyArrivals,
-      ExpectedNumberOfCasesUnderNZResidentQuarantine=InferredActiveCasePopRate*NZResMonthlyArrivalsLatestScaled1,
-      ExpectedNumberOfCasesNZResident=InferredActiveCasePopRate*NZResidentMonthlyArrivalsWeighted,
-      ExpectedNumberOfCasesForeign=InferredActiveCasePopRate*LocationResidentMonthlyArrivalsWeighted
+      ProbabilityOfMoreThanZeroCases=1-((Population-InferredActiveCases)/Population)^MonthlyArrivalsWeighted)
+  
+  
+  world_with_covid_data <- 
+    world_with_covid_data %>% mutate(
+      ExpectedNumberOfCasesAll=InferredActiveCasePopRate*MonthlyArrivalsWeighted,
+      ExpectedNumberOfCasesUnderLockdown=InferredActiveCasePopRate*StatusQuoMonthlyArrivals#,
+      #ExpectedNumberOfCasesNZResident=InferredActiveCasePopRate*NZResidentMonthlyArrivalsWeighted,
+      #ExpectedNumberOfCasesForeign=InferredActiveCasePopRate*LocationResidentMonthlyArrivalsWeighted
       )
   
   
@@ -147,16 +150,6 @@ get_analysis_covid_data <- function(
   }else{
     prob_infected_arr_reaches_community<-quarantine_odds_override
   }
-  
-  
-  world_with_covid_data <- 
-    world_with_covid_data %>% mutate(
-      ProbabilityOfMoreThanZeroCommunityCases=
-        1-((Population-InferredActiveCases*prob_infected_arr_reaches_community)/Population)^TotalExpectedMonthlyArrivals)
-  
-  world_with_covid_data <- 
-    world_with_covid_data %>% mutate(
-      ExpectedNumberOfCasesInCommunity=ExpectedNumberOfCasesAll*prob_infected_arr_reaches_community)
   
   
   ######### SCREENING TREATMENT
@@ -192,19 +185,15 @@ get_analysis_covid_data <- function(
     world_with_covid_data %>% mutate(
       ExpectedNumberOfCasesEscapingTwoScreens=ExpectedNumberOfCasesAll*(1-screening_sensitivity)^2)
       
-    
   
   world_with_covid_data <- 
     world_with_covid_data %>% mutate(
       ProbabilityOfMoreThanZeroCommunityCases=
-        1-((Population-InferredActiveCases*prob_infected_arr_reaches_community)/Population)^TotalExpectedMonthlyArrivals)
+        1-((Population-InferredActiveCases*prob_infected_arr_reaches_community)/Population)^MonthlyArrivalsWeighted)
   
   world_with_covid_data <- 
     world_with_covid_data %>% mutate(
       ExpectedNumberOfCasesInCommunity=ExpectedNumberOfCasesAll*prob_infected_arr_reaches_community)
-  
-  
-  
   
   #get the predicted two-week prevalence
   #this is quite rough - is just hte predicted cases over the next two weeks
@@ -238,31 +227,4 @@ get_analysis_covid_data <- function(
     
   
   return(world_with_covid_data)
-}
-
-#this method will focus on returning resident risk for country
-#using the infection rates from that country, same as we do for non-NZ residents
-#we may be able to use the _actual_ rates of COVID-19 among returnees to re-weight these up or down
-#but for now we'll just use the John-Hopkins-reported results.
-get_nz_returning_resident_risk_for_country <- function(
-  observed_monthly_arrivals_under_quarantine,
-  observed_monthly_arrivals_pre_covid,
-  origin_infection_rate,
-  general_travel_rate
-){
-  stop("obsolete. this logic is incorporated into get_analysis_covid_data")
-  #the General Travel Rate is the figure we use to measure the proportion of foreign residents who will come to NZ
-  #Pre-COVID, the General Travel Rate is 100%.
-  #under NZ citizens and residents only policy, it's 0%.
-  #we expect under restrictions, e.g., mandatory quarantine, only a proportion of visitors are motivated to come to NZ
-  
-  #make the NZ returning resident count equal to nz monthly arrivals under quarantine,
-  #plus DIFFERENCE between the current and pre-covid travel volume, multiplied by the GTR
-  returning_residents_per_month <- (
-    observed_monthly_arrivals_under_quarantine+
-      max(observed_monthly_arrivals_pre_covid-observed_monthly_arrivals_under_quarantine,0)*general_travel_rate
-  )
-  risk <- returning_residents_per_month * origin_infection_rate
-  
-  return(risk)
 }

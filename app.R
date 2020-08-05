@@ -87,10 +87,10 @@ get_intsim_dt<-function(
   if(selected_probs=="quarantine"){
     df_to_return<- filtered_df %>%
     select(Location,ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
-           ExpectedNumberOfCasesUnderNZResidentQuarantine,ExpectedNumberOfCasesAll,ExpectedNumberOfCasesInCommunity
+           ExpectedNumberOfCasesUnderLockdown,ExpectedNumberOfCasesAll,ExpectedNumberOfCasesInCommunity
     )
     percentage_cols <-c('ProbabilityOfMoreThanZeroCases','ProbabilityOfMoreThanZeroCommunityCases')
-    rounding_cols <-c('ExpectedNumberOfCasesUnderNZResidentQuarantine','ExpectedNumberOfCasesAll','ExpectedNumberOfCasesInCommunity')
+    rounding_cols <-c('ExpectedNumberOfCasesUnderLockdown','ExpectedNumberOfCasesAll','ExpectedNumberOfCasesInCommunity')
     dt_colnames<-c("Territory","Probability of 1 or more cases\n arriving in quarantine",
                    "Probability of 1 or more cases\n reaching community",
                    "Expected cases in quarantine at status quo","Expected cases in quarantine", "Expected cases reaching community")
@@ -237,7 +237,7 @@ server <- function(input, output, session) {
     wwcd1 <- wwcd %>% 
       #filter(LifeExp>=life_exp_thresh) %>%
       filter(Location!="New Zealand") %>% #doesn't make sense to display New Zealand here.
-      filter(TotalExpectedMonthlyArrivals>=input$countrylist_travelerfilter) %>%
+      filter(Total2019MonthlyArrivals>=input$countrylist_travelerfilter) %>%
       data.frame %>%
       arrange(InfActiveCasesPerMillion)
 
@@ -252,7 +252,7 @@ server <- function(input, output, session) {
           PrevalenceRating,
           OutlookRating,
           Total2019MonthlyArrivals,
-          TotalExpectedMonthlyArrivals,#ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
+          MonthlyArrivalsWeighted,#ProbabilityOfMoreThanZeroCases,ProbabilityOfMoreThanZeroCommunityCases,
           ExpectedNumberOfCasesAll,
           ExpectedNumberOfCasesEscapingOneScreen,
           ExpectedNumberOfCasesInCommunity
@@ -288,7 +288,7 @@ server <- function(input, output, session) {
           OutlookRating,
           DataReliablityRating,#add
           Total2019MonthlyArrivals,
-          TotalExpectedMonthlyArrivals,
+          MonthlyArrivalsWeighted,
           ExpectedNumberOfCasesAll,
           ExpectedNumberOfCasesEscapingOneScreen,
           ExpectedNumberOfCasesInCommunity
@@ -603,7 +603,7 @@ Refer to the 'Simulation settings' tab for more options.
     #nz_resident_risk_df <- get_nz_resident_risk()
     
     #nz_resident_risk_label <- nz_resident_risk_df$Location[[1]]
-    nz_res_only_label <- "NZ Resident Returnees Only Locations"
+    nz_res_only_label <- "Lockdown Returnee Restriction Locations"
     bubble_other_label <- "Other Bubble Locations"
     quarantine_other_label <- "Other Quarantine Locations"
     l2_screener_other_label <- "Other Screened Locations"
