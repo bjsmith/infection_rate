@@ -100,7 +100,7 @@ get_analysis_covid_data <- function(
   world_with_covid_data <- (
     world_with_covid_data %>% mutate(
       NZResidentMonthlyArrivalsWeighted = (
-        NZResMonthlyArrivalsLatest + pmax(0,NZResMonthlyArrivalsScaled1-NZResMonthlyArrivalsLatest)*general_travel_rate
+        NZResMonthlyArrivalsLatestScaled1 + pmax(0,NZResMonthlyArrivalsScaled1-NZResMonthlyArrivalsLatestScaled1)*general_travel_rate
       )
     )%>% mutate(
       TotalExpectedMonthlyArrivals = (
@@ -129,7 +129,7 @@ get_analysis_covid_data <- function(
   world_with_covid_data <- 
     world_with_covid_data %>% mutate(
       ExpectedNumberOfCasesAll=InferredActiveCasePopRate*TotalExpectedMonthlyArrivals,
-      ExpectedNumberOfCasesUnderNZResidentQuarantine=InferredActiveCasePopRate*NZResMonthlyArrivalsLatest,
+      ExpectedNumberOfCasesUnderNZResidentQuarantine=InferredActiveCasePopRate*NZResMonthlyArrivalsLatestScaled1,
       ExpectedNumberOfCasesNZResident=InferredActiveCasePopRate*NZResidentMonthlyArrivalsWeighted,
       ExpectedNumberOfCasesForeign=InferredActiveCasePopRate*LocationResidentMonthlyArrivalsWeighted
       )

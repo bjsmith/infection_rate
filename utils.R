@@ -201,8 +201,9 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   # jh_deaths<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
   # jh_deaths$EventType<-"Deaths"
   # jh_data<-rbind(jh_cases_confirmed,jh_cases_recovered,jh_deaths)
-  
-  data_list <- get_data()
+  #save(data_list,file="../../data/data-snapshot.RData")
+  load(file = "../../data/data-snapshot.RData")
+  #data_list <- get_data()
   jh_data <- data_list[["jh_data"]]
   
   if (separate_aussie_states_and_hk){
@@ -295,7 +296,7 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   arrivals_this_month <- arrivals %>% 
     filter(`Total passenger movements by EVERY country of residence (Monthly)`==month_code) %>% 
     .[,2:ncol(.)] %>%
-    tidyr::gather("Country","LocationResidentMonthlyArrivals")
+    tidyr::gather("Country","LocationResidentMonthlyArrivalsByCountry")
   country_mapping_stats_nz <- read_csv("data/mapping/country_mapping_stats_nz_to_iso.csv")
   statsnz_arr <- left_join(arrivals_this_month,country_mapping_stats_nz,by=c("Country" = "Stats_NZ_Arrivals_Name"))
   
@@ -306,14 +307,14 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   nz_res_arrivals_this_month <- nz_resident_arrivals %>% 
     filter(MonthLabel==month_code) %>% 
     .[,2:ncol(.)] %>%
-    tidyr::gather("NZRArrivalsMainDestination","NZResMonthlyArrivals")
+    tidyr::gather("NZRArrivalsMainDestination","NZResMonthlyArrivalsByCountry")
   statsnz_nzres_arr <- left_join(nz_res_arrivals_this_month,country_mapping_stats_nz,by=c("NZRArrivalsMainDestination" = "Stats_NZ_Arrivals_Name"))
   
   #### NZ resident monthly arrivals from now 
   nz_res_arrivals_latest <- nz_resident_arrivals %>% 
     filter(MonthLabel==MonthLabel[nrow(.)]) %>%  #get the latest month
     .[,2:ncol(.)] %>%
-    tidyr::gather("NZRArrivalsMainDestination","NZResMonthlyArrivalsLatest")
+    tidyr::gather("NZRArrivalsMainDestination","NZResMonthlyArrivalsLatestByCountry")
   statsnz_nzres_latest_arr <- left_join(nz_res_arrivals_latest,country_mapping_stats_nz,by=c("NZRArrivalsMainDestination" = "Stats_NZ_Arrivals_Name"))
   
   ##### testing data
@@ -494,31 +495,31 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
     left_join(
       statsnz_arr %>% 
         filter(`ISO3166-1-Alpha-3`!="") %>% 
-        select(LocationResidentMonthlyArrivals,`ISO3166-1-Alpha-3`),
+        select(LocationResidentMonthlyArrivalsByCountry,`ISO3166-1-Alpha-3`),
       by=c("Alpha3CountryOnly" =  "ISO3166-1-Alpha-3")) %>%
     left_join(
       statsnz_nzres_arr %>% 
         filter(`ISO3166-1-Alpha-3`!="") %>% 
-        select(NZResMonthlyArrivals,`ISO3166-1-Alpha-3`),
+        select(NZResMonthlyArrivalsByCountry,`ISO3166-1-Alpha-3`),
       by=c("Alpha3CountryOnly" =  "ISO3166-1-Alpha-3")) %>%
     left_join(
       statsnz_nzres_latest_arr %>% 
         filter(`ISO3166-1-Alpha-3`!="") %>% 
-        select(NZResMonthlyArrivalsLatest,`ISO3166-1-Alpha-3`),
+        select(NZResMonthlyArrivalsLatestByCountry,`ISO3166-1-Alpha-3`),
       by=c("Alpha3CountryOnly" =  "ISO3166-1-Alpha-3"))
   
 
   
-  world_with_covid_data$LocationResidentMonthlyArrivals<-as.numeric(world_with_covid_data$LocationResidentMonthlyArrivals)
+  world_with_covid_data$LocationResidentMonthlyArrivalsByCountry<-as.numeric(world_with_covid_data$LocationResidentMonthlyArrivalsByCountry)
   
   world_with_covid_data <- 
     world_with_covid_data %>% 
     group_by(Alpha3CountryOnly) %>% 
     #if monthly arrivals from a country e.g. Australia need to be spread over mmultiple states, do it proportional to population, 
     #if we want to be conservative, we can multiply it by the square root of the size of the population.
-    mutate(LocationResidentMonthlyArrivalsScaled1 = Population/sum(Population)*LocationResidentMonthlyArrivals,
-           NZResMonthlyArrivalsScaled1 = Population/sum(Population)*NZResMonthlyArrivals,
-           NZResMonthlyArrivalsLatestScaled1 = Population/sum(Population)*NZResMonthlyArrivalsLatest
+    mutate(LocationResidentMonthlyArrivalsScaled1 = Population/sum(Population)*LocationResidentMonthlyArrivalsByCountry,
+           NZResMonthlyArrivalsScaled1 = Population/sum(Population)*NZResMonthlyArrivalsByCountry,
+           NZResMonthlyArrivalsLatestScaled1 = Population/sum(Population)*NZResMonthlyArrivalsLatestByCountry
            ) %>% 
     ungroup
   
