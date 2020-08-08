@@ -7,9 +7,13 @@ library(ggrepel)
 
 life_exp_thresh <- 70
 default_assumed_ifr_percent<-0.6
-default_quarantine_failure_odds<-12
+default_quarantine_failure_odds<-21 # 3 in 65
 default_assumed_sensitivity <- 0.3
 default_general_travel_rate <- 0.2
+default_current_lockdown_passenger_volume <- 9037
+#https://www.customs.govt.nz/covid-19/more-information/passenger-statistics/
+default_traveler_relative_prevalence <- 1.25
+  #derived to bring our predicted "status quo" predicted cases/month numbers to match what we are actually observing at the border.
 
 #Ben J:
 #Assume 0.5% transmission risk without mask (it’s a conservative worst case rate)
@@ -18,6 +22,7 @@ default_general_travel_rate <- 0.2
 default_aircraft_infection_rate <- 0.005 #without mask
 default_aircraft_mask_effectiveness_percent <- 90
 
+#run_date<-as.Date("2020-07-15")#Sys.Date()
 run_date<-Sys.Date()
 month_name <- format(run_date,"%B")
 
@@ -25,7 +30,10 @@ geo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date)
 geo_world_with_covid_data <- get_analysis_covid_data(geo_world_basic_data,
                                                      screening_sensitivity = default_assumed_sensitivity,
                                                      assumed_ifr = default_assumed_ifr_percent/100,
-                                                     quarantine_odds_override=(1/default_quarantine_failure_odds))
+                                                     quarantine_odds_override=(1/default_quarantine_failure_odds),
+                                                     traveler_relative_prevalence=default_traveler_relative_prevalence,
+                                                     current_lockdown_passenger_volume = default_current_lockdown_passenger_volume
+                                                     )
 
 nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
 # world_with_covid_data <- get_analysis_covid_data(nogeo_world_basic_data,assumed_ifr = default_assumed_ifr_percent/100,
@@ -153,7 +161,9 @@ server <- function(input, output, session) {
       screening_sensitivity = input$intsim_sensitivity_level2_control,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
       general_travel_rate = default_general_travel_rate,
-      assumed_ifr = input$simsettings_ifr/100)
+      assumed_ifr = input$simsettings_ifr/100,
+      traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
+      current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
   })
   
   generate_mapped_world_with_covid_data <- reactive({
@@ -161,7 +171,9 @@ server <- function(input, output, session) {
       geo_world_basic_data,
       screening_sensitivity = input$intsim_sensitivity_level2_control,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
-      assumed_ifr = input$simsettings_ifr/100)
+      assumed_ifr = input$simsettings_ifr/100,
+      traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
+      current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
   })
   
   get_filtered_mapped_world_with_covid_data <- reactive({
@@ -463,7 +475,9 @@ Refer to the 'Simulation settings' tab for more options.
       screening_sensitivity = input$intsim_sensitivity_level2_control,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
       general_travel_rate=input$intsim_percent_tvolume/100,
-      assumed_ifr = input$simsettings_ifr/100)
+      assumed_ifr = input$simsettings_ifr/100,
+      traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
+      current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
     return(world_w_covid_data)
   })
   
@@ -473,7 +487,9 @@ Refer to the 'Simulation settings' tab for more options.
       screening_sensitivity = input$intsim_sensitivity_level2_control,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
       general_travel_rate=input$intsim_percent_tvolume_level2_control/100,
-      assumed_ifr = input$simsettings_ifr/100)
+      assumed_ifr = input$simsettings_ifr/100,
+      traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
+      current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
     return(world_w_covid_data)
   })
   
@@ -483,7 +499,9 @@ Refer to the 'Simulation settings' tab for more options.
       screening_sensitivity = input$intsim_sensitivity_level2_control,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
       general_travel_rate=input$intsim_percent_tvolume_with_quarantine/100,
-      assumed_ifr = input$simsettings_ifr/100)
+      assumed_ifr = input$simsettings_ifr/100,
+      traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
+      current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
     return(world_w_covid_data)
   })
   
@@ -494,7 +512,9 @@ Refer to the 'Simulation settings' tab for more options.
       screening_sensitivity = input$intsim_sensitivity_level2_control,
       quarantine_odds_override=(1/input$intsim_quarantine_failure_odds),
       general_travel_rate=0,
-      assumed_ifr = input$simsettings_ifr/100)
+      assumed_ifr = input$simsettings_ifr/100,
+      traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
+      current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
     return(world_w_covid_data)
   })
   
@@ -589,6 +609,26 @@ Refer to the 'Simulation settings' tab for more options.
     )
   })
   
+  get_daily_nz_data <- reactive({
+    daily_nz_data <- get_daily_data(TRUE) %>% filter(Location=="New Zealand")
+    return(daily_nz_data)
+  })
+  
+  output$new_zealand_status_quo <- renderPlot({
+    #1. do a graph of "monthly total" - do a running total over last 30 days
+    daily_nz_data<-get_daily_nz_data()
+    daily_nz_data <-  daily_nz_data %>% 
+      mutate(NewCasesOverLastMonth = rollapply(NewCasesImportAdjusted,30,sum,align='right',fill=NA))
+    graph_data <- daily_nz_data %>% filter(Date>"2020-06-15") %>% 
+      select(Date,NewCasesOverLastMonth,ActiveCases) %>%
+      tidyr::gather(key="Metric",value="Value",2:3)
+    return(
+      ggplot(graph_data %>% filter(Date>"2020-06-15"),aes(x=Date,y=Value))+
+        geom_line()+
+        facet_wrap(~Metric, scales = "free_y",nrow = 2)+
+        labs(title="New Zealand recent activity",subtitle = "Active Cases; New cases over the last 30 days (rolling total)"))
+  })
+  
   output$cases_at_border_graph <- renderPlot({
     status_quo_risk <- get_status_quo_risk()
     status_quo_risk$Condition<-"Status Quo"
@@ -648,7 +688,6 @@ Refer to the 'Simulation settings' tab for more options.
       scale_x_discrete(name="")+
       scale_y_continuous(name="Expected cases per month at border",
                          #breaks=0:plot_max,
-                         minor_breaks = NULL, 
                          limits = c(0,plot_max)#,
                          #limits=c(0,20),
                          #position="right"
@@ -779,6 +818,31 @@ Refer to the 'Simulation settings' tab for more options.
       #guides(fill=guide_legend(nrow=2,byrow=TRUE))+
       geom_label_repel(aes(y=LabelPosition),color="white",fontface="bold")+
       coord_flip()
+  })
+  
+  
+  output$validation_description <- renderText({
+    
+    "
+    Here, we compare values to try to check and see whether values from different sources align.
+    
+    The first thing to check: does the predicted number of cases under \"status quo\" line up with the observed number of cases coming in to the country?
+    
+    "
+  })
+  
+  output$validation_description_2 <- renderText({
+    daily_nz_data <- get_daily_nz_data()
+    total_new_cases <- sum(daily_nz_data %>% filter(Date>"2020-06-01") %>% .$NewCases)
+    paste0("
+    What does that imply for our predicted cases getting into the community?
+    Working from the New Zealand rolling new cases graph, we see about 30-40 new cases per month over June to July.
+    
+    The total number of new cases since June 1 in New Zealand is ",as.character(total_new_cases),".
+    
+    With 3 border breaches that should work out to an error rate of 3 in ",as.character(total_new_cases),".
+    
+    ")
   })
   
   
@@ -1113,7 +1177,7 @@ ui <- navbarPage(
         mainPanel(
           titlePanel("Total risk per month"),
           uiOutput("intsim_totalrisk"),
-          plotOutput("cases_at_border_graph"),
+          #plotOutput("cases_at_border_graph"),
           plotOutput("total_risk_graph"),
           titlePanel("Risk from travelers from Level 1 countries (in our bubble)"),
           DT::dataTableOutput("dt_countries_bubble"),
@@ -1209,6 +1273,20 @@ ui <- navbarPage(
      )
    )),
   tabPanel(
+    "Validation",
+    fluidPage(
+      titlePanel("Validation"),
+      mainPanel(
+        textOutput("validation_description"),
+        plotOutput("new_zealand_status_quo"),
+        plotOutput("cases_at_border_graph"),
+        textOutput("validation_description_2"),
+        width = 12
+          )
+        )
+
+  ),
+  tabPanel(
     "Simulation settings",
     fluidPage(
       titlePanel("Simulation Settings"),
@@ -1229,11 +1307,23 @@ ui <- navbarPage(
                      min=0,
                      max=10,step=0.001,
                      value = default_aircraft_infection_rate),
-        numericInput("simsettings_ifr",
+        numericInput("simsettings_maskuse",
                      "Reduction in aircraft infections from mask use (%):",
                      min=0,
                      max=100,step=1,
-                     value = default_aircraft_mask_effectiveness_percent)
+                     value = default_aircraft_mask_effectiveness_percent),
+        numericInput("simsettings_traveler_relative_prevalence",
+                     "Prevalence of COVID-19 in travelers relative to the population:",
+                     min=0,
+                     max=10,step=0.1,
+                     value = default_traveler_relative_prevalence),
+        
+        numericInput("simsettings_current_lockdown_passenger_volume",
+                     "Current monthly incoming passenger volume:",
+                     min=0,
+                     max=10^5,step=1000,
+                     value = default_current_lockdown_passenger_volume)
+        
         
       )
     )

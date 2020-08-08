@@ -9,7 +9,7 @@ This notebook is for manually generating a risk matrix report.
 
 
 library(DT)
-debugSource("utils.R")
+source("utils.R")
 source("simulation.R")
 source("country_classification_rules.R")
 library(ggrepel)
@@ -124,6 +124,8 @@ covid_data %>%
 # 
 # drive_upload(covid_data)
 ```
+
+
 ```{r}
 #library(ggplot2)
 ggplot(covid_data_to_save %>% filter(Population>10^6 & `Life Expectancy`>=70),aes(x=`Estimated Prevalence (per million)`,y=slope_7days,label=Location))+

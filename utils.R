@@ -129,10 +129,10 @@ get_data_closure <- function() {
   data_list <- NULL
   
   f <- function() {
-    warning("loading data from cache for testing purposes")
+    #warning("loading data from cache for testing purposes")
     #save(data_list,file="../../data/data-snapshot.RData")
-    load(file = "../../data/data-snapshot.RData")
-    return(data_list)
+    #load(file = "../../data/data-snapshot.RData")
+    #return(data_list)
     if(is.null(data_list)){
       print("Fetching JH data...")
       dl_local<-list()
@@ -178,12 +178,9 @@ get_data_closure <- function() {
 get_data <- get_data_closure()
 
 
-
-#this function contains some calculation of derived statistics
-#this is deprecated and I am trying to separate out data import from data analysis
-#this function should exclude all analysis including calculation of rates of disease
-#focus should be on importing and cleaning data.
-get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),separate_aussie_states_and_hk=FALSE,include_geo_data=TRUE){
+get_daily_data <- function(separate_aussie_states_and_hk){
+  data_list <- get_data()
+  jh_data <- data_list[["jh_data"]]
   #separate_aussie_states_and_hk<-TRUE
   #include_geo_data=FALSE
   
@@ -194,10 +191,8 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   ### this has a TWO LETTER country code.
   ### will need to carry a "LocationCode" and "CountryCode" separately to determine appropriate behaviour.
   
-  if(separate_aussie_states_and_hk & include_geo_data){
-    stop("Cannot include geo data and separate australian states; don't have polygons for Australian states.")
-  }
 
+  
   # jh_cases_recovered<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")
   # jh_cases_recovered$EventType<-"Recoveries"
   # jh_cases_confirmed <- readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
@@ -206,19 +201,18 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   # jh_deaths$EventType<-"Deaths"
   # jh_data<-rbind(jh_cases_confirmed,jh_cases_recovered,jh_deaths)
   
-  data_list <- get_data()
-  jh_data <- data_list[["jh_data"]]
+  
   
   if (separate_aussie_states_and_hk){
     jh_data %<>% 
       mutate(Location = 
-      case_when(
-        `Country/Region`=="Australia" ~ paste0(`Province/State`,", ",`Country/Region`),
-        `Country/Region`=="China" & `Province/State`=="Hong Kong" ~ "Hong Kong, China",
-        `Country/Region`=="China" & `Province/State`=="Macao" ~ "Macao, China",
-        `Country/Region`=="China" & `Province/State`!="Hong Kong" ~ "China (mainland)",
-        TRUE ~ `Country/Region`
-        )
+               case_when(
+                 `Country/Region`=="Australia" ~ paste0(`Province/State`,", ",`Country/Region`),
+                 `Country/Region`=="China" & `Province/State`=="Hong Kong" ~ "Hong Kong, China",
+                 `Country/Region`=="China" & `Province/State`=="Macao" ~ "Macao, China",
+                 `Country/Region`=="China" & `Province/State`!="Hong Kong" ~ "China (mainland)",
+                 TRUE ~ `Country/Region`
+               )
       )
   }else{
     jh_data %<>% 
@@ -229,7 +223,7 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
     dplyr::select(-Lat,-Long,-`Province/State`,-`Country/Region`) %>% 
     group_by(Location,EventType) %>% summarise_all(sum,na.rm=TRUE)
   
-
+  
   jh_long<-jh_bycountry %>% tidyr::gather("Date","Count",3:ncol(.))
   jh_long$Date<-as.Date(jh_long$Date,format="%m/%d/%y")
   
@@ -239,122 +233,7 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   
   jh_dxc <- left_join(jh_dxc,jh_country_mapping,by=c("Location" = "John_Hopkins_Name"))
   
-  #world pop
-  world_pop <- data_list[["world_pop"]]
-  
-  
-  #now get life expectancy
-  life_exp<-readr::read_csv("data/mapping/lifeexpectancy-verbose.csv") %>% 
-    filter(GhoDisplay=="Life expectancy at birth (years)" & SexCode=="BTSX") %>%
-    select(CountryCode,Numeric,YearCode) %>% group_by(CountryCode) %>% filter(YearCode==max(YearCode)) %>%ungroup %>%
-    rename(LocationCode=CountryCode)
-    
-  
-  colnames(life_exp)[colnames(life_exp)=="Numeric"]<-"LifeExp"
-  
-  world_data <-left_join(life_exp,world_pop,by=c("LocationCode"="Country Code"))
-  colnames(world_data)[5]<-"Population"
-  
-  world_data<-rbind(world_data,
-                  tibble::tibble(
-                    LocationCode="TWN","LifeExp"=80.4,"YearCode"=2017,"Country Name"="Taiwan","Population"=23.78*10^6))
-  
-  #add the Australian states
-  if(separate_aussie_states_and_hk){
-    australian_states_data <- readr::read_csv("data/mapping/australian-state-population.csv") %>%
-      select(LocationCode=ISO, Population=Value,`Country Name`=Region) %>% 
-      mutate(LifeExp=as.numeric(world_data %>% filter(LocationCode=="AUS") %>% select(LifeExp) %>% .[[1]])) %>%
-      mutate(YearCode=2013) %>%
-      mutate(`Country Name`=paste0(`Country Name`,", Australia"))
-    
-    #need to manually add Hong Kong and Macao to this world data
-    hk_macao_data <- 
-      data.table(
-        "LocationCode"=c("HKG","MAC"),
-        "Population"=c(7.451*10^6,631636),
-        `Country Name`=c("Hong Kong, China","Macao, China"),
-        "LifeExp"=c(84.7,84.0),
-        "YearCode"=c(2017,2017))
-      readr::read_csv("data/mapping/australian-state-population.csv") %>%
-      select(LocationCode=ISO, Population=Value,`Country Name`=Region) %>% 
-      mutate(LifeExp=as.numeric(world_data %>% filter(LocationCode=="AUS") %>% select(LifeExp) %>% .[[1]])) %>%
-      mutate(YearCode=2013) %>%
-      mutate(`Country Name`=paste0(`Country Name`,", Australia"))
-    
-    world_data <- rbind(world_data,australian_states_data,hk_macao_data)
-    
-    
-  }
-  
-  #mapping to get iso2 to iso3
-  country_codes<-read.csv("data/mapping/country-codes.csv")
-  country_iso_2_to_3_map<-country_codes[,c("ISO3166.1.Alpha.2","ISO3166.1.Alpha.3","official_name_en")]
-  
-  
-  #### arrivals data (1,2,3,4)
-  country_mapping_stats_nz <- read_csv("data/mapping/country_mapping_stats_nz_to_iso.csv")
-  
-  #1.
-  #load New Zealand arrivals data.
-  arrivals<-read_csv("data/stats-nz-arrivals-by-country.csv")
-  colnames(arrivals)[1] <- "MonthLabel"
-  #pick out the month we are interested in
-  month_code <- paste0("2019M",str_pad(as.character(lubridate::month(run_date)),2,side="left",pad="0"))
-  
-  
-  foreign_arrivals_this_month <- arrivals %>% 
-    filter(MonthLabel==month_code) %>% 
-    .[,2:ncol(.)] %>%
-    tidyr::gather("Country","LocationResidentMonthlyArrivalsRaw") %>%
-    mutate(LocationResidentMonthlyArrivalsRaw = as.numeric(LocationResidentMonthlyArrivalsRaw))
-  
-  #2.
-  nz_resident_arrivals <- readr::read_csv("data/stats-nz-infoshare-nz-NZ-resident traveller arrivals by EVERY country of main destination and purpose (Monthly)_formatted.csv")
-  colnames(nz_resident_arrivals)[1] <- "MonthLabel"
-  nz_res_arrivals_this_month <- nz_resident_arrivals %>% 
-    filter(MonthLabel==month_code) %>% 
-    .[,2:ncol(.)] %>%
-    tidyr::gather("NZRArrivalsMainDestination","NZResMonthlyArrivalsRaw")
-  
-  #3.
-  foreign_arrivals_lockdown <- arrivals %>% 
-    filter(MonthLabel==MonthLabel[nrow(.)]) %>% #latest month
-    .[,2:ncol(.)] %>%
-    tidyr::gather("Country","LocationResidentMonthlyArrivalsLockdownRaw") %>%
-    mutate(LocationResidentMonthlyArrivalsLockdownRaw = as.numeric(LocationResidentMonthlyArrivalsLockdownRaw))
-    
-  #4.
-  nz_res_arrivals_lockdown <- nz_resident_arrivals %>% 
-    filter(MonthLabel==MonthLabel[nrow(.)]) %>%  #get the latest month
-    .[,2:ncol(.)] %>%
-    tidyr::gather("NZRArrivalsMainDestination","NZResMonthlyArrivalsLockdownRaw")
-  
-  arrivals_data <- foreign_arrivals_this_month %>%
-    full_join(nz_res_arrivals_this_month,by=c("Country"="NZRArrivalsMainDestination")) %>%
-    full_join(foreign_arrivals_lockdown,by=c("Country"="Country")) %>%
-    full_join(nz_res_arrivals_lockdown,by=c("Country"="NZRArrivalsMainDestination")) %>%
-    left_join(country_mapping_stats_nz %>% select(Stats_NZ_Arrivals_Name,`ISO3166-1-Alpha-3`),by=c("Country" = "Stats_NZ_Arrivals_Name"))
 
-  #exclude new zealand; it doesn't make sense to include it because returning NZers are allocated to other categories
-  arrivals_data <- arrivals_data %>% filter(`ISO3166-1-Alpha-3`!="NZL")
-  ##### testing data
-  owid_7_day_average_testing_observable <- preprocess_owid_test_data(data_list[["owid_fullset"]])
-  
-  
-  if(include_geo_data){
-    worldc <- get_world_with_supplements()
-    
-    world_health<-worldc %>% 
-      left_join(country_iso_2_to_3_map,by=c("iso_a2" = "ISO3166.1.Alpha.2"),name="iso_a2") %>%
-      left_join(world_data,by=c("ISO3166.1.Alpha.3"="LocationCode")) %>%
-      rename("LocationCode"="ISO3166.1.Alpha.3")
-  }else{
-    world_health<-world_data
-  }
-  
-  
-  
-  
   jh_dxc <- jh_dxc %>%
     group_by(CountryDivisionCodeMixed) %>%
     arrange(Date) %>% 
@@ -415,13 +294,13 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   #https://www.health.gov.au/news/health-alerts/novel-coronavirus-2019-ncov-health-alert/coronavirus-covid-19-current-situation-and-case-numbers#total-cases-recoveries-deaths-and-new-cases-in-the-last-24-hours
   #moving these back to 19 March when these cases entered Sydney.
   jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-07-03")),"NewCases"]<-(
-      jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-07-03")),"NewCases"] - 189
-    )
+    jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-07-03")),"NewCases"] - 189
+  )
   jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-03-19")),"NewCases"]<-(
     jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-03-19")),"NewCases"] + 189
   )
   
-    
+  
   
   ########### calculate active cases.
   
@@ -430,8 +309,8 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
     group_by(CountryDivisionCodeMixed) %>%
     arrange(Date) %>% mutate(ActiveCases1Raw = CasesConfirmed-Deaths-Recoveries) %>%
     mutate(ActiveCases1 = ifelse(ActiveCases1Raw>=0,ActiveCases1Raw,NA)) %>%  
-      #do not use this if it's returning a negative value.
-      #when countries or states change their reporting, there is sometimes a discontinuity in CasesConfirmed that leads to a negative value.
+    #do not use this if it's returning a negative value.
+    #when countries or states change their reporting, there is sometimes a discontinuity in CasesConfirmed that leads to a negative value.
     mutate(ActiveCases2 = rollapply(NewCasesImportAdjusted,21,sum,align='right',fill=NA)) %>% 
     mutate(ActiveCases = pmin(ActiveCases1,ActiveCases2,na.rm=TRUE)) %>%
     ungroup
@@ -439,9 +318,141 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
   #to put a ceiling on cases, I follow NSW procedure and only include a case as active if it's been reported in four weeks from the beginning of my case period
   
   #https://www.nsw.gov.au/covid-19/find-facts-about-covid-19
+  
+  return(jh_dxc)
+}
+
+#this function contains some calculation of derived statistics
+#this is deprecated and I am trying to separate out data import from data analysis
+#this function should exclude all analysis including calculation of rates of disease
+#focus should be on importing and cleaning data.
+get_geomapped_covid_data <- function(
+  life_exp_thresh=50,run_date=Sys.Date(),separate_aussie_states_and_hk=FALSE,include_geo_data=TRUE){
+  
+  if(separate_aussie_states_and_hk & include_geo_data){
+    stop("Cannot include geo data and separate australian states; don't have polygons for Australian states.")
+  }
+  
+  jh_dxc <- get_daily_data(separate_aussie_states_and_hk)
+  
+  data_list <- get_data()
+  jh_data <- data_list[["jh_data"]]
+  
+  #world pop
+  world_pop <- data_list[["world_pop"]]
+  
+  
+  #now get life expectancy
+  life_exp<-readr::read_csv("data/mapping/lifeexpectancy-verbose.csv") %>% 
+    filter(GhoDisplay=="Life expectancy at birth (years)" & SexCode=="BTSX") %>%
+    select(CountryCode,Numeric,YearCode) %>% group_by(CountryCode) %>% filter(YearCode==max(YearCode)) %>%ungroup %>%
+    rename(LocationCode=CountryCode)
+  
+  
+  colnames(life_exp)[colnames(life_exp)=="Numeric"]<-"LifeExp"
+  
+  world_data <-left_join(life_exp,world_pop,by=c("LocationCode"="Country Code"))
+  colnames(world_data)[5]<-"Population"
+  
+  world_data<-rbind(world_data,
+                    tibble::tibble(
+                      LocationCode="TWN","LifeExp"=80.4,"YearCode"=2017,"Country Name"="Taiwan","Population"=23.78*10^6))
+  
+  #add the Australian states
+  if(separate_aussie_states_and_hk){
+    australian_states_data <- readr::read_csv("data/mapping/australian-state-population.csv") %>%
+      select(LocationCode=ISO, Population=Value,`Country Name`=Region) %>% 
+      mutate(LifeExp=as.numeric(world_data %>% filter(LocationCode=="AUS") %>% select(LifeExp) %>% .[[1]])) %>%
+      mutate(YearCode=2013) %>%
+      mutate(`Country Name`=paste0(`Country Name`,", Australia"))
+    
+    #need to manually add Hong Kong and Macao to this world data
+    hk_macao_data <- 
+      data.table(
+        "LocationCode"=c("HKG","MAC"),
+        "Population"=c(7.451*10^6,631636),
+        `Country Name`=c("Hong Kong, China","Macao, China"),
+        "LifeExp"=c(84.7,84.0),
+        "YearCode"=c(2017,2017))
+    readr::read_csv("data/mapping/australian-state-population.csv") %>%
+      select(LocationCode=ISO, Population=Value,`Country Name`=Region) %>% 
+      mutate(LifeExp=as.numeric(world_data %>% filter(LocationCode=="AUS") %>% select(LifeExp) %>% .[[1]])) %>%
+      mutate(YearCode=2013) %>%
+      mutate(`Country Name`=paste0(`Country Name`,", Australia"))
+    
+    world_data <- rbind(world_data,australian_states_data,hk_macao_data)
+    
+    
+  }
+  
+  #mapping to get iso2 to iso3
+  country_codes<-read.csv("data/mapping/country-codes.csv")
+  country_iso_2_to_3_map<-country_codes[,c("ISO3166.1.Alpha.2","ISO3166.1.Alpha.3","official_name_en")]
+  
+  
+  #### arrivals data (1,2,3,4)
+  country_mapping_stats_nz <- read_csv("data/mapping/country_mapping_stats_nz_to_iso.csv")
+  
+  #1.
+  #load New Zealand arrivals data.
+  arrivals<-read_csv("data/stats-nz-arrivals-by-country.csv")
+  colnames(arrivals)[1] <- "MonthLabel"
+  #pick out the month we are interested in
+  month_code <- paste0("2019M",str_pad(as.character(lubridate::month(run_date)),2,side="left",pad="0"))
+  
+  
+  foreign_arrivals_this_month <- arrivals %>% 
+    filter(MonthLabel==month_code) %>% 
+    .[,2:ncol(.)] %>%
+    tidyr::gather("Country","LocationResidentMonthlyArrivalsRaw") %>%
+    mutate(LocationResidentMonthlyArrivalsRaw = as.numeric(LocationResidentMonthlyArrivalsRaw))
+  
+  #2.
+  nz_resident_arrivals <- readr::read_csv("data/stats-nz-infoshare-nz-NZ-resident traveller arrivals by EVERY country of main destination and purpose (Monthly)_formatted.csv")
+  colnames(nz_resident_arrivals)[1] <- "MonthLabel"
+  nz_res_arrivals_this_month <- nz_resident_arrivals %>% 
+    filter(MonthLabel==month_code) %>% 
+    .[,2:ncol(.)] %>%
+    tidyr::gather("NZRArrivalsMainDestination","NZResMonthlyArrivalsRaw")
+  
+  #3.
+  foreign_arrivals_lockdown <- arrivals %>% 
+    filter(MonthLabel==MonthLabel[nrow(.)]) %>% #latest month
+    .[,2:ncol(.)] %>%
+    tidyr::gather("Country","LocationResidentMonthlyArrivalsLockdownRaw") %>%
+    mutate(LocationResidentMonthlyArrivalsLockdownRaw = as.numeric(LocationResidentMonthlyArrivalsLockdownRaw))
+  
+  #4.
+  nz_res_arrivals_lockdown <- nz_resident_arrivals %>% 
+    filter(MonthLabel==MonthLabel[nrow(.)]) %>%  #get the latest month
+    .[,2:ncol(.)] %>%
+    tidyr::gather("NZRArrivalsMainDestination","NZResMonthlyArrivalsLockdownRaw")
+  
+  arrivals_data <- foreign_arrivals_this_month %>%
+    full_join(nz_res_arrivals_this_month,by=c("Country"="NZRArrivalsMainDestination")) %>%
+    full_join(foreign_arrivals_lockdown,by=c("Country"="Country")) %>%
+    full_join(nz_res_arrivals_lockdown,by=c("Country"="NZRArrivalsMainDestination")) %>%
+    right_join(country_mapping_stats_nz %>% select(Stats_NZ_Arrivals_Name,`ISO3166-1-Alpha-3`),by=c("Country" = "Stats_NZ_Arrivals_Name"))
+  
+  #exclude new zealand; it doesn't make sense to include it because returning NZers are allocated to other categories
+  arrivals_data <- arrivals_data %>% filter(`ISO3166-1-Alpha-3`!="NZL")
+  ##### testing data
+  owid_7_day_average_testing_observable <- preprocess_owid_test_data(data_list[["owid_fullset"]])
+  
+  
+  if(include_geo_data){
+    worldc <- get_world_with_supplements()
+    
+    world_health<-worldc %>% 
+      left_join(country_iso_2_to_3_map,by=c("iso_a2" = "ISO3166.1.Alpha.2"),name="iso_a2") %>%
+      left_join(world_data,by=c("ISO3166.1.Alpha.3"="LocationCode")) %>%
+      rename("LocationCode"="ISO3166.1.Alpha.3")
+  }else{
+    world_health<-world_data
+  }
 
   
-  latest_date <- max(jh_dxc$Date)
+  latest_date <- min(max(jh_dxc$Date),run_date)
   date_period_begin<- latest_date - days(7)
   
   #select the cases 3 weeks ago
@@ -518,11 +529,13 @@ get_geomapped_covid_data <- function(life_exp_thresh=50,run_date=Sys.Date(),sepa
       by=c("Alpha3CountryOnly" =  "ISO3166-1-Alpha-3"))
 
   
+  
   world_with_covid_data <- 
     world_with_covid_data %>% 
     group_by(Alpha3CountryOnly) %>% 
     #if monthly arrivals from a country e.g. Australia need to be spread over mmultiple states, do it proportional to population, 
     #if we want to be conservative, we can multiply it by the square root of the size of the population.
+    #we also want to scale relative to a constant change in arrivals
     mutate(LocationResidentMonthlyArrivalsScaled1 = Population/sum(Population)*LocationResidentMonthlyArrivalsRaw,
            NZResMonthlyArrivalsScaled1 = Population/sum(Population)*NZResMonthlyArrivalsRaw,
            LocationResidentMonthlyArrivalsLockdownScaled1 = Population/sum(Population)*LocationResidentMonthlyArrivalsLockdownRaw,

@@ -69,3 +69,42 @@ manual_corrections<-read_sheet("1hkpfinHpxT1KcTI8umh55aaiFug12jKKSMZoae4ttlA")
 
 ```
 
+
+
+
+
+
+
+
+
+
+```{r}
+#can we output the actual active cases for new zealand?
+
+library(DT)
+source("utils.R")
+source("simulation.R")
+source("country_classification_rules.R")
+library(ggrepel)
+
+life_exp_thresh <- 70
+default_assumed_ifr_percent<-0.6
+default_quarantine_failure_odds<-12
+default_assumed_sensitivity <- 0.3
+default_general_travel_rate <- 0.2
+
+run_date<-Sys.Date()
+month_name <- format(run_date,"%B")
+
+nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
+covid_data <- get_analysis_covid_data(
+      nogeo_world_basic_data,
+      screening_sensitivity = 0.5,
+      quarantine_odds_override=1/12,
+      general_travel_rate = 0.2,
+      assumed_ifr = 0.0065)
+
+#and now get the new zealand data
+
+covid_data %>% filter(Location=="New Zealand") %>% t %>% View
+```

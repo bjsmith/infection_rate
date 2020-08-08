@@ -48,8 +48,24 @@ get_analysis_covid_data <- function(
   screening_sensitivity,
   quarantine_odds_override=NULL,
   general_travel_rate=1,
-  assumed_ifr=0.005
+  assumed_ifr=0.005,
+  traveler_relative_prevalence=1,
+  current_lockdown_passenger_volume=NULL
   ){
+  
+  if(is.null(current_lockdown_passenger_volume)){
+    stop("an explicit argument for current_lockdown_passenger_volume is required in get_analysis_covid_data")
+    current_lockdown_passenger_volume <- sum(world_with_covid_data$MonthlyArrivalsLockdownScaled1,na.rm=TRUE)
+  }
+  
+  #now we want to scale again according to the change in passenger volume since May
+  world_with_covid_data <- 
+    world_with_covid_data %>% mutate(
+      MonthlyArrivalsScaled2 = MonthlyArrivalsScaled1, # no change
+      LocationResidentMonthlyArrivalsScaled2 = LocationResidentMonthlyArrivalsScaled1, #no change
+      MonthlyArrivalsLockdownScaled2 = current_lockdown_passenger_volume/sum(MonthlyArrivalsLockdownScaled1,na.rm = TRUE)*MonthlyArrivalsLockdownScaled1
+    ) 
+  
   
 
   world_with_covid_data <- 
@@ -76,14 +92,16 @@ get_analysis_covid_data <- function(
     world_with_covid_data %>% 
     mutate(InferredActiveCases= (ActiveCases/InferredDetectionRate))
   
-  
-  world_with_covid_data <- 
-    world_with_covid_data %>% 
-    mutate(InferredActiveCasePopRate = (InferredActiveCases/Population))
-  
   world_with_covid_data <- 
     world_with_covid_data %>% 
     mutate(ActiveCasePopRate = ActiveCases/Population)
+  
+  world_with_covid_data <- 
+    world_with_covid_data %>% 
+    mutate(InferredActiveCasePopRate = (InferredActiveCases/Population)) %>% 
+    mutate(InferredActiveCaseTravelerRate = InferredActiveCasePopRate*traveler_relative_prevalence)
+  
+  
   
   
   print(quarantine_odds_override)
@@ -94,22 +112,22 @@ get_analysis_covid_data <- function(
   ### calculate the probability of at least one COVID-19 case
   
   world_with_covid_data$LocationResidentMonthlyArrivalsWeighted<-(
-    world_with_covid_data$LocationResidentMonthlyArrivalsScaled1*general_travel_rate
+    world_with_covid_data$LocationResidentMonthlyArrivalsScaled2*general_travel_rate
   )
   
   world_with_covid_data <- (
     world_with_covid_data %>% mutate(
       MonthlyArrivalsWeighted = (
-        MonthlyArrivalsLockdownScaled1 + pmax(0,MonthlyArrivalsScaled1-MonthlyArrivalsLockdownScaled1)*general_travel_rate
+        MonthlyArrivalsLockdownScaled2 + pmax(0,MonthlyArrivalsScaled2-MonthlyArrivalsLockdownScaled2)*general_travel_rate
       )
     )%>% mutate(
       StatusQuoMonthlyArrivals = (
-        MonthlyArrivalsLockdownScaled1
+        MonthlyArrivalsLockdownScaled2
       )
       )%>% 
         mutate(
         Total2019MonthlyArrivals = (
-          MonthlyArrivalsScaled1
+          MonthlyArrivalsScaled2
         )
       )
   )
@@ -126,15 +144,15 @@ get_analysis_covid_data <- function(
   
   world_with_covid_data <- 
     world_with_covid_data %>% mutate(
-      ProbabilityOfMoreThanZeroCases=1-((Population-InferredActiveCases)/Population)^MonthlyArrivalsWeighted)
+      ProbabilityOfMoreThanZeroCases=1-(1-InferredActiveCaseTravelerRate)^MonthlyArrivalsWeighted)
   
   
   world_with_covid_data <- 
     world_with_covid_data %>% mutate(
-      ExpectedNumberOfCasesAll=InferredActiveCasePopRate*MonthlyArrivalsWeighted,
-      ExpectedNumberOfCasesUnderLockdown=InferredActiveCasePopRate*StatusQuoMonthlyArrivals#,
-      #ExpectedNumberOfCasesNZResident=InferredActiveCasePopRate*NZResidentMonthlyArrivalsWeighted,
-      #ExpectedNumberOfCasesForeign=InferredActiveCasePopRate*LocationResidentMonthlyArrivalsWeighted
+      ExpectedNumberOfCasesAll=InferredActiveCaseTravelerRate*MonthlyArrivalsWeighted,
+      ExpectedNumberOfCasesUnderLockdown=InferredActiveCaseTravelerRate*StatusQuoMonthlyArrivals#,
+      #ExpectedNumberOfCasesNZResident=InferredActiveCaseTravelerRate*NZResidentMonthlyArrivalsWeighted,
+      #ExpectedNumberOfCasesForeign=InferredActiveCaseTravelerRate*LocationResidentMonthlyArrivalsWeighted
       )
   
   
@@ -159,7 +177,7 @@ get_analysis_covid_data <- function(
   #I think we need negative predictive value as well as positive predictive value.
   #https://en.wikipedia.org/wiki/Positive_and_negative_predictive_values#Positive_predictive_value
   #https://en.wikipedia.org/wiki/Positive_and_negative_predictive_values#Negative_predictive_value
-  prevalence <- world_with_covid_data$InferredActiveCasePopRate
+  prevalence <- world_with_covid_data$InferredActiveCaseTravelerRate
   #this is the "detection rate" or how many true positives we catch for the total number of calls
   # positive_predictive_value <- (
   #   (screening_sensitivity * (prevalence))/
@@ -210,10 +228,10 @@ get_analysis_covid_data <- function(
     ) %>%
     ungroup
   
-  world_with_covid_data$InfActiveCasesPerMillion <- world_with_covid_data$InferredActiveCasePopRate*10^6
-  world_with_covid_data$InfActiveCasesPerThousand <- world_with_covid_data$InferredActiveCasePopRate*10^3
-  world_with_covid_data$ActiveCasesPerThousand <- world_with_covid_data$ActiveCasePopRate*10^3
-  world_with_covid_data$ActiveCasesPerMillion <- world_with_covid_data$ActiveCasePopRate*10^6
+  world_with_covid_data$InfActiveCasesPerMillion <- world_with_covid_data$InferredActiveCaseTravelerRate*10^6
+  world_with_covid_data$InfActiveCasesPerThousand <- world_with_covid_data$InferredActiveCaseTravelerRate*10^3
+  # world_with_covid_data$ActiveCasesPerThousand <- world_with_covid_data$ActiveCasePopRate*10^3
+  # world_with_covid_data$ActiveCasesPerMillion <- world_with_covid_data$ActiveCasePopRate*10^6
   
   #rate overall prevalence
   world_with_covid_data <- 
