@@ -12,7 +12,7 @@ default_assumed_sensitivity <- 0.3
 default_general_travel_rate <- 0.2
 default_current_lockdown_passenger_volume <- 9037
 #https://www.customs.govt.nz/covid-19/more-information/passenger-statistics/
-default_traveler_relative_prevalence <- 1.25
+default_traveler_relative_prevalence <- 1.2 
   #derived to bring our predicted "status quo" predicted cases/month numbers to match what we are actually observing at the border.
 
 #Ben J:
@@ -23,7 +23,7 @@ default_aircraft_infection_rate <- 0.005 #without mask
 default_aircraft_mask_effectiveness_percent <- 90
 
 #run_date<-as.Date("2020-07-15")#Sys.Date()
-run_date<-Sys.Date()
+run_date<-as.Date("2020-07-15")#Sys.Date()
 month_name <- format(run_date,"%B")
 
 geo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date)
