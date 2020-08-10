@@ -19,9 +19,13 @@ library(googlesheets4)
 
 
 show_leaflet <- function(data_to_show,primary_col,rounding_func,legend_title,
-                         quant_grades=5,pal_reverse=TRUE){
+                         quant_grades=5,pal_reverse=TRUE,custom_palette=NULL){
+  if(is.null(custom_palette)){
+    pal<-colorQuantile(palette="YlOrRd",domain= data_to_show[[primary_col]],n=quant_grades,reverse=pal_reverse)
+  }else{
+    pal<-custom_palette
+  }
   
-  pal<-colorQuantile(palette="YlOrRd",domain= data_to_show[[primary_col]],n=quant_grades,reverse=pal_reverse)
   
   chloro_labels <- paste0(data_to_show$name_long, ": ", as.character(rounding_func(data_to_show[[primary_col]])))
   

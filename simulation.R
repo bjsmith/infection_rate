@@ -17,6 +17,11 @@ simulate_treatment_for_countries <- function(
   current_lockdown_passenger_volume=NULL
   ){
   
+  dataset_is_geographic <- FALSE
+  if("sf" %in% class(world_with_covid_data)){
+    dataset_is_geographic <- TRUE
+  }
+  
   if(is.null(current_lockdown_passenger_volume)){
     stop("an explicit argument for current_lockdown_passenger_volume is required in get_analysis_covid_data")
     current_lockdown_passenger_volume <- sum(world_with_covid_data$MonthlyArrivalsLockdownScaled1,na.rm=TRUE)
@@ -97,19 +102,12 @@ simulate_treatment_for_countries <- function(
   #1-((5000-500)/5000)^20
   #1-(4500/5000)^20
   #0.8784233
-  
+
   world_with_covid_data <- 
     world_with_covid_data %>% mutate(
-      ProbabilityOfMoreThanZeroCases=1-(1-InferredActiveCaseTravelerRate)^MonthlyArrivalsWeighted)
-  
-  
-  world_with_covid_data <- 
-    world_with_covid_data %>% mutate(
-      ExpectedCasesAtBorder=InferredActiveCaseTravelerRate*MonthlyArrivalsWeighted
-      )
-  
-  world_with_covid_data <- 
-    world_with_covid_data %>% mutate(
+      ProbabilityOfMoreThanZeroCases=1-(1-InferredActiveCaseTravelerRate)^MonthlyArrivalsWeighted,
+      ExpectedCasesAtBorder=InferredActiveCaseTravelerRate*MonthlyArrivalsWeighted,
+      ExpectedCasesAtBorderAt2019Levels=InferredActiveCaseTravelerRate*Total2019MonthlyArrivals,
       ExpectedCasesAtBorderUnderLockdown=InferredActiveCaseTravelerRate*StatusQuoMonthlyArrivals
     )
   
@@ -205,6 +203,10 @@ simulate_treatment_for_countries <- function(
            ) %>%
     ungroup()
     
+  #need to relabel as geographic due to the rowwise above.
+  if (dataset_is_geographic){
+    world_with_covid_data <- st_as_sf(world_with_covid_data)
+  }
   
   return(world_with_covid_data)
 }
