@@ -146,7 +146,9 @@ get_data_closure <- function() {
       jh_cases_confirmed$EventType<-"CasesConfirmed"
       jh_deaths<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
       jh_deaths$EventType<-"Deaths"
-      jh_data<-rbind(jh_cases_confirmed,jh_cases_recovered,jh_deaths)
+      #need to filter by shared columns because the source has been known to not update these at the same time.
+      shared_cols <- intersect(intersect(colnames(jh_deaths),colnames(jh_cases_recovered)),colnames(jh_cases_confirmed))
+      jh_data<-rbind(jh_cases_confirmed[,shared_cols],jh_cases_recovered[,shared_cols],jh_deaths[,shared_cols])
       
       
       dl_local[["jh_data"]] <- jh_data
@@ -315,7 +317,8 @@ get_daily_data <- function(separate_aussie_states_and_hk){
     mutate(ActiveCases1 = ifelse(ActiveCases1Raw>=0,ActiveCases1Raw,NA)) %>%  
     #do not use this if it's returning a negative value.
     #when countries or states change their reporting, there is sometimes a discontinuity in CasesConfirmed that leads to a negative value.
-    mutate(ActiveCases2 = rollapply(NewCasesImportAdjusted,21,sum,align='right',fill=NA)) %>% 
+    mutate(ActiveCases2_Raw = rollapply(NewCasesImportAdjusted,21,sum,align='right',fill=NA)) %>% 
+    mutate(ActiveCases2 = ifelse(ActiveCases2_Raw<0,NA,ActiveCases2_Raw)) %>% 
     mutate(ActiveCases = pmin(ActiveCases1,ActiveCases2,na.rm=TRUE)) %>%
     ungroup
   #some locations don't reliably report recoveries.

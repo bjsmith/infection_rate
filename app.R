@@ -73,18 +73,26 @@ get_intsim_dt<-function(
   
   #percentage_cols=c()
   rounding_cols=c("ExpectedCasesAtBorderUnderLockdown","ExpectedCasesAtBorder","ExpectedNumberOfCasesInCommunity")
+  rounding_0_cols=c("StatusQuoMonthlyArrivals","MonthlyArrivalsWeighted")
   dt_colnames <- c("Location",
-                   "Expected Infections At Border (status quo)",
-                   "Expected Infections At Border (with intervention)","Expected infections still infectious when reaching community (with intervention)")
+                   "Status quo: pax per month",
+                   "Status quo: Expected Infections At Border",
+                   "Intervention: pax per month",
+                   "Intervention: Expected Infections At Border",
+                   "Intervention: Expected infections still infectious when reaching community")
   
   df_to_return<- filtered_df %>%
-    select(Location,ExpectedCasesAtBorderUnderLockdown,ExpectedCasesAtBorder,ExpectedNumberOfCasesInCommunity
+    select(Location,
+           StatusQuoMonthlyArrivals,ExpectedCasesAtBorderUnderLockdown,
+           MonthlyArrivalsWeighted,ExpectedCasesAtBorder,ExpectedNumberOfCasesInCommunity
     )
 
 
   return(DT::datatable(df_to_return,colnames=dt_colnames)%>%
            #formatPercentage(percentage_cols,3) %>%
-           formatRound(rounding_cols,2))
+           formatRound(rounding_cols,2) %>%
+           formatRound(rounding_0_cols,0)
+  )
 }
 
 ###########create data table for table tab
@@ -1166,6 +1174,9 @@ ui <- navbarPage(
       titlePanel("Intervention simulation"),
       sidebarLayout(
         sidebarPanel(
+          actionButton("intsim_20countries",
+                       "Set to 20 country reference list",
+                       class="btn btn-primary"),
           get_simJourneyPanel_from_level_id(0,choices= countries_to_choose_from,selected = 
                                               c("Taiwan","Thailand","Korea, South")),
           get_simJourneyPanel_from_level_id(1,choices= countries_to_choose_from,
@@ -1174,9 +1185,6 @@ ui <- navbarPage(
                                             selected = c("Germany")),
           get_simJourneyPanel_from_level_id(3,choices= countries_to_choose_from,
                                             selected=c("New South Wales, Australia")),
-          actionButton("intsim_20countries",
-                       "Set to 20 country reference list",
-                       class="btn btn-primary"),
           uiOutput("intsim_notes")
         ),
         mainPanel(
