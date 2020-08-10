@@ -37,10 +37,10 @@ nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,sepa
 ```{r}
 
 
-covid_data <- get_analysis_covid_data(
+covid_data <- simulate_treatment_for_countries(
       nogeo_world_basic_data,
       screening_sensitivity = 0.5,
-      quarantine_odds_override=1/12,
+      #quarantine_odds_override=1/12,
       general_travel_rate = 0.2,
       assumed_ifr = 0.0065)
 

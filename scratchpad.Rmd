@@ -97,10 +97,11 @@ run_date<-Sys.Date()
 month_name <- format(run_date,"%B")
 
 nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
-covid_data <- get_analysis_covid_data(
+covid_data <- simulate_treatment_for_countries(
       nogeo_world_basic_data,
       screening_sensitivity = 0.5,
-      quarantine_odds_override=1/12,
+      extra_spread = 0.02,
+      #quarantine_odds_override=1/12,
       general_travel_rate = 0.2,
       assumed_ifr = 0.0065)
 

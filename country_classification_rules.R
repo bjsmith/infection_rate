@@ -20,8 +20,8 @@ classify_country <-function(lifeExp,expectedCases){
 classify_country_prevalence <-function(lifeExp,prevalence_p_m){
   if(is.na(lifeExp) | is.na(prevalence_p_m)){return(NA)}
   if(lifeExp>=70){
-    if(prevalence_p_m<1){
-      return("Very low/COVID-free")
+    if(prevalence_p_m<=0){
+      return("COVID-free")
     }else if(prevalence_p_m<10){
       return("Low")
       #high trust, very low prevalence
