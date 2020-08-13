@@ -41,4 +41,4 @@ prop.test(c(1,12),c(30,9000))
 #a compromise figure might be:
 1/30
 12/9000
-1/
+exp(mean(log(c(1/30,12/9000))))
