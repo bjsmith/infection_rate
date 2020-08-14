@@ -3,18 +3,26 @@ title: "Get manual risk matrix report"
 output: html_notebook
 ---
 
+```{r setup, include=FALSE}
+# require("knitr")
+# knitr::opts_chunk$set(echo = TRUE)
+# knitr::opts_knit$set(root.dir = "app/")
+# getwd()
+# setwd("app/")
+```
+
 This notebook is for manually generating a risk matrix report.
 
 ```{r}
 
 library(DT)
-source("utils.R")
-source("simulation.R")
-source("country_classification_rules.R")
+source("../app/utils.R")
+source("../app/simulation.R")
+source("../app/country_classification_rules.R")
 library(ggrepel)
 
 
-source("defaults.R")
+source("../app/defaults.R")
 
 #Ben J:
 #Assume 0.5% transmission risk without mask (it’s a conservative worst case rate)
@@ -29,7 +37,7 @@ month_name <- format(run_date,"%B")
 
 
 
-
+setwd("../app")
 
 ```
 
@@ -41,14 +49,14 @@ nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,sepa
 
 ```{r}
 
-
-covid_data <- simulate_treatment_for_countries(
-      nogeo_world_basic_data,
-      screening_sensitivity = 0.5,
-      #quarantine_odds_override=1/12,
-      general_travel_rate = 0.2,
-      assumed_ifr = 0.0065)
-
+geo_world_with_covid_data <- simulate_treatment_for_countries(nogeo_world_basic_data,
+                                                    treatment_effectiveness = default_assumed_effectiveness,
+                                                    extra_spread = 0,
+                                                     assumed_ifr = default_assumed_ifr_percent/100,
+                                                     
+                                                     traveler_relative_prevalence=default_traveler_relative_prevalence,
+                                                     current_lockdown_passenger_volume = default_current_lockdown_passenger_volume
+                                                     )
 ```
 
 

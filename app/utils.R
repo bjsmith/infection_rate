@@ -165,10 +165,10 @@ get_data_closure <- function() {
       # Or, if you don't use multiple Google identities, you can be more vague:
       #gs4_auth_configure(api_key = "AIzaSyAnEAdoH-yLBO1rvhmAD-kkKR9TMYqI0Rs")
       #gs4_auth_configure(app = google_app)
-      #gs4_deauth()
+      
       options(gargle_oauth_email = "newzealandborderriskapp@gmail.com")
       options(gargle_oauth_email = TRUE)
-      
+      gs4_deauth()
       #set this for now, but we may need to follow the instructions below:
       manual_corrections<-read_sheet("1hkpfinHpxT1KcTI8umh55aaiFug12jKKSMZoae4ttlA")
       
@@ -508,7 +508,8 @@ get_geomapped_covid_data <- function(
     select(CasesConfirmed,Recoveries,ActiveCases, CountryDivisionCodeMixed,Alpha3CountryOnly) %>%
     group_by(CountryDivisionCodeMixed,Alpha3CountryOnly) %>%
     summarise_all(mean)
-  deaths_with_lagged_cases <- deaths_with_lagged_cases %>% left_join(jh_key_stats,by=c("CountryDivisionCodeMixed"="CountryDivisionCodeMixed"))
+  deaths_with_lagged_cases <- deaths_with_lagged_cases %>% 
+    left_join(jh_key_stats,by=c("CountryDivisionCodeMixed"="CountryDivisionCodeMixed"))
   
   
   get_slope_lastn<-function(y,lastn){

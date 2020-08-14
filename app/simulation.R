@@ -34,11 +34,10 @@ simulate_treatment_for_countries <- function(
       LocationResidentMonthlyArrivalsScaled2 = LocationResidentMonthlyArrivalsScaled1, #no change
       MonthlyArrivalsLockdownScaled2 = current_lockdown_passenger_volume/sum(MonthlyArrivalsLockdownScaled1,na.rm = TRUE)*MonthlyArrivalsLockdownScaled1
     ) 
-  
-  
-
+  #w2 %>% select(Location,NewDeaths,LaggedNewCases,CaseFatalityRatio) %>% View()
   world_with_covid_data <- 
     world_with_covid_data %>% 
+    mutate(CaseFatalityRatio = NewDeaths/LaggedNewCases) %>%
     mutate(InferredDetectionRate = case_when(
       #if there are NO deaths then we infer detection rate is 100%
       NewDeaths==0~1.0,
@@ -47,19 +46,13 @@ simulate_treatment_for_countries <- function(
       #this indicates probably quite severe under-reporting
       (NewDeaths>0) & (LaggedNewCases==0) ~ as.double(NA),
       #otherwise we set it using our formula
-      TRUE~(assumed_ifr*LaggedNewCases/NewDeaths)
+      TRUE~(CaseFatalityRatio/assumed_ifr)
     )
     )
-  
-  # world_with_covid_data$InferredDetectionRate[is.infinite(world_with_covid_data$InferredDetectionRate)]<-1
-  # #can't be infinite
-  # world_with_covid_data$InferredDetectionRate[world_with_covid_data$InferredDetectionRate>1]<-1
-  # #can't be more than 1
-  # 
   
   world_with_covid_data <-
     world_with_covid_data %>% 
-    mutate(InferredActiveCases= (ActiveCases/InferredDetectionRate))
+    mutate(InferredActiveCases= (ActiveCases*InferredDetectionRate))
   
   world_with_covid_data <- 
     world_with_covid_data %>% 
@@ -182,8 +175,8 @@ simulate_treatment_for_countries <- function(
            
     ) %>% 
     mutate(
-      PredictedInfActiveCases = PredictedActiveCases/InferredDetectionRate,
-      PredictedInfActiveCasesPerMillion = PredictedActiveCasesPerMillion/InferredDetectionRate,
+      PredictedInfActiveCases = PredictedActiveCases*InferredDetectionRate,
+      PredictedInfActiveCasesPerMillion = PredictedActiveCasesPerMillion*InferredDetectionRate,
       
     ) %>%
     ungroup
