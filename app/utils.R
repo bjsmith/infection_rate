@@ -161,8 +161,15 @@ get_data_closure <- function() {
       
       
       print("fetching google sheets data...")
-      gs4_deauth()
+      #library(googlesheets4)
+      # Or, if you don't use multiple Google identities, you can be more vague:
+      #gs4_auth_configure(api_key = "AIzaSyAnEAdoH-yLBO1rvhmAD-kkKR9TMYqI0Rs")
+      #gs4_auth_configure(app = google_app)
+      #gs4_deauth()
+      options(gargle_oauth_email = "newzealandborderriskapp@gmail.com")
+      options(gargle_oauth_email = TRUE)
       
+      #set this for now, but we may need to follow the instructions below:
       manual_corrections<-read_sheet("1hkpfinHpxT1KcTI8umh55aaiFug12jKKSMZoae4ttlA")
       
       dl_local[["manual_corrections"]] <- manual_corrections
