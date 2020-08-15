@@ -182,7 +182,7 @@ get_data_closure <- function() {
           #the cache exists and it's less than 60 minutes old
           #use it
           print("using cache to get manual corrections")
-          manual_corrections2 <- read_csv(google_sheets_cache_filepath)
+          manual_corrections <- read_csv(google_sheets_cache_filepath)
         }else{
           manual_corrections <- get_manual_corrections_from_gsheet(google_sheets_cache_filepath)
         }
