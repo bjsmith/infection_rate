@@ -1,12 +1,10 @@
-
-library(DT)
 source("utils.R")
 source("simulation.R")
 source("country_classification_rules.R")
-library(ggrepel)
 source("simJourneyPanel.R")
-
 source("defaults.R")
+library(ggrepel)
+library(DT)
 
 #Ben J:
 #Assume 0.5% transmission risk without mask (it’s a conservative worst case rate)
@@ -976,19 +974,19 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
       session=session,
       inputId="intsim_countries_level1",
       selected = 
-        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Low") %>% .$Location
+        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Very low") %>% .$Location
     )
     updateSelectInput(
       session=session,
       inputId="intsim_countries_level2",
       selected = 
-        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Moderate") %>% .$Location
+        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Low") %>% .$Location
     )
     updateSelectInput(
       session=session,
       inputId="intsim_countries_level3",
       selected = 
-        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "High") %>% .$Location
+        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Moderate") %>% .$Location
     )
     
     })

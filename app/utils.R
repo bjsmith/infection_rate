@@ -165,12 +165,30 @@ get_data_closure <- function() {
       # Or, if you don't use multiple Google identities, you can be more vague:
       #gs4_auth_configure(api_key = "AIzaSyAnEAdoH-yLBO1rvhmAD-kkKR9TMYqI0Rs")
       #gs4_auth_configure(app = google_app)
-      
-      options(gargle_oauth_email = "newzealandborderriskapp@gmail.com")
-      options(gargle_oauth_email = TRUE)
-      gs4_deauth()
-      #set this for now, but we may need to follow the instructions below:
-      manual_corrections<-read_sheet("1hkpfinHpxT1KcTI8umh55aaiFug12jKKSMZoae4ttlA")
+      google_sheets_cache_filepath <- "data/manual_corrections_cache.csv"
+      get_manual_corrections_from_gsheet <- function(save_path){
+        print('connecting to google sheet to get manual corrections')
+        options(gargle_oauth_email = "newzealandborderriskapp@gmail.com")
+        options(gargle_oauth_email = TRUE)
+        gs4_deauth()
+        #set this for now, but we may need to follow the instructions below:
+        manual_corrections <- read_sheet("1hkpfinHpxT1KcTI8umh55aaiFug12jKKSMZoae4ttlA")
+        #write it to a CSV
+        write_csv(manual_corrections,path = google_sheets_cache_filepath)
+        return(manual_corrections)
+      }
+      if(file.exists(google_sheets_cache_filepath)){
+        if(as.double(difftime(Sys.time(),file.info(google_sheets_cache_filepath)$mtime,units="mins"))<60){
+          #the cache exists and it's less than 60 minutes old
+          #use it
+          print("using cache to get manual corrections")
+          manual_corrections2 <- read_csv(google_sheets_cache_filepath)
+        }else{
+          manual_corrections <- get_manual_corrections_from_gsheet(google_sheets_cache_filepath)
+        }
+      }else{
+        manual_corrections <- get_manual_corrections_from_gsheet(google_sheets_cache_filepath)
+      }
       
       dl_local[["manual_corrections"]] <- manual_corrections
       
