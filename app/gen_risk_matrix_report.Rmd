@@ -43,7 +43,8 @@ setwd("../app")
 
 
 ```{r}
-nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
+nogeo_world_basic_data <- 
+  get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
 ```
 
 

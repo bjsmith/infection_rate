@@ -427,7 +427,7 @@ get_geomapped_covid_data <- function(
   
   #1.
   #load New Zealand arrivals data.
-  arrivals<-read_csv("data/stats-nz-arrivals-by-country.csv")
+  arrivals<-read_csv("data/2020june/ Total passenger movements by EVERY country of residence (Monthly) to june 2020.csv")
   colnames(arrivals)[1] <- "MonthLabel"
   #pick out the month we are interested in
   month_code <- paste0("2019M",str_pad(as.character(lubridate::month(run_date)),2,side="left",pad="0"))
@@ -440,7 +440,7 @@ get_geomapped_covid_data <- function(
     mutate(LocationResidentMonthlyArrivalsRaw = as.numeric(LocationResidentMonthlyArrivalsRaw))
   
   #2.
-  nz_resident_arrivals <- readr::read_csv("data/stats-nz-infoshare-nz-NZ-resident traveller arrivals by EVERY country of main destination and purpose (Monthly)_formatted.csv")
+  nz_resident_arrivals <- readr::read_csv("data/2020june/NZ-resident traveller arrivals by EVERY country of main destination and purpose (Monthly) to june 2020.csv")
   colnames(nz_resident_arrivals)[1] <- "MonthLabel"
   nz_res_arrivals_this_month <- nz_resident_arrivals %>% 
     filter(MonthLabel==month_code) %>% 
@@ -465,6 +465,7 @@ get_geomapped_covid_data <- function(
     full_join(foreign_arrivals_lockdown,by=c("Country"="Country")) %>%
     full_join(nz_res_arrivals_lockdown,by=c("Country"="NZRArrivalsMainDestination")) %>%
     right_join(country_mapping_stats_nz %>% select(Stats_NZ_Arrivals_Name,`ISO3166-1-Alpha-3`),by=c("Country" = "Stats_NZ_Arrivals_Name"))
+    
   
   #exclude new zealand; it doesn't make sense to include it because returning NZers are allocated to other categories
   arrivals_data <- arrivals_data %>% filter(`ISO3166-1-Alpha-3`!="NZL")

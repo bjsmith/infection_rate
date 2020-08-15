@@ -34,8 +34,13 @@ geo_world_with_covid_data <- simulate_treatment_for_countries(geo_world_basic_da
                                                      )
 
 nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
-# world_with_covid_data <- get_analysis_covid_data(nogeo_world_basic_data,assumed_ifr = default_assumed_ifr_percent/100,
-#                                                   quarantine_odds_override=(1/default_quarantine_failure_odds))
+default_simulation_data <- simulate_treatment_for_countries(
+  nogeo_world_basic_data,
+  treatment_effectiveness = default_assumed_effectiveness,
+  extra_spread = 0,
+  assumed_ifr = default_assumed_ifr_percent/100,
+  traveler_relative_prevalence=default_traveler_relative_prevalence,
+  current_lockdown_passenger_volume = default_current_lockdown_passenger_volume)
 
 #save.image("environ.RData")
 #load("environ.RData")
@@ -1176,13 +1181,13 @@ ui <- navbarPage(
                        "Set to 20 country reference list",
                        class="btn btn-primary"),
           get_simJourneyPanel_from_level_id(0,choices= countries_to_choose_from,selected = 
-                                              c("Taiwan","Thailand","Korea, South")),
+                                              default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "COVID-free") %>% .$Location),
           get_simJourneyPanel_from_level_id(1,choices= countries_to_choose_from,
-                                            selected = c("Malaysia","Japan")),
+                                            selected = default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Very low") %>% .$Location),
           get_simJourneyPanel_from_level_id(2,choices= countries_to_choose_from,
-                                            selected = c("Germany")),
+                                            selected = default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Low") %>% .$Location),
           get_simJourneyPanel_from_level_id(3,choices= countries_to_choose_from,
-                                            selected=c("New South Wales, Australia")),
+                                            selected=default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Moderate") %>% .$Location),
           uiOutput("intsim_notes")
         ),
         mainPanel(
