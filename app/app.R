@@ -1169,6 +1169,7 @@ ui <- navbarPage(
       )
     )
   ),
+  
 
     tabPanel(
     "Risk Matrix",
