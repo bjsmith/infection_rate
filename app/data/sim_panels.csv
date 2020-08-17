@@ -1,5 +1,3 @@
 level,label,default_effectiveness,default_extra_spread,default_volume
 0,Open (temperature screening only),0.1,0.025,50
-1,Airport PCR screening with 1 day quarantine,0.78,0.025,40
-2,5 day quarantine,0.94,0.0095,20
-3,14 day quarantine,0.9995,0.02033,10
+1,14 day quarantine,0.9995,0.02033,10
