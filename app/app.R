@@ -10,12 +10,11 @@ library(DT)
 #Assume 0.5% transmission risk without mask (it’s a conservative worst case rate)
 #If mask use reduces risk by 90% as per Arthur’s email then in-flight transmission risk reduced to 0.05%
 #Therefore one case expected to be acquired ‘in-flight’ for every 125 infectious cases carried
-#default_aircraft_infection_rate <- 0.005 #without mask
-#default_aircraft_mask_effectiveness_percent <- 90
+default_aircraft_infection_rate <- 0.005 #without mask
+default_aircraft_mask_effectiveness_percent <- 90
 
 #run_date<-as.Date("2020-07-15")#Sys.Date()
-#run_date<-as.Date("2020-06-15")#Sys.Date()
-run_date<-as.Date("2020-08-15")#Sys.Date()
+
 month_name <- format(run_date,"%B")
 
 # world_with_covid_data,
