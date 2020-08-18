@@ -489,8 +489,9 @@ get_geomapped_covid_data <- function(
   date_period_begin<- latest_date - days(7)
   
   #select the cases 3 weeks ago
+  #used to be 14 to 21 days. changed to 21 to 28 on Stephen Child's advice
   jh_dxc_7_day_cases_lagged <- jh_dxc %>%
-    filter(Date>=(date_period_begin - days(21)) & Date<(date_period_begin - days(14))) %>% 
+    filter(Date>=(date_period_begin - days(28)) & Date<(date_period_begin - days(21))) %>% 
     select(CountryDivisionCodeMixed, Location, contains("Cases")) %>%
     group_by(CountryDivisionCodeMixed, Location) %>%
     summarise_all(mean,na.rm=TRUE)
