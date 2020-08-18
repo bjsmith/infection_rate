@@ -979,19 +979,19 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
       session=session,
       inputId="intsim_countries_level1",
       selected = 
-        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Very low") %>% .$Location
+        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Low") %>% .$Location
     )
     updateSelectInput(
       session=session,
       inputId="intsim_countries_level2",
       selected = 
-        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Low") %>% .$Location
+        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Moderate") %>% .$Location
     )
     updateSelectInput(
       session=session,
       inputId="intsim_countries_level3",
       selected = 
-        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Moderate") %>% .$Location
+        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "High") %>% .$Location
     )
     
     })
@@ -1183,11 +1183,11 @@ ui <- navbarPage(
           get_simJourneyPanel_from_level_id(0,choices= countries_to_choose_from,selected = 
                                               default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "COVID-free") %>% .$Location),
           get_simJourneyPanel_from_level_id(1,choices= countries_to_choose_from,
-                                            selected = default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Very low") %>% .$Location),
-          get_simJourneyPanel_from_level_id(2,choices= countries_to_choose_from,
                                             selected = default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Low") %>% .$Location),
+          get_simJourneyPanel_from_level_id(2,choices= countries_to_choose_from,
+                                            selected = default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Moderate") %>% .$Location),
           get_simJourneyPanel_from_level_id(3,choices= countries_to_choose_from,
-                                            selected=default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Moderate") %>% .$Location),
+                                            selected=default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "High") %>% .$Location),
           uiOutput("intsim_notes")
         ),
         mainPanel(
