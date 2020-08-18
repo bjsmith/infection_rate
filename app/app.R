@@ -151,7 +151,7 @@ server <- function(input, output, session) {
   generate_mapped_world_with_covid_data <- reactive({
     simulate_treatment_for_countries(
       geo_world_basic_data,
-      treatment_effectiveness = input$intsim_effectiveness_level2/100,
+      treatment_effectiveness = input$intsim_effectiveness_level1/100,
       extra_spread = default_assumed_spread,
       assumed_ifr = input$simsettings_ifr/100,
       traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
@@ -465,6 +465,7 @@ Refer to the 'Simulation settings' tab for more options.
       current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
     return(world_w_covid_data)
   })
+
   
   sim_geo_world_with_covid_data_level1 <- reactive({
     world_w_covid_data <- simulate_treatment_for_countries(
@@ -478,37 +479,13 @@ Refer to the 'Simulation settings' tab for more options.
     return(world_w_covid_data)
   })
   
-  sim_geo_world_with_covid_data_level2 <- reactive({
-    world_w_covid_data <- simulate_treatment_for_countries(
-      nogeo_world_basic_data,
-      treatment_effectiveness = input$intsim_effectiveness_level2/100,
-      extra_spread = input$intsim_extraspread_level2/100,
-      travel_volume_proportion = input$intsim_percent_tvolume_level2/100,
-      assumed_ifr = input$simsettings_ifr/100,
-      traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
-      current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
-    return(world_w_covid_data)
-  })
-  
-  sim_geo_world_with_covid_data_level3 <- reactive({
-    world_w_covid_data <- simulate_treatment_for_countries(
-      nogeo_world_basic_data,
-      treatment_effectiveness = input$intsim_effectiveness_level3/100,
-      extra_spread = input$intsim_extraspread_level3/100,
-      travel_volume_proportion = input$intsim_percent_tvolume_level3/100,
-      assumed_ifr = input$simsettings_ifr/100,
-      traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
-      current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
-    return(world_w_covid_data)
-  })
-  
   
   #basically NZ citizens only.
   sim_geo_world_with_covid_data_statusquo <- reactive({
     world_w_covid_data <- simulate_treatment_for_countries(
       nogeo_world_basic_data,
-      treatment_effectiveness = input$intsim_effectiveness_level3/100,
-      extra_spread = input$intsim_extraspread_level3/100,
+      treatment_effectiveness = input$intsim_effectiveness_level1/100,
+      extra_spread = input$intsim_extraspread_level1/100,
         travel_volume_proportion=0,
       assumed_ifr = input$simsettings_ifr/100,
       traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
@@ -529,17 +506,17 @@ Refer to the 'Simulation settings' tab for more options.
     )
   })
 
-  countries_level2_df <- reactive({
-    return(get_intsim_dt(input$intsim_countries_level2,
-                         sim_geo_world_with_covid_data_level2())
-    )
-  })
-  
-  countries_level3_df <- reactive({
-    return(get_intsim_dt(input$intsim_countries_level3,
-                         sim_geo_world_with_covid_data_level3())
-    )
-  })
+  # countries_level2_df <- reactive({
+  #   return(get_intsim_dt(input$intsim_countries_level2,
+  #                        sim_geo_world_with_covid_data_level2())
+  #   )
+  # })
+  # 
+  # countries_level3_df <- reactive({
+  #   return(get_intsim_dt(input$intsim_countries_level3,
+  #                        sim_geo_world_with_covid_data_level3())
+  #   )
+  # })
   
   # 
   # get_countries_out_of_bubble_risks <- reactive({
@@ -599,15 +576,15 @@ Refer to the 'Simulation settings' tab for more options.
       sim_geo_world_with_covid_data_level1() %>%
         filter(Location %in% input$intsim_countries_level1) %>%
         mutate(
-          InterventionLevel=1),
-      sim_geo_world_with_covid_data_level2() %>%
-        filter(Location %in% input$intsim_countries_level2) %>%
-        mutate(
-          InterventionLevel=2),
-      sim_geo_world_with_covid_data_level3() %>%
-        filter(Location %in% input$intsim_countries_level3) %>%
-        mutate(
-          InterventionLevel=3)
+          InterventionLevel=1)#,
+      # sim_geo_world_with_covid_data_level2() %>%
+      #   filter(Location %in% input$intsim_countries_level2) %>%
+      #   mutate(
+      #     InterventionLevel=2),
+      # sim_geo_world_with_covid_data_level3() %>%
+      #   filter(Location %in% input$intsim_countries_level3) %>%
+      #   mutate(
+      #     InterventionLevel=3)
     ) %>% rowwise() %>% mutate(InterventionLabel=get_intervention_name(InterventionLevel))
     
     intervention_risk <- 
@@ -733,9 +710,9 @@ Refer to the 'Simulation settings' tab for more options.
     #we'll pool risk from all countries that haven't been selected, for both status quo and intervention categories.
     selected_locations <- unique(c(
       input$intsim_countries_level0,
-      input$intsim_countries_level1,
-      input$intsim_countries_level2,
-      input$intsim_countries_level3
+      input$intsim_countries_level1#,
+      #input$intsim_countries_level2,
+      #input$intsim_countries_level3
     ))
     
     intervention_risk$Condition<-"Intervention"
@@ -816,7 +793,7 @@ Refer to the 'Simulation settings' tab for more options.
       scale_x_discrete(name="")+
       scale_y_continuous(name="Expected cases per month",
                          #breaks=0:plot_max,
-                         minor_breaks = NULL, 
+                         minor_breaks = NULL 
                          #limits = c(0,plot_max)#,
                          #limits=c(0,20),
                          #position="right"
@@ -865,8 +842,7 @@ Refer to the 'Simulation settings' tab for more options.
       #filter((name_long %in% input$intsim_countries_bubble) | name_long %in% (input$intsim_countries_qurantine)) %>%
       filter(Location %in% 
                c(input$intsim_countries_bubble,
-                 input$intsim_countries_level2,
-                 input$intsim_countries_quarantine)) %>%
+                 input$intsim_countries_level1)) %>%
       filter(LifeExp<life_exp_thresh)
     
     
@@ -937,15 +913,15 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
   )
   
   
-  output$dt_countries_level2<-DT::renderDataTable(
-    countries_level2_df() 
-    
-  )
-  output$dt_countries_level3<-DT::renderDataTable(
-    countries_level3_df() 
-    
-  )
-  
+  # output$dt_countries_level2<-DT::renderDataTable(
+  #   countries_level2_df() 
+  #   
+  # )
+  # output$dt_countries_level3<-DT::renderDataTable(
+  #   countries_level3_df() 
+  #   
+  # )
+  # 
   output$intsim_totalrisk<-
     renderUI({
       withMathJax(HTML(paste0(
@@ -955,8 +931,6 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
   
   output$intsim_level0_header <- simJourneyPanelHeader(0)
   output$intsim_level1_header <- simJourneyPanelHeader(1)
-  output$intsim_level2_header <- simJourneyPanelHeader(2)
-  output$intsim_level3_header <- simJourneyPanelHeader(3)
 
   
   observeEvent(input$intsim_20countries,{
@@ -1181,7 +1155,8 @@ ui <- navbarPage(
                        "Set to 20 country reference list",
                        class="btn btn-primary"),
           get_simJourneyPanel_from_level_id(0,choices= countries_to_choose_from,selected = 
-                                              default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "COVID-free") %>% .$Location),
+                                              default_simulation_data %>% 
+                                              filter(Location %in% key_interest_countries & PrevalenceRating %in% "COVID-free") %>% .$Location),
           get_simJourneyPanel_from_level_id(1,choices= countries_to_choose_from,
                                             selected = default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Low") %>% .$Location),
           get_simJourneyPanel_from_level_id(2,choices= countries_to_choose_from,
@@ -1195,18 +1170,20 @@ ui <- navbarPage(
           uiOutput("intsim_totalrisk"),
           #plotOutput("cases_at_border_graph"),
           plotOutput("total_risk_graph"),
-          titlePanel("Level 0 countries (no risk)"),
+          titlePanel("COVID-free countries (no risk)"),
           DT::dataTableOutput("dt_countries_level0"),
-          titlePanel("Level 1 countries (low risk)"),
+          titlePanel("Other countries (low risk)"),
           DT::dataTableOutput("dt_countries_level1"),
-          titlePanel("Level 2 countries (medium risk)"),
-          DT::dataTableOutput("dt_countries_level2"),
-          titlePanel("Level 3 countries (high risk)"),
-          DT::dataTableOutput("dt_countries_level3")
+          # titlePanel("Level 2 countries (medium risk)"),
+          # DT::dataTableOutput("dt_countries_level2"),
+          # titlePanel("Level 3 countries (high risk)"),
+          # DT::dataTableOutput("dt_countries_level3")
         )
       )
     )
   ),
+  
+  
 
     tabPanel(
     "Risk Matrix",
