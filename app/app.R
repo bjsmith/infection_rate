@@ -507,6 +507,19 @@ Refer to the 'Simulation settings' tab for more options.
   sim_geo_world_with_covid_data_statusquo <- reactive({
     world_w_covid_data <- simulate_treatment_for_countries(
       nogeo_world_basic_data,
+      treatment_effectiveness = input$intsim_effectiveness_level4/100,
+      extra_spread = input$intsim_extraspread_level4/100,
+      travel_volume_proportion=0,
+      assumed_ifr = input$simsettings_ifr/100,
+      traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
+      current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
+    return(world_w_covid_data)
+    
+  })
+  #NZ citizens only, with the new pre-departure testing
+  sim_geo_world_with_covid_data_predeparture_testing <- reactive({
+    world_w_covid_data <- simulate_treatment_for_countries(
+      nogeo_world_basic_data,
       treatment_effectiveness = input$intsim_effectiveness_level3/100,
       extra_spread = input$intsim_extraspread_level3/100,
       travel_volume_proportion=0,
@@ -585,7 +598,12 @@ Refer to the 'Simulation settings' tab for more options.
       input$intsim_countries_level2,
       input$intsim_countries_level3
     )
-    status_quo_countries <- get_status_quo_risk()%>% 
+    #this is a bit different to status quo risk
+    #because we're applying an intervention to reduce the number of people coming from other countries.
+    status_quo_countries <- sim_geo_world_with_covid_data_predeparture_testing() %>%
+      mutate(
+        InterventionLevel=NA,
+        InterventionLabel="None")%>% 
       filter((Location %in% countries_in_intervention)==FALSE) %>%
       mutate(
         InterventionLevel=NA,
@@ -1188,7 +1206,9 @@ ui <- navbarPage(
                                             selected = default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Moderate") %>% .$Location),
           get_simJourneyPanel_from_level_id(3,choices= countries_to_choose_from,
                                             selected=default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "High") %>% .$Location),
-          uiOutput("intsim_notes")
+          get_simJourneyPanel_from_level_id(4,choices= c("(all other countries)"),
+                                            selected= c("(all other countries)")),
+                    uiOutput("intsim_notes")
         ),
         mainPanel(
           titlePanel("Total risk per month"),

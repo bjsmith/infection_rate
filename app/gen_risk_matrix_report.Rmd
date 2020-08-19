@@ -159,3 +159,9 @@ ggplot(covid_data_to_save %>% filter(Population>10^6 & `Life Expectancy`>=70),ae
 # so it should be either new cases or log(new cases)
 ```
 
+
+  
+  
+  
+  
+  

@@ -7,9 +7,14 @@
 #probability of a case infecting another person on the aeroplane
 
 
+verbose <- TRUE
 
-
-
+printv <-function(to_print){
+  if(verbose){
+    cat(to_print)
+    cat("\n")
+  }
+}
 
 run_sim <- function(
   pcr_test_list_to_avoid_boarding = list(list(-2,-3)),
@@ -52,18 +57,22 @@ run_sim <- function(
 
   #duration_to_flight
   #spawn one case from t-13 onward to t=0
-  for (t in 0:days_to_measure){
+  for (t in 1:days_to_measure){
     # by convention t will be 20 days before flight.
     duration_to_flight <- t-sim_days_before_flight_start
     
     #flight occurs on day 14 then
     
-    cat("\n\n")
-    print(paste("days after flight:",as.character(duration_to_flight)))
+    printv("\n\n")
+    printv(paste("days after flight:",as.character(duration_to_flight)))
     
     
     #create one infection per day constant, if we're pre-flight
-    if(duration_to_flight<=0){
+    
+    if(duration_to_flight==0){ #include equal infections of day of flight
+      warning("excluded day of flight from infections but it should really be included!")
+    }
+    if(duration_to_flight<0){ #exclude day of flight
       case_list_day_begin[length(case_list_day_begin) + 1] <- t
       case_list_weight[length(case_list_weight) + 1] <- 1/sum(p_infection_remains_infectious_by_day)
         #this weight should really be divided by the sum of our "remains infectious" value
@@ -86,7 +95,7 @@ run_sim <- function(
       # probably will deprecate this at some point when we go probabilistic
       # case WEIGHT (the odds this is still in pipeline) is important
       # case INFECTIOUSNESS is also important)
-      print("flying")
+      printv("flying")
       num_contacts_on_flight=16
       infectious_cases_on_flight <- sum(case_list_weight*p_case_remains_infectious)
       #probability of infection per case 
@@ -142,13 +151,13 @@ run_sim <- function(
     }
     #then the next day, we're gonna let the travelers out.
     if(duration_to_flight==quarantine_release_day){
-      cat("releasing all travelers who haven't been tested positive.")
-      cat(paste("There are",current_infectious_cases_sum,"cases being released."))
+      printv("releasing all travelers who haven't been tested positive.")
+      printv(paste("There are",current_infectious_cases_sum,"cases being released."))
       
       #this is the probability that each case is detected and removed
       #we now adjust our weights
       community_exposure[t]=+current_infectious_cases_sum
-      cat("cases detected are removed and results shown on next day")
+      printv("cases detected are removed and results shown on next day")
     }
 
     
@@ -163,49 +172,55 @@ run_sim <- function(
       
       #now probabilistically a PCR test on this day, the result of which will be to avoid boarding.
       if(duration_to_flight %in% pcr_test_set_to_avoid_boarding){
-        cat("doing PCR test...")
+        print("doing PCR test...")
+        stop("can't calculate PCR test this way because you're effectively multiplying the two probabilities together. They need to be added or averaged instead.")
+        # better way is to find the LAST day in the test set
+        # then run it on there but stagger the probability detections and work on that basis.
         p_case_list_detected <- p_pcr_detectable_by_day[case_list_days_since_case+1]*(1/test_possibilities)
+        print(p_case_list_detected)
+        print(t)
+        print(duration_to_flight)
         #weighted to account for the probabiliyt of actually running the test
         #this is the probability that each case is detected and removed
         #we now adjust our weights
         case_list_weight <- case_list_weight*(1-p_case_list_detected)
-        cat("cases detected are removed and results shown on next day")
+        print("cases detected are removed and results shown on next day")
         
       }
     }
     
     #now we do a temperature test if there is one on this day.
     if(duration_to_flight %in% temp_and_symptoms_test_to_avoid_boarding){
-      cat("doing temperature and symptom screening...")
+      printv("doing temperature and symptom screening...")
       p_case_list_detected <- p_symptomatic_by_day[case_list_days_since_case+1]
       #this is the probability that each case is detected and removed
       #we now adjust our weights
       case_list_weight <- case_list_weight*(1-p_case_list_detected)
-      cat("cases detected are removed and results shown on next day")
+      printv("cases detected are removed and results shown on next day")
     }
     
     #now we do a PCR test within the quarantine if there is one on this day.
     if(duration_to_flight %in% pcr_test_to_remain_in_quarantine){
-      cat("doing PCR test to hold patients in quarantine...")
+      printv("doing PCR test to hold patients in quarantine...")
       p_case_list_detected <- p_pcr_detectable_by_day[case_list_days_since_case+1]
       #this is the probability that each case is detected and removed
       #we now adjust our weights
       case_list_weight <- case_list_weight*(1-p_case_list_detected)
-      cat("cases detected are removed and results shown on next day")
+      printv("cases detected are removed and results shown on next day")
     }
     
       
 
     #now look at hte odds cases remain infectious and undetected
     if(length(case_list_day_begin)>0){
-      print("Case beginning by case:")
-      print(round(case_list_day_begin,3))
-      print("Case infectiousness by case:")
-      print(round(current_infectious_cases,3))
-      print("total infectious cases in the journey at the moment:")
-      print(current_infectious_cases_sum)
-      print("expected community exposure today:")
-      print(community_exposure[t])
+      printv("Case beginning by case:")
+      printv(round(case_list_day_begin,3))
+      printv("Case infectiousness by case:")
+      printv(round(current_infectious_cases,3))
+      printv("total infectious cases in the journey at the moment:")
+      printv(current_infectious_cases_sum)
+      printv("expected community exposure today:")
+      printv(community_exposure[t])
       # print("log community exposure, by day, to date:")
       # print(log(community_exposure))
       
@@ -218,7 +233,21 @@ run_sim <- function(
     
   }
   
-  return(sum(community_exposure))
+
+  
+  
+  return(list(
+    "data_by_infection_source" = data.frame(
+      "day_of_infection" = case_list_day_begin-sim_days_before_flight_start,
+      "cases_undetected" = case_list_weight,
+      "p_case_remains_infectious"=p_case_remains_infectious,
+      "p_remains_infectious_and_in_pipeline" = current_infectious_cases),
+    "data_by_day" = data.frame(
+      "days_past_flight"= 1:days_to_measure - sim_days_before_flight_start,
+      "p_community_exposure" = community_exposure),
+    "total_community_exposure" = sum(community_exposure)
+    )
+  )
 }
 
 
@@ -236,10 +265,155 @@ library(ggplot2)
 # #and apply interventions along the way
 
 
+# 
+# p_expected_cases_in_community <- run_sim()
+# p_expected_cases_in_community_no_temp_check <- run_sim(temp_and_symptoms_test_to_avoid_boarding=c())
+# 
+# 
+# #now we simulate different variants:
+# verbose=FALSE
+# #overnight quarantine with temp check
+# run_sim(
+#   pcr_test_list_to_avoid_boarding = list(list(-2,-3)),
+#   pcr_test_to_remain_in_quarantine = c(0),
+#   quarantine_release_day = 1,
+#   temp_and_symptoms_test_to_avoid_boarding = c(0)#,
+#   #p_flight_infection_risk_per_case_contact = 0.005*.15 #with mask wearing
+# )
+# 
+# #no flight risk
+# run_sim(
+#   pcr_test_list_to_avoid_boarding = list(list(-2,-3)),
+#   pcr_test_to_remain_in_quarantine = c(0),
+#   quarantine_release_day = 1,
+#   temp_and_symptoms_test_to_avoid_boarding = c(0),
+#   p_flight_infection_risk_per_case_contact = 0
+# )
+# 
+# #overnight quarantine with no temp check
+# run_sim(
+#   pcr_test_list_to_avoid_boarding = list(list(-2,-3)),
+#   pcr_test_to_remain_in_quarantine = c(0),
+#   quarantine_release_day = 1,
+#   temp_and_symptoms_test_to_avoid_boarding = c()
+# )
+# 
+# #3 day quarantine
+# quarantine_length <- 3
+# run_sim(
+#   pcr_test_list_to_avoid_boarding = list(list(-2,-3)),
+#   pcr_test_to_remain_in_quarantine = c(quarantine_length-1),
+#   quarantine_release_day = quarantine_length,
+#   temp_and_symptoms_test_to_avoid_boarding = c()
+# )
+# 
+# #4 day quarantine
+# quarantine_length <- 4
+# run_sim(
+#   pcr_test_list_to_avoid_boarding = list(list(-2,-3)),
+#   pcr_test_to_remain_in_quarantine = c(quarantine_length-1),
+#   quarantine_release_day = quarantine_length,
+#   temp_and_symptoms_test_to_avoid_boarding = c()
+# )
+# 
+# #5 day quarantine
+# quarantine_length <- 5
+# run_sim(
+#   pcr_test_list_to_avoid_boarding = list(list(-2,-3)),
+#   pcr_test_to_remain_in_quarantine = c(quarantine_length-1),
+#   quarantine_release_day = quarantine_length,
+#   temp_and_symptoms_test_to_avoid_boarding = c()
+# )
+# 
+# #6 day quarantine
+# quarantine_length <- 6
+# run_sim(
+#   pcr_test_list_to_avoid_boarding = list(list(-2,-3)),
+#   pcr_test_to_remain_in_quarantine = c(quarantine_length-1),
+#   quarantine_release_day = quarantine_length,
+#   temp_and_symptoms_test_to_avoid_boarding = c()
+# )
+# 
+# #7 day quarantine
+# quarantine_length <- 6
+# run_sim(
+#   pcr_test_list_to_avoid_boarding = list(list(-2,-3)),
+#   pcr_test_to_remain_in_quarantine = c(quarantine_length-1),
+#   quarantine_release_day = quarantine_length,
+#   temp_and_symptoms_test_to_avoid_boarding = c()
+# )
+# 
+# #14 day quarantine
+# quarantine_length <- 14
+# run_sim(
+#   pcr_test_list_to_avoid_boarding = list(list(-2,-3)),
+#   pcr_test_to_remain_in_quarantine = c(quarantine_length-1),
+#   quarantine_release_day = quarantine_length,
+#   temp_and_symptoms_test_to_avoid_boarding = c()
+# )
 
-p_expected_cases_in_community <- run_sim()
-p_expected_cases_in_community_no_temp_check <- run_sim(temp_and_symptoms_test_to_avoid_boarding=c())
+
+####MATCHING STEYN, BINNY, HENDY
+#14 day quarantine
+verbose=TRUE
+quarantine_length <- 14
+sim_result <- run_sim(
+  pcr_test_list_to_avoid_boarding = list(list(-2,-3)),
+  pcr_test_to_remain_in_quarantine = c(3,12),
+  quarantine_release_day = quarantine_length,
+  temp_and_symptoms_test_to_avoid_boarding = c(0),
+  p_flight_infection_risk_per_case_contact=0 #EXCLUDE flight risk.
+)
+ggplot(sim_result$data_by_infection_source,aes(x=day_of_infection,y=p_remains_infectious_and_in_pipeline))+geom_point()
+
+sim_result <- run_sim(
+  pcr_test_list_to_avoid_boarding = list(list(-2,-3)),
+  pcr_test_to_remain_in_quarantine = c(3),
+  quarantine_release_day = quarantine_length,
+  temp_and_symptoms_test_to_avoid_boarding = c(0),
+  p_flight_infection_risk_per_case_contact=0 #EXCLUDE flight risk.
+)
+ggplot(sim_result$data_by_infection_source,aes(x=day_of_infection,y=p_remains_infectious_and_in_pipeline))+geom_point()
 
 
+#now, this includes:
+# inherent risk
+# cabin exposure
+# breaches (escapees and exceptions)
+# spread to other guests during quarantine
 
 
+#Does NOT include:
+# - spread to workers during quarantine
+
+
+##### MATCHING MY OWN DATASET
+verbose=FALSE
+#overnight quarantine with temp check
+res<-run_sim(
+  pcr_test_list_to_avoid_boarding = list(list(-2)),
+  pcr_test_to_remain_in_quarantine = c(0),
+  quarantine_release_day = 1,
+  temp_and_symptoms_test_to_avoid_boarding = c(0)#,
+  #p_flight_infection_risk_per_case_contact = 0.005*.15 #with mask wearing
+)
+res$total_community_exposure
+
+verbose=FALSE
+#overnight quarantine with temp check
+res<-run_sim(
+  pcr_test_list_to_avoid_boarding = list(list(-3)),
+  pcr_test_to_remain_in_quarantine = c(0),
+  quarantine_release_day = 1,
+  temp_and_symptoms_test_to_avoid_boarding = c(0)#,
+  #p_flight_infection_risk_per_case_contact = 0.005*.15 #with mask wearing
+)
+res$total_community_exposure
+res<-run_sim(
+  pcr_test_list_to_avoid_boarding = list(list(-2,-3)),
+  pcr_test_to_remain_in_quarantine = c(0),
+  quarantine_release_day = 1,
+  temp_and_symptoms_test_to_avoid_boarding = c(0)#,
+  #p_flight_infection_risk_per_case_contact = 0.005*.15 #with mask wearing
+)
+res$total_community_exposure
