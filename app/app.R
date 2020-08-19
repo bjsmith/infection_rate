@@ -15,7 +15,7 @@ library(DT)
 
 #run_date<-as.Date("2020-07-15")#Sys.Date()
 #run_date<-as.Date("2020-06-15")#Sys.Date()
-run_date<-as.Date("2020-08-15")#Sys.Date()
+run_date<-Sys.Date()
 month_name <- format(run_date,"%B")
 
 # world_with_covid_data,

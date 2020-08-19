@@ -558,7 +558,7 @@ get_geomapped_covid_data <- function(
     left_join(owid_7_day_average_testing_observable,by=c("LocationCode" = "owid_iso_code")) %>%
     left_join(deaths_with_lagged_cases,by=c("LocationCode" = "CountryDivisionCodeMixed")) %>%
     left_join(predictions,by=c("LocationCode" = "CountryDivisionCodeMixed")) %>%
-    left_join(
+    full_join(
       (arrivals_data %>% 
         filter(`ISO3166-1-Alpha-3`!="")),
       by=c("Alpha3CountryOnly" =  "ISO3166-1-Alpha-3"))
