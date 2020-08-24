@@ -15,8 +15,9 @@ library(DT)
 #default_aircraft_mask_effectiveness_percent <- 90
 
 #run_date<-as.Date("2020-07-15")#Sys.Date()
-#run_date<-as.Date("2020-06-15")#Sys.Date()
+#run_date<-as.Date("2020-08-15")#Sys.Date()
 run_date<-Sys.Date()
+#run_date<-as.Date("2020-08-14")
 month_name <- format(run_date,"%B")
 
 # world_with_covid_data,

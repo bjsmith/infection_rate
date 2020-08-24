@@ -312,25 +312,25 @@ get_daily_data <- function(separate_aussie_states_and_hk){
   
   #############
   
-  if (separate_aussie_states_and_hk){
-    #move the Ruby princess cases from 3 July to 19 March
-    ruby_princess_category<-"AU-NSW"
-    
-  }else{
-    ruby_princess_category<-"AU"
-    
-  }
+  # if (separate_aussie_states_and_hk){
+  #   #move the Ruby princess cases from 3 July to 19 March
+  #   ruby_princess_category<-"AU-NSW"
+  #   
+  # }else{
+  #   ruby_princess_category<-"AU"
+  #   
+  # }
   
   #On 3 July, 189 historic cases reported in crew members on board a ship were classified as Australian cases and included in NSW totals.
   #https://www.health.gov.au/news/health-alerts/novel-coronavirus-2019-ncov-health-alert/coronavirus-covid-19-current-situation-and-case-numbers#total-cases-recoveries-deaths-and-new-cases-in-the-last-24-hours
   #moving these back to 19 March when these cases entered Sydney.
-  jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-07-03")),"NewCases"]<-(
-    jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-07-03")),"NewCases"] - 189
-  )
-  jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-03-19")),"NewCases"]<-(
-    jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-03-19")),"NewCases"] + 189
-  )
-  
+  # jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-07-03")),"NewCases"]<-(
+  #   jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-07-03")),"NewCases"] - 189
+  # )
+  # jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-03-19")),"NewCases"]<-(
+  #   jh_dxc[which((jh_dxc$Alpha2CountrySubdivision==ruby_princess_category) & (jh_dxc$Date=="2020-03-19")),"NewCases"] + 189
+  # )
+  # 
   
   
   ########### calculate active cases.
