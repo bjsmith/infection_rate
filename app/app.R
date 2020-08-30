@@ -16,8 +16,10 @@ library(DT)
 
 #run_date<-as.Date("2020-07-15")#Sys.Date()
 #run_date<-as.Date("2020-08-15")#Sys.Date()
-run_date<-Sys.Date()
+#run_date<-Sys.Date()
 #run_date<-as.Date("2020-08-14")
+#run_date<-as.Date("2020-08-22")
+#run_date<-as.Date("2020-08-22")
 month_name <- format(run_date,"%B")
 
 # world_with_covid_data,
@@ -602,7 +604,12 @@ Refer to the 'Simulation settings' tab for more options.
     )
     #this is a bit different to status quo risk
     #because we're applying an intervention to reduce the number of people coming from other countries.
-    status_quo_countries <- sim_geo_world_with_covid_data_predeparture_testing() %>%
+    if(input$intsim_universalPCR){
+      world_raw <- sim_geo_world_with_covid_data_predeparture_testing()
+    }else{
+      world_raw <- sim_geo_world_with_covid_data_statusquo()
+    }
+    status_quo_countries <- world_raw %>%
       mutate(
         InterventionLevel=NA,
         InterventionLabel="None")%>% 
@@ -913,9 +920,14 @@ Refer to the 'Simulation settings' tab for more options.
     #total_risk_prop
     textout<-paste0(
       "In the status quo where only NZ residents are allowed can enter, we estimate ",
-      signif(sum(status_quo_risk$ExpectedCasesAtBorder,na.rm = TRUE),2),
+      signif(sum(status_quo_risk$ExpectedCasesAtBorderUnderLockdown,na.rm = TRUE),2),
       " cases per month will arrive at the border, of which ",
       signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),2),
+      " will be exposed to the community.",
+      "This represents ",
+      signif(sum(status_quo_risk$ExpectedCasesAtBorder,na.rm=TRUE)/sum(status_quo_risk$StatusQuoMonthlyArrivals,na.rm = TRUE)*10^5,4),
+      " cases per 100k travellers at the border, of which ",
+      signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)/sum(status_quo_risk$StatusQuoMonthlyArrivals,na.rm = TRUE)*10^5,2),
       " will be exposed to the community.",
       "<br /> <br />",
       "In the specified intervention, we estimate ",
@@ -977,6 +989,7 @@ NZ resident returnees from these countries are already allowed, but we caution a
   output$intsim_level1_header <- simJourneyPanelHeader(1)
   output$intsim_level2_header <- simJourneyPanelHeader(2)
   output$intsim_level3_header <- simJourneyPanelHeader(3)
+  output$intsim_level4_header <- simJourneyPanelHeader(4)
   
   
   observeEvent(input$intsim_20countries,{
@@ -1215,7 +1228,8 @@ NZ resident returnees from these countries are already allowed, but we caution a
     totals <-journey_data %>% group_by(label) %>% summarise(remains_infectious_and_in_pipeline=sum(p_remains_infectious_and_in_pipeline))
     
     ggplot(totals,aes(x=label,y=remains_infectious_and_in_pipeline,group=label,fill=label))+geom_bar(stat="identity")+
-      theme(legend.position="bottom",axis.text.x = element_text(angle = 20))
+      theme(legend.position="bottom",axis.text.x = element_text(angle = 20))+geom_label(aes(label=scales::percent(remains_infectious_and_in_pipeline,accuracy = 0.01)))+
+      scale_y_continuous(labels=scales::percent_format())
   })
   
   
@@ -1253,6 +1267,9 @@ ui <- navbarPage(
           actionButton("intsim_20countries",
                        "Set to 20 country reference list",
                        class="btn btn-primary"),
+          checkboxInput(inputId = "intsim_universalPCR",
+                        label="Include universal pre-departure PCR for Level 4 travellers in intervention",
+                        value = FALSE),
           get_simJourneyPanel_from_level_id(0,choices= countries_to_choose_from,selected = 
                                               default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "COVID-free") %>% .$Location),
           get_simJourneyPanel_from_level_id(1,choices= countries_to_choose_from,
@@ -1305,7 +1322,7 @@ ui <- navbarPage(
         ),
         column(2,
                numericInput("countrylist_travelerfilter",
-                            "Show countries with at least this number of travelers per month:",
+                            "Show countries with at least this number of travellers per month:",
                             min=0,max=100000,
                             step=500,
                             value=500)
@@ -1393,6 +1410,7 @@ ui <- navbarPage(
         selectInput("journey_postflight_test_dates",
                     "Quarantine PCR on ALL of the following days:",
                     choices = 0:15,
+                    selected=c(3,12),
                     multiple=TRUE),
         checkboxInput("journey_preflight_tempsymptoms",
                       "Do preflight combined symptom and temperature screening",
@@ -1440,7 +1458,7 @@ ui <- navbarPage(
         #              max=100,step=1,
         #              value = default_aircraft_mask_effectiveness_percent),
         numericInput("simsettings_traveler_relative_prevalence",
-                     "Prevalence of COVID-19 in travelers relative to the population:",
+                     "Prevalence of COVID-19 in travellers relative to the population:",
                      min=0,
                      max=10,step=0.1,
                      value = default_traveler_relative_prevalence),

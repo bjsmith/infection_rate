@@ -1,7 +1,7 @@
 require(readr)
 require(dplyr)
 
-simPanelDf <- read_csv("data/sim_panels.csv")
+simPanelDf <- read_csv("data/sim_panels_infection_lasts_2d_longer.csv")
 
 get_generated_button <- function(){
   return(          actionButton("intsim_20countries1",

@@ -1,0 +1,6 @@
+level,label,default_effectiveness,default_extra_spread,default_volume
+0,Open,0.0000,0.0116,20
+1,1 night quarantine,0.7010,0.0066,20
+2,5 night quarantine,0.9180,0.0051,20
+3,14 day quarantine (with pre-flight PCR),0.9990,0.0053,20
+4,14-day quarantine (status quo),0.9990,0.0082,0

@@ -163,6 +163,7 @@ simulate_treatment_for_countries <- function(
   world_with_covid_data <- 
     world_with_covid_data %>% mutate(
       ExpectedNumberOfCasesInCommunity=ExpectedCasesAtBorder*prob_infected_arr_reaches_community,
+      ExpectedNumberOfCasesInCommunityUnderLockdown=ExpectedCasesAtBorderUnderLockdown*prob_infected_arr_reaches_community,
       TreatmentCommunitySpreadProportion=prob_infected_arr_reaches_community
       )
   

@@ -71,11 +71,11 @@ run_sim <- function(
     
     #create one infection per day constant, if we're pre-flight
     
-    # if(duration_to_flight==0){ #include equal infections of day of flight
-    #   warning("excluded day of flight from infections but it should really be included!")
-    # }
-    #if(duration_to_flight<0){ #exclude day of flight
-    if(duration_to_flight<=0){ #exclude day of flight
+    if(duration_to_flight==0){ #include equal infections of day of flight
+      warning("excluded day of flight from infections. No special accounting for airport risk occurs.")
+    }
+    if(duration_to_flight<0){ #exclude day of flight
+    #if(duration_to_flight<=0){ #exclude day of flight
       case_list_day_begin[length(case_list_day_begin) + 1] <- t
       if(set_density_at_1_per_day){ #just for debugging
         case_list_weight[length(case_list_weight) + 1] <- 1

@@ -11,6 +11,8 @@ key_interest_countries <- c("US","China (mainland)","Fiji","United Kingdom",
                             "Victoria, Australia","Queensland, Australia",
                             "South Australia, Australia","Western Australia, Australia",
                             "Tasmania, Australia","Northern Territory, Australia",
-                            "Australian Capital Territory, Australia"
+                            "Australian Capital Territory, Australia",
+                            #extra countries, not in the original list, but have >= 2000 travellers NZ in August2020
+                            "Vietnam","Ireland","Italy","South Africa","Spain"
                             
 )
