@@ -1,8 +1,14 @@
+
+
 source("utils.R")
 source("simulation.R")
 source("country_classification_rules.R")
 source("simJourneyPanel.R")
+
 source("defaults.R")
+run_date<-as.Date("2020-08-22")
+
+
 source("monte_carlo.R")
 library(ggrepel)
 library(DT)
@@ -19,7 +25,7 @@ library(DT)
 #run_date<-Sys.Date()
 #run_date<-as.Date("2020-08-14")
 #run_date<-as.Date("2020-08-22")
-#run_date<-as.Date("2020-08-22")
+
 month_name <- format(run_date,"%B")
 
 # world_with_covid_data,
