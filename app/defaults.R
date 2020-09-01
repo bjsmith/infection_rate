@@ -35,4 +35,3 @@ default_traveler_relative_prevalence <- 1.2
 #run_date<-as.Date("2020-07-15")#Sys.Date()
 #run_date<-Sys.Date()
 
-month_name <- format(run_date,"%B")

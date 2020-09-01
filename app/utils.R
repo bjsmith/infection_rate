@@ -703,15 +703,14 @@ generate_areaPlot <- function(covid_data){
     filter(PrevalenceRating!="Unknown") %>%
     group_by(PrevalenceRating) %>% 
     summarise(
-      left = min(CumulativeTravelExclusive),
-      right = max(CumulativeTravelInclusive),
-      top=max(all_rects$CasesPerThousand)*2,
-      bottom=-max(all_rects$CasesPerThousand),
-      max_prevalence=max(InferredActiveCaseTravelerRate)
+      left = min(CumulativeTravelExclusive,na.rm = TRUE),
+      right = max(CumulativeTravelInclusive,na.rm = TRUE),
+      top=max(all_rects$CasesPerThousand,na.rm = TRUE)*2,
+      bottom=-max(all_rects$CasesPerThousand,na.rm = TRUE),
+      max_prevalence=max(InferredActiveCaseTravelerRate,na.rm = TRUE)
     ) %>% 
     arrange(max_prevalence)
   
-  level_rects$LevelColour=brewer.pal(n = nrow(level_rects), name = "Blues")
   
   #return the plot
   return(
@@ -721,7 +720,7 @@ generate_areaPlot <- function(covid_data){
                      alpha=0.5,
                      fill=brewer.pal(n = nrow(level_rects), name = "Blues"))+
            geom_text_repel(data=level_rects,mapping=aes(left, label=PrevalenceRating),segment.color = "transparent",
-                           y=max(all_rects$CasesPerThousand)*2/3,
+                           y=max(all_rects$CasesPerThousand,na.rm=TRUE)*2/3,
                            hjust=1,
                            size=3,
                            color="black",
@@ -735,9 +734,10 @@ generate_areaPlot <- function(covid_data){
            geom_hline(yintercept = current_risk_per_thousand,color="#cc0000")+
            geom_text(x=0,y=current_risk_per_thousand,vjust=0,hjust=0,color="#cc0000",label="Status quo aggregate traveller risk\n",size=3)+
            #set the scales and style
+            geom_vline(xintercept=0,color="#aaaaaa")+
            scale_x_continuous(name="Cumulative expected travellers per month", labels=scales::comma_format(),)+
            scale_y_continuous(name="Cases per 1,000 travellers",breaks = c(0,2,4,6,8,10,12),minor_breaks = NULL)+
-           coord_cartesian(ylim=c(-max(all_rects$CasesPerThousand)/4,max(all_rects$CasesPerThousand)))+
+           coord_cartesian(ylim=c(-max(all_rects$CasesPerThousand,na.rm=TRUE)/4,max(all_rects$CasesPerThousand,na.rm=TRUE)))+
            theme_minimal()+
            theme(panel.grid.major.x = element_blank(),
                  panel.grid.minor.x = element_blank())+

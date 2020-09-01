@@ -41,6 +41,9 @@ simulate_treatment_for_countries <- function(
     mutate(InferredDetectionRate = case_when(
       #if there are NO deaths then we infer detection rate is 100%
       NewDeaths==0~1.0,
+      #if there are no new cases AND no new deaths we also infer the detection rate is 100%; this is a bit more dangerous but 
+      #is a reasonable assumption for countries with high quality data.
+      (LaggedNewCases==0) & (NewDeaths==0)~1.0,
       #if there are NO cases but there ARE deaths then we set InferredDetectionRate to NA--
       #we infer that the detection rate is completely unknown
       #this indicates probably quite severe under-reporting
