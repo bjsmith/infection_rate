@@ -744,6 +744,11 @@ Refer to the 'Simulation settings' tab for more options.
     
   })
   
+  output$intsim_AreaPlot <- renderPlot({
+    intervention_risk <- get_intervention_risk()
+    generate_areaPlot(intervention_risk)
+  })
+  
   
   output$total_risk_graph <- renderPlot({
     #foreign_risk <- get_foreign_risk()
@@ -990,6 +995,7 @@ NZ resident returnees from these countries are already allowed, but we caution a
         total_risk_text()
       )))
     })
+
   
   output$intsim_level0_header <- simJourneyPanelHeader(0)
   output$intsim_level1_header <- simJourneyPanelHeader(1)
@@ -1243,25 +1249,17 @@ NZ resident returnees from these countries are already allowed, but we caution a
 
 ui <- navbarPage(
   "Opening the border: What's the risk?",
-  selected="Journey design",
+  selected="Intervention simulation",
   tabPanel(
     "Location Profiles",
     fluidPage(
       titlePanel("Location Profiles"),
-      # sidebarLayout(
-      #   sidebarPanel(
       textOutput("Location Profile Options"),
       selectInput("locprofile_Location",
                   "Select a location to profile:",
                   choices = key_interest_countries,
                   multiple=FALSE),
       downloadButton("downloadable_report", "Generate report")
-      # )
-      # ,
-      # mainPanel(
-      #   htmlOutput("onscreen_report")
-      # )
-      # )
     )
   ),
   tabPanel(
@@ -1292,6 +1290,7 @@ ui <- navbarPage(
           titlePanel("Total risk per month"),
           uiOutput("intsim_totalrisk"),
           #plotOutput("cases_at_border_graph"),
+          plotOutput("intsim_AreaPlot"),
           plotOutput("total_risk_graph"),
           titlePanel("Level 0 countries (no risk)"),
           DT::dataTableOutput("dt_countries_level0"),

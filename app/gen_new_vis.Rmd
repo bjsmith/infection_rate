@@ -1,0 +1,264 @@
+---
+title: "Get manual risk matrix report"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+# require("knitr")
+# knitr::opts_chunk$set(echo = TRUE)
+# knitr::opts_knit$set(root.dir = "app/")
+# getwd()
+# setwd("app/")
+```
+
+This notebook is for manually generating a risk matrix report.
+
+```{r}
+
+library(DT)
+source("../app/utils.R")
+source("../app/simulation.R")
+source("../app/country_classification_rules.R")
+library(ggrepel)
+
+run_date<-as.Date("2020-08-22")#Sys.Date()
+source("../app/defaults.R")
+
+#Ben J:
+#Assume 0.5% transmission risk without mask (it’s a conservative worst case rate)
+#If mask use reduces risk by 90% as per Arthur’s email then in-flight transmission risk reduced to 0.05%
+#Therefore one case expected to be acquired ‘in-flight’ for every 125 infectious cases carried
+default_aircraft_infection_rate <- 0.005 #without mask
+default_aircraft_mask_effectiveness_percent <- 90
+
+
+
+month_name <- format(run_date,"%B")
+
+
+
+setwd("../app")
+
+```
+
+
+```{r}
+nogeo_world_basic_data <- 
+  get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
+```
+
+
+```{r}
+
+geo_world_with_covid_data <- simulate_treatment_for_countries(nogeo_world_basic_data,
+                                                    treatment_effectiveness = default_assumed_effectiveness,
+                                                    extra_spread = 0,
+                                                     assumed_ifr = default_assumed_ifr_percent/100,
+                                                     
+                                                     traveler_relative_prevalence=default_traveler_relative_prevalence,
+                                                     current_lockdown_passenger_volume = default_current_lockdown_passenger_volume
+                                                     )
+```
+
+
+
+
+```{r}
+source("key_interest_countries.R")
+#prettify the column names
+covid_data_to_save<-
+geo_world_with_covid_data %>% 
+  filter(Location %in% key_interest_countries) %>%
+  arrange(LocationCode) %>%
+  mutate(
+    InfActiveCasesPerMillion = round(InfActiveCasesPerMillion,1),
+    PredictedActiveCasesPerMillion = round(PredictedActiveCasesPerMillion,1),
+    PredictedActiveCases = round(PredictedActiveCases,0),
+    
+  ) %>% 
+  select(
+    #location info
+    `Location Code` = `LocationCode`,
+    `Location` = `Location`,
+    `Population` = `Population`,
+    
+    
+    
+    #assessing expected cases
+    `Total Confirmed Cases` = `CasesConfirmed`,
+    `Total Fatalities` = `Deaths`,
+    `Total Recoveries` = `Recoveries`,
+    `Active Cases` = `ActiveCases`,
+    PredictedActiveCases = PredictedActiveCases,
+    #health data trust
+    `Life Expectancy` = `LifeExp`,
+    
+    #assessing expected prevalence
+    `Mean daily fatalities in last 7 days` = `NewDeaths`,
+    `Mean daily cases in last 7 days of two weeks prior`=LaggedActiveCases,
+    `Infection detection ratio` = `InferredDetectionRate`,
+    `Estimated active infections` = `InferredActiveCases`,
+    `Estimated Prevalence (per million)` = `InfActiveCasesPerMillion`,
+    
+    #assess any recent increase in cases,
+    `Estimated Predicted Prevalence (per million)` = PredictedInfActiveCasesPerMillion,
+    
+    
+    #risk to new zealand
+    #`Monthly arrivals of residents from location to NZ in 2019` = `LocationResidentMonthlyArrivals`,
+    #`Monthly arrivals of returning NZ residents from location in 2019` = `NZResMonthlyArrivals`,
+    
+    `Expected monthly arrivals` = `MonthlyArrivalsWeighted`,
+    `Expected monthly arrivals with active infection` = `ExpectedCasesAtBorder`,
+    #`Expected monthly arrivals with active infection passing screening` = `ExpectedNumberOfCasesEscapingOneScreen`,
+    `Expected monthly active cases leaking from quarantine` = `ExpectedNumberOfCasesInCommunity`
+  )
+  
+
+```
+
+
+
+```{r}
+library(ggplot2)
+source("key_interest_countries.R")
+#we need traveller prevalence and expected volume
+
+
+current_risk_per_thousand<-sum(geo_world_with_covid_data$ExpectedCasesAtBorderUnderLockdown,na.rm=TRUE)/sum(geo_world_with_covid_data$MonthlyArrivalsLockdownScaled2,na.rm=TRUE)*1000
+
+#we draw an area plot that needs coordinates
+#ordered by InferredActiveCaseTravelerRate from lowest to highest
+#coloured by PrevalenceRating
+#each country needs two data points in our area plot - the start and the end of it.
+#and we need a cumulative graph
+relevant_data <- geo_world_with_covid_data %>% 
+  filter(Location %in% key_interest_countries) %>%
+  arrange(InferredActiveCaseTravelerRate) %>%
+  select(Location,MonthlyArrivalsWeighted,InferredActiveCaseTravelerRate,PrevalenceRating) %>%
+  mutate(CumulativeTravelExclusive=cumsum(MonthlyArrivalsWeighted)-MonthlyArrivalsWeighted,
+         CumulativeTravelInclusive=cumsum(MonthlyArrivalsWeighted)
+         )
+  
+  
+start_points <- relevant_data %>% 
+  mutate(
+    TravelCumulative=CumulativeTravelExclusive)
+
+end_points <- relevant_data %>% 
+  mutate(
+    TravelCumulative=CumulativeTravelInclusive)
+
+all_points_line <- rbind(start_points,end_points) %>% arrange(InferredActiveCaseTravelerRate,TravelCumulative)
+
+
+```
+
+```{r}
+
+all_rects <-
+  relevant_data %>% 
+  mutate(CasesPerThousand=InferredActiveCaseTravelerRate*10^3) %>%
+  mutate(bottom=0,
+         RectLabel=Location,
+         top=CasesPerThousand,
+         left=CumulativeTravelExclusive,
+         right=CumulativeTravelInclusive,
+         label_xpos=CumulativeTravelExclusive + MonthlyArrivalsWeighted/2,
+         label_ypos=0)
+
+all_rects <- all_rects %>%
+  mutate(RectId=1:nrow(all_rects)#,
+         #GroupId=as.numeric(NA)
+         )
+```
+  
+```{r}
+  
+#all_rects[1,"GroupId"]=1
+for (rect_i in 2:nrow(all_rects)){
+  #now for each row, set the rectgroup to the minimum rectID where the row label_xpos has less than a certain difference.
+  current_rectID<-all_rects[[rect_i,"RectId"]]
+  current_xpos <- all_rects[[rect_i,"label_xpos"]]
+  group_base_rect_candidates <- all_rects %>% filter(label_xpos > (current_xpos - 15000) & RectId<current_rectID)
+  if(nrow(group_base_rect_candidates)>0){
+    group_base_rect<-group_base_rect_candidates[1,]
+    #print(paste0(group_base_rect$Location, " taking ", all_rects[[rect_i,"Location"]]))
+    group_base_rect_id <- group_base_rect$RectId
+      #and move the xpos back to reflect the change.
+    all_rects[[rect_i,"label_xpos"]] <- group_base_rect[["label_xpos"]]
+    #now merge the labels
+    #print(group_base_rect_id)
+    all_rects <- all_rects %>% 
+      mutate(RectLabel=ifelse(RectId==group_base_rect_id,
+                              paste0(RectLabel,"\n",all_rects[[rect_i,"RectLabel"]]),
+                              RectLabel
+                              ))
+
+    all_rects[[rect_i,"RectLabel"]] = ""
+  }
+
+  
+}
+
+34/9000*1000
+
+```
+
+
+```{r}
+library(RColorBrewer)
+level_rects <- all_rects %>% 
+  filter(PrevalenceRating!="Unknown") %>%
+  group_by(PrevalenceRating) %>% 
+  summarise(
+    left = min(CumulativeTravelExclusive),
+    right = max(CumulativeTravelInclusive),
+    top=max(all_rects$CasesPerThousand)*2,
+    bottom=-max(all_rects$CasesPerThousand),
+    max_prevalence=max(InferredActiveCaseTravelerRate)
+    ) %>% 
+  arrange(max_prevalence)
+  
+level_rects$LevelColour=brewer.pal(n = nrow(level_rects), name = "Blues")
+```
+
+
+```{r}
+
+  
+  
+#ggplot(all_points,aes(x=TravelCumulative,y=InferredActiveCaseTravelerRate))+geom_line()
+ggplot(all_rects,aes(xmin=left, xmax=right, ymin=bottom,ymax=top))+
+  #draw the levels
+  geom_rect(data=level_rects,mapping=aes(xmin=left, xmax=right, ymin=bottom,ymax=top,fill=PrevalenceRating),
+            alpha=0.5,
+            fill=brewer.pal(n = nrow(level_rects), name = "Blues"))+
+  geom_text_repel(data=level_rects,mapping=aes(left, label=PrevalenceRating),segment.color = "transparent",
+            y=max(all_rects$CasesPerThousand)*2/3,
+            hjust=1,
+            size=3,
+            color="black",
+            fill=brewer.pal(n = nrow(level_rects), name = "Blues"))+
+  #draw the countries
+  geom_vline(aes(xintercept=CumulativeTravelInclusive),linetype="dotted",color="#aaaaaa")+
+  geom_rect(color="#9999ff",fill="#000055",alpha=0.8)+
+  geom_text(aes(label_xpos,y=label_ypos,label=RectLabel),
+                  angle=30,size=3,hjust=1,vjust=1)+
+  #draw the current average prevalence
+  geom_hline(yintercept = current_risk_per_thousand,color="#cc0000")+
+  geom_text(x=0,y=current_risk_per_thousand,vjust=0,hjust=0,color="#cc0000",label="Status quo aggregate traveller risk\n",size=3)+
+  #set the scales and style
+  scale_x_continuous(name="Cumulative expected travellers per month", labels=scales::comma_format(),)+
+  scale_y_continuous(name="Cases per 1,000 travellers",breaks = c(0,2,4,6,8,10,12),minor_breaks = NULL)+
+  coord_cartesian(ylim=c(-max(all_rects$CasesPerThousand)/4,max(all_rects$CasesPerThousand)))+
+  theme_minimal()+
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())+
+  labs(title="Risk prior to applying any interventions")
+  
+  
+
+
+```
+
