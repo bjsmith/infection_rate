@@ -305,8 +305,15 @@ get_daily_data <- function(separate_aussie_states_and_hk){
                is.na(`Active local cases on date override`) ~ NewCases,
                Date < ManualCorrectDate ~ 0,
                Date == ManualCorrectDate ~ `Active local cases on date override`,
-               Date > ManualCorrectDate ~ NewCases
-             ))
+               Date > ManualCorrectDate ~ NewCases,
+             ),
+           NewDeathsImportAdjusted = 
+             case_when(
+               is.na(`Recent local fatalities on date override`) ~ NewDeaths,
+               Date < ManualCorrectDate ~ 0,
+               Date == ManualCorrectDate ~ `Recent local fatalities on date override`,
+               Date > ManualCorrectDate ~ NewDeaths)
+           )
   #This is used for calculating "Active Cases"
   #in practice this is mainly useful where acountry has had few or no local cases
   #and we can show that the country is therefore covid-free
