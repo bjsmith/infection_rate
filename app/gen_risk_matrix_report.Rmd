@@ -21,7 +21,7 @@ source("../app/simulation.R")
 source("../app/country_classification_rules.R")
 library(ggrepel)
 
-
+run_date<-as.Date("2020-08-22")#Sys.Date()
 source("../app/defaults.R")
 
 #Ben J:
@@ -31,7 +31,7 @@ source("../app/defaults.R")
 default_aircraft_infection_rate <- 0.005 #without mask
 default_aircraft_mask_effectiveness_percent <- 90
 
-#run_date<-as.Date("2020-07-15")#Sys.Date()
+
 
 month_name <- format(run_date,"%B")
 
@@ -61,6 +61,16 @@ geo_world_with_covid_data <- simulate_treatment_for_countries(nogeo_world_basic_
 ```
 
 
+```{r}
+    status_quo_risk <- simulate_treatment_for_countries(
+      nogeo_world_basic_data,
+      treatment_effectiveness = 0.9990,
+      extra_spread = .0190,
+      travel_volume_proportion=0,
+      assumed_ifr = default_assumed_ifr_percent/100,
+      traveler_relative_prevalence=default_traveler_relative_prevalence,
+      current_lockdown_passenger_volume = default_current_lockdown_passenger_volume)
+```
 
 
 ```{r}

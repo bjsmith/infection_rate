@@ -1,6 +1,8 @@
 
+
 library(shiny)
 library(dplyr)
+library(data.table)
 library(lubridate)
 library(readr)
 library(stringr)
@@ -17,6 +19,22 @@ library(data.table)
 library(magrittr)
 library(googlesheets4)
 
+#timer functionality
+start_time <- Sys.time()
+last_time <- start_time
+timer_filepath <- "data/timer.log"
+if (file.exists(timer_filepath)){
+  file.remove(timer_filepath)
+}
+print_elapsed_time <- function(msg){
+  this_time <- Sys.time()
+  dif <- this_time - last_time
+  startdif <- this_time - start_time
+  cat(paste0(
+    sprintf("%05.2f", startdif),
+    "; ", msg,"\n"),file=timer_filepath,append=TRUE)
+  last_time <<- this_time
+}
 
 
 show_leaflet <- function(data_to_show,primary_col,rounding_func,legend_title,
@@ -139,7 +157,7 @@ get_data_closure <- function() {
     #load(file = "../../data/data-snapshot.RData")
     #return(data_list)
     if(is.null(data_list)){
-      print("Fetching JH data...")
+      print_elapsed_time("Fetching JH data...")
       dl_local<-list()
       jh_cases_recovered<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")
       jh_cases_recovered$EventType<-"Recoveries"
@@ -151,7 +169,7 @@ get_data_closure <- function() {
       shared_cols <- intersect(intersect(colnames(jh_deaths),colnames(jh_cases_recovered)),colnames(jh_cases_confirmed))
       jh_data<-rbind(jh_cases_confirmed[,shared_cols],jh_cases_recovered[,shared_cols],jh_deaths[,shared_cols])
       
-      
+      print_elapsed_time("JH data retrieved.")
       dl_local[["jh_data"]] <- jh_data
       
       print("Fetching local data...")
@@ -167,6 +185,7 @@ get_data_closure <- function() {
       #gs4_auth_configure(api_key = "AIzaSyAnEAdoH-yLBO1rvhmAD-kkKR9TMYqI0Rs")
       #gs4_auth_configure(app = google_app)
       google_sheets_cache_filepath <- "data/manual_corrections_cache.csv"
+      owid_cache_filepath <- "data/owid_cache.csv"
       get_manual_corrections_from_gsheet <- function(save_path){
         print('connecting to google sheet to get manual corrections')
         options(gargle_oauth_email = "newzealandborderriskapp@gmail.com")
@@ -195,7 +214,24 @@ get_data_closure <- function() {
       
       print("fetching ourworldindata data...")
       
-      owid_fullset<-readr::read_csv("https://github.com/owid/covid-19-data/raw/master/public/data/owid-covid-data.csv")
+      if(file.exists(owid_cache_filepath)){
+        if(as.double(difftime(Sys.time(),file.info(owid_cache_filepath)$mtime,units="mins"))<60*8){
+          #the cache exists and it's less than 60 minutes old
+          #use it
+          print_elapsed_time("using cache to get OWID dataset")
+          owid_fullset <- read_csv(owid_cache_filepath)
+        }else{
+          print_elapsed_time("getting OWID from github")
+          owid_fullset<-readr::read_csv("https://github.com/owid/covid-19-data/raw/master/public/data/owid-covid-data.csv")
+          write_csv(owid_fullset,path = owid_cache_filepath)
+        }
+      }else{
+        print_elapsed_time("getting OWID from github")
+        owid_fullset<-readr::read_csv("https://github.com/owid/covid-19-data/raw/master/public/data/owid-covid-data.csv")
+        write_csv(owid_fullset,path = owid_cache_filepath)
+      }
+      
+      
       dl_local[["owid_fullset"]] <- owid_fullset
       
       data_list <<- dl_local
@@ -211,7 +247,9 @@ get_data <- get_data_closure()
 
 
 get_daily_data <- function(separate_aussie_states_and_hk){
+  print_elapsed_time("retrieving data list...")
   data_list <- get_data()
+  print_elapsed_time("...retrieved.")
   jh_data <- data_list[["jh_data"]]
   #separate_aussie_states_and_hk<-TRUE
   #include_geo_data=FALSE
@@ -233,7 +271,7 @@ get_daily_data <- function(separate_aussie_states_and_hk){
   # jh_deaths$EventType<-"Deaths"
   # jh_data<-rbind(jh_cases_confirmed,jh_cases_recovered,jh_deaths)
   
-  
+  print_elapsed_time("mutating...")
   
   if (separate_aussie_states_and_hk){
     jh_data %<>% 
@@ -251,17 +289,29 @@ get_daily_data <- function(separate_aussie_states_and_hk){
       mutate(Location = `Country/Region`,
              .before=`Province/State`)
   }
-  jh_bycountry<-jh_data %>% 
-    dplyr::select(-Lat,-Long,-`Province/State`,-`Country/Region`) %>% 
-    group_by(Location,EventType) %>% summarise_all(sum,na.rm=TRUE)
+  print_elapsed_time("summarising...")
+  #jh_data %>% View
+  # jh_bycountry<-jh_data %>% 
+  #   dplyr::select(-Lat,-Long,-`Province/State`,-`Country/Region`) %>% 
+  #   group_by(Location,EventType) %>% summarise_all(sum,na.rm=TRUE)
+  jh_bycountry <- 
+    jh_data %>% dplyr::select(-Lat,-Long,-`Province/State`,-`Country/Region`) %>% 
+    data.table  %>% 
+    .[,lapply(.SD,sum,na.rm=TRUE),.(Location,EventType)]
+    
   
-  
+  print_elapsed_time("getting jh_long and dxc...")
   jh_long<-jh_bycountry %>% tidyr::gather("Date","Count",3:ncol(.))
   jh_long$Date<-as.Date(jh_long$Date,format="%m/%d/%y")
   
+
   jh_dxc <- jh_long %>% tidyr::spread("EventType","Count")
   
+  print_elapsed_time("retrieving country mapping...")
+  
   jh_country_mapping <- readr::read_csv("data/mapping/country_mapping_jh.csv")
+  
+  print_elapsed_time("...retrieved.")
   
   jh_dxc <- left_join(jh_dxc,jh_country_mapping,by=c("Location" = "John_Hopkins_Name"))
   
@@ -284,7 +334,7 @@ get_daily_data <- function(separate_aussie_states_and_hk){
   #For ActiveCases1, which is confirmed minus recoveries minus deaths,
   #we just reset the total counts from the specified day
   #For days after that, for the ActiveCases2, 
-  
+  print_elapsed_time("merging manual corrections...")
   
   manual_corrections<-data_list[["manual_corrections"]]
   mc_merge <- manual_corrections%>%
@@ -340,7 +390,7 @@ get_daily_data <- function(separate_aussie_states_and_hk){
   # )
   # 
   
-  
+  print_elapsed_time("calculating active cases...")
   ########### calculate active cases.
   
   library(zoo)
@@ -373,9 +423,16 @@ get_geomapped_covid_data <- function(
     stop("Cannot include geo data and separate australian states; don't have polygons for Australian states.")
   }
   
+  print_elapsed_time("getting data...")
+  
+  
   jh_dxc <- get_daily_data(separate_aussie_states_and_hk)
+  print_elapsed_time("got daily data, getting full data...")
+  
   
   data_list <- get_data()
+  print_elapsed_time("got data.")
+  
   jh_data <- data_list[["jh_data"]]
   
   #world pop
@@ -387,6 +444,8 @@ get_geomapped_covid_data <- function(
     filter(GhoDisplay=="Life expectancy at birth (years)" & SexCode=="BTSX") %>%
     select(CountryCode,Numeric,YearCode) %>% group_by(CountryCode) %>% filter(YearCode==max(YearCode)) %>%ungroup %>%
     rename(LocationCode=CountryCode)
+  
+  print_elapsed_time("got life expectancy")
   
   
   colnames(life_exp)[colnames(life_exp)=="Numeric"]<-"LifeExp"
@@ -425,6 +484,8 @@ get_geomapped_covid_data <- function(
     
   }
   
+  print_elapsed_time("loading country codes...")
+  
   #mapping to get iso2 to iso3
   country_codes<-read.csv("data/mapping/country-codes.csv")
   country_iso_2_to_3_map<-country_codes[,c("ISO3166.1.Alpha.2","ISO3166.1.Alpha.3","official_name_en")]
@@ -432,6 +493,8 @@ get_geomapped_covid_data <- function(
   
   #### arrivals data (1,2,3,4)
   country_mapping_stats_nz <- read_csv("data/mapping/country_mapping_stats_nz_to_iso.csv")
+  
+  print_elapsed_time("loading arrivals...")
   
   #1.
   #load New Zealand arrivals data.
@@ -474,9 +537,12 @@ get_geomapped_covid_data <- function(
     full_join(nz_res_arrivals_lockdown,by=c("Country"="NZRArrivalsMainDestination")) %>%
     right_join(country_mapping_stats_nz %>% select(Stats_NZ_Arrivals_Name,`ISO3166-1-Alpha-3`),by=c("Country" = "Stats_NZ_Arrivals_Name"))
     
+  print_elapsed_time("filtering arrivals")
+  
   
   #exclude new zealand; it doesn't make sense to include it because returning NZers are allocated to other categories
   arrivals_data <- arrivals_data %>% filter(`ISO3166-1-Alpha-3`!="NZL")
+  print("world data")
   ##### testing data
   owid_7_day_average_testing_observable <- preprocess_owid_test_data(data_list[["owid_fullset"]])
   
@@ -492,6 +558,7 @@ get_geomapped_covid_data <- function(
     world_health<-world_data
   }
 
+  print_elapsed_time("processing")
   
   latest_date <- min(max(jh_dxc$Date),run_date)
   date_period_begin<- latest_date - days(7)
@@ -521,7 +588,8 @@ get_geomapped_covid_data <- function(
 
   deaths_with_lagged_cases <- jh_dxc_7_day_cases_lagged %>% left_join(jh_dxc_7_day_deaths)
   
-
+  
+  
   #deaths_with_lagged_cases$CountryPopulation<-deaths_with_lagged_cases$total_cases/deaths_with_lagged_cases$total_cases_per_million*10^6
   #we want the inferred case population rate
   #this has to come from the john hopkins data because we can get active cases from that.
@@ -540,6 +608,7 @@ get_geomapped_covid_data <- function(
     left_join(jh_key_stats,by=c("CountryDivisionCodeMixed"="CountryDivisionCodeMixed"))
   
   
+  print_elapsed_time("getting slopes")
   get_slope_lastn<-function(y,lastn){
     
     test_series<-y[(length(y)-lastn+1):length(y)]
@@ -548,14 +617,23 @@ get_geomapped_covid_data <- function(
     slope <- lm(test_series~x)$coefficients[[2]]
     return(slope)
   }
-  predictions <- jh_dxc %>% ungroup %>% 
-    group_by(CountryDivisionCodeMixed) %>%
-    #filter(Alpha2CountrySubdivision=="VN") %>% 
-      summarise(
-        slope_7days=get_slope_lastn(NewCases,7),
-        slope_14days=get_slope_lastn(NewCases,14),
-        next_two_weeks_cases = get_new_case_prediction(NewCases)
-      )
+  # predictions <- jh_dxc %>% 
+  #   group_by(CountryDivisionCodeMixed) %>%
+  #     summarise(
+  #       slope_7days=get_slope_lastn(NewCases,7),
+  #       slope_14days=get_slope_lastn(NewCases,14),
+  #       next_two_weeks_cases = get_new_case_prediction(NewCases)
+  #     )
+  predictions <- jh_dxc %>% 
+    ungroup %>% 
+    data.table %>% .[,
+                     .(slope_7days=NA,#get_slope_lastn(NewCases,7),
+                       slope_14days=NA,#get_slope_lastn(NewCases,14),
+                       next_two_weeks_cases = get_new_case_prediction(NewCases)
+                       )
+                     ,by=CountryDivisionCodeMixed]
+    
+    
   
   
   
@@ -589,6 +667,8 @@ get_geomapped_covid_data <- function(
       MonthlyArrivalsLockdownScaled1 = LocationResidentMonthlyArrivalsLockdownScaled1 + NZResMonthlyArrivalsLodckdownScaled1
     ) %>%
     ungroup
+  
+  print_elapsed_time("...finished.")
   
 
   return(world_with_covid_data)

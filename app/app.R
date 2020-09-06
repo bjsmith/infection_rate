@@ -1,9 +1,12 @@
+
 #run_date<-as.Date("2020-08-22")
 run_date<-Sys.Date()
 month_name <- format(run_date,"%B")
 
 
 source("utils.R")
+print_elapsed_time("START")
+
 source("simulation.R")
 source("country_classification_rules.R")
 source("simJourneyPanel.R")
@@ -17,6 +20,7 @@ source("monte_carlo.R")
 library(ggrepel)
 library(DT)
 
+print_elapsed_time("loaded dependencies")
 #Ben J:
 #Assume 0.5% transmission risk without mask (it’s a conservative worst case rate)
 #If mask use reduces risk by 90% as per Arthur’s email then in-flight transmission risk reduced to 0.05%
@@ -38,7 +42,10 @@ library(DT)
 # travel_volume_proportion=1,
 # assumed_ifr=0.006,
 # traveler_relative_prevalence=1,
+print_elapsed_time("LOADING DATA")
+
 geo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date)
+print_elapsed_time("RUNNING SIM")
 geo_world_with_covid_data <- simulate_treatment_for_countries(geo_world_basic_data,
                                                               treatment_effectiveness = default_assumed_effectiveness,
                                                               extra_spread = 0,
@@ -48,7 +55,12 @@ geo_world_with_covid_data <- simulate_treatment_for_countries(geo_world_basic_da
                                                               current_lockdown_passenger_volume = default_current_lockdown_passenger_volume
 )
 
+print_elapsed_time("LOADING DATA 2")
+
 nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
+print_elapsed_time("RUNNING SIM 2")
+
+
 default_simulation_data <- simulate_treatment_for_countries(
   nogeo_world_basic_data,
   treatment_effectiveness = default_assumed_effectiveness,
@@ -56,6 +68,9 @@ default_simulation_data <- simulate_treatment_for_countries(
   assumed_ifr = default_assumed_ifr_percent/100,
   traveler_relative_prevalence=default_traveler_relative_prevalence,
   current_lockdown_passenger_volume = default_current_lockdown_passenger_volume)
+
+print_elapsed_time("FINISHED SIM 2")
+
 
 #save.image("environ.RData")
 #load("environ.RData")
@@ -934,9 +949,11 @@ Refer to the 'Simulation settings' tab for more options.
     #now we need to add a warning for excluded countries.
     #total_risk_prop
     textout<-paste0(
-      "In the status quo where only NZ residents are allowed can enter, we estimate ",
+      "In the status quo where only NZ residents are allowed can enter, we assume ",
+      sum(status_quo_risk$MonthlyArrivalsWeighted,na.rm = TRUE),
+      " travellers will arrive at the border per month. Consequently, we estimate ",
       signif(sum(status_quo_risk$ExpectedCasesAtBorderUnderLockdown,na.rm = TRUE),2),
-      " cases per month will arrive at the border, of which ",
+      " positive cases per month will arrive at the border, of which ",
       signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),2),
       " will be exposed to the community.",
       "This represents ",
@@ -946,6 +963,8 @@ Refer to the 'Simulation settings' tab for more options.
       " will be exposed to the community.",
       "<br /> <br />",
       "In the specified intervention, we estimate ",
+      round(sum(intervention_risk$MonthlyArrivalsWeighted,na.rm=TRUE),0),
+      " travellers will arrive at the border per month. Consequently, we estimate ",
       signif(sum(intervention_risk$ExpectedCasesAtBorder,na.rm = TRUE),2),
       " cases per month will arrive at the border, of which ",
       signif(sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),2),
@@ -968,7 +987,9 @@ NZ resident returnees from these countries are already allowed, but we caution a
     
     
     
-    textout<-paste0(textout, "<br /> <br /><em>Cook Islands</em> and <em>Western Samoa</em> are not explicitly modeled. International sources do not track these locations and they are currently rated zero-risk, due to their COVID-free status and low or zero inbound travel. The situation should be continually monitored for any changes to their current zero-risk status.")
+    textout<-paste0(textout, 
+                    "<br /> <br /><em>Cook Islands</em> and <em>Western Samoa</em> are not explicitly modeled. International sources do not track these locations and they are currently rated zero-risk, due to their COVID-free status and low or zero inbound travel. The situation should be continually monitored for any changes to their current zero-risk status.",
+                    " Their 100% August 2019 combined travel volumes were 21,952.")
     
     return(textout)
   })
