@@ -1,3 +1,153 @@
+render_map_page <- function(output, filtered_mapped_world_with_covid_data,month_name){
+  
+  output$testt<-
+    renderUI({
+      withMathJax(HTML(
+        map_page_notes(month_name,life_exp_thresh)
+      ))
+    })
+  
+  output$graph0header<-renderText({"Figure 1: Reported active cases now (average past 7 days)"})
+  output$graph0 <- renderLeaflet({
+    show_leaflet(data_to_show = filtered_mapped_world_with_covid_data %>% filter(!is.na(ActiveCases)),
+                 primary_col = "ActiveCases",
+                 rounding_func = function(x){scales::comma(round(x,1))},
+                 legend_title =  "Observed active cases",
+                 quant_grades = 4,
+                 pal_reverse = FALSE
+    )
+    
+  })
+  output$graph1header<-renderText({"Figure 2: Hit rate or inferred case detection rate"})
+  output$graph1 <- renderLeaflet({
+    show_leaflet(data_to_show = filtered_mapped_world_with_covid_data %>% filter(!is.na(InferredDetectionRate)),
+                 primary_col = "InferredDetectionRate",
+                 rounding_func = function(x){scales::percent(x,accuracy = 0.1)},
+                 quant_grades = 3,
+                 legend_title = "Inferred detection rate <br /> (current deaths over cases three weeks prior; <br /> countries with a life expectancy of 75 or greater)")
+    
+  })
+  output$graph2header<-renderText({"Figure 3: Inferred active cases today"})
+  output$graph2 <- renderLeaflet({
+    show_leaflet(data_to_show = filtered_mapped_world_with_covid_data %>% filter(!is.na(InferredActiveCases)),
+                 primary_col = "InferredActiveCases",
+                 rounding_func = function(x){scales::comma(round(x,1))},
+                 legend_title =  "Inferred active cases<br /> (likely to underestimate in countries<br /> with poor death recording)",
+                 quant_grades = 4,
+                 pal_reverse = FALSE
+    )
+    
+  })
+  output$graph3header<-renderText({"Figure 4: Active cases per million"})
+  output$graph3<-renderLeaflet({
+    
+    show_leaflet(data_to_show = filtered_mapped_world_with_covid_data %>% filter(!is.na(InfActiveCasesPerMillion)),
+                 primary_col = "InfActiveCasesPerMillion",
+                 rounding_func = function(x){scales::comma(signif(x,2))},
+                 legend_title =  "Inferred active cases per million people <br /> (likely to underestimate in countries<br /> with poor death recording)",
+                 quant_grades = 4,
+                 pal_reverse = FALSE
+    )
+  })
+  
+  output$graph4header<-renderText({"Figure 5: New Zealand arrivals by month (2019 figures)"})
+  output$graph4<-renderLeaflet({
+    
+    show_leaflet(data_to_show = filtered_mapped_world_with_covid_data %>% filter(!is.na(Total2019MonthlyArrivals)),
+                 primary_col = "Total2019MonthlyArrivals",
+                 rounding_func = function(x){scales::comma(signif(x,3))},
+                 legend_title =  "NZ arrivals by month",
+                 quant_grades = 5,
+                 pal_reverse = FALSE
+    )
+  })
+  output$graph5header<-renderText({paste0(
+    "Figure 6: Probability of one or more cases arriving each month from residents of each country, based on arrival figures from this country in ",
+    month_name,
+    " 2019.")})
+  output$graph5<-renderLeaflet({
+    
+    #get the maximum number of bins we can have, considering the distribution of the data
+    display_data <- filtered_mapped_world_with_covid_data %>% filter(!is.na(ProbabilityOfMoreThanZeroCases))
+    col_of_interest <-"ProbabilityOfMoreThanZeroCases"
+    
+    show_leaflet(data_to_show =  display_data ,
+                 primary_col = col_of_interest,
+                 rounding_func = function(x){scales::percent(x,accuracy = 0.01)},
+                 legend_title =  "Probability of more than zero cases arriving to New Zealand",
+                 quant_grades = get_max_quantiles(display_data,col_of_interest,max_quantiles=8),
+                 pal_reverse = FALSE
+    )
+  })
+  output$graph6header<-renderText({paste0(
+    "Figure 7: Expected number of cases to arrive each month from residents of each country, based on arrival figures from this country in ",
+    month_name,
+    "2019.")})
+  output$graph6<-renderLeaflet({
+    
+    display_data <- filtered_mapped_world_with_covid_data %>% filter(!is.na(ExpectedCasesAtBorder))
+    col_of_interest <-"ExpectedCasesAtBorder"
+    
+    
+    show_leaflet(data_to_show = display_data,
+                 primary_col = col_of_interest,
+                 rounding_func = function(x){scales::comma(signif(x,2))},
+                 legend_title =  "Expected number of cases to arrive each month",
+                 quant_grades = get_max_quantiles(display_data,col_of_interest,max_quantiles=8),
+                 pal_reverse = FALSE
+    )
+  })
+  # output$graph7header<-renderText({paste0(
+  #   "Figure 8: Probability of one or more cases arrives and is quarantined but reaches the community, based on arrival figures from this country in ",
+  #   month_name,
+  #   " 2019.")})
+  # output$graph7<-renderLeaflet({
+  #   
+  #   display_data <- filtered_mapped_world_with_covid_data %>% filter(!is.na(ProbabilityOfMoreThanZeroCommunityCases))
+  #   col_of_interest <- "ProbabilityOfMoreThanZeroCommunityCases"
+  #   show_leaflet(data_to_show = display_data,
+  #                primary_col = col_of_interest,
+  #                rounding_func = function(x){scales::percent(x,accuracy = 0.01)},
+  #                legend_title =  "insert legend title",
+  #                quant_grades = get_max_quantiles(display_data,col_of_interest,max_quantiles=8),
+  #                pal_reverse = FALSE
+  #   )
+  # })
+  output$graph8header<-renderText({paste0(
+    "Figure 8: Expected number of cases to arrive and be quarantined but still reach the community, based on arrival figures from this country in ",
+    month_name,
+    "2019.")})
+  output$graph8<-renderLeaflet({
+    
+    display_data <- filtered_mapped_world_with_covid_data %>% filter(!is.na(ExpectedNumberOfCasesInCommunity))
+    col_of_interest <- "ExpectedNumberOfCasesInCommunity"
+    
+    binpal <- colorBin("YlOrRd", 
+                       display_data$ExpectedNumberOfCasesInCommunity, 
+                       domain=c(0,max(display_data$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)),
+                       bins=c(0.001,0.01,0.1,1,10,min(100,max(display_data$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)), pretty = FALSE)
+    )
+    
+    show_leaflet(data_to_show = display_data,
+                 primary_col = col_of_interest,
+                 rounding_func = function(x){scales::comma(signif(x,2))},
+                 legend_title =  "Expected number of cases to arrive each month",
+                 custom_palette = binpal
+                 
+    )
+  })
+  
+  output$ifr_explanation <- renderText({
+    paste0(
+      "Where there are recent COVID fatalities, this is compared to confirmed cases two weeks prior. ",
+      "If the number of cases look too low, then a 'hit rate' is calculated by comparing those cases two weeks prior to fatalities now.",
+      "Then, inferred active cases now is caclculted by dividing the confirmed active cases by the hit rate.",
+      "To do this we need to assume an infection fatality rate (IFR)."
+      
+    )
+  })
+}
+
 map_page_notes <- function(month_name,life_exp_thresh){
   paste0(
   "

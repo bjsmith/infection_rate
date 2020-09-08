@@ -1,23 +1,30 @@
 
-
+#shiny
 library(shiny)
+#library(shinyjs)
 library(dplyr)
+
+#data
+library(DT)
 library(data.table)
+library(dplyr)
 library(lubridate)
 library(readr)
 library(stringr)
+library(magrittr)
+library(googlesheets4)
+
+#visual
+library(ggplot2) # tidyverse vis package
+library(ggrepel)
 library(sf)
-library(dplyr)
 library(spData)
 library(leaflet)
-library(ggplot2) # tidyverse vis package
-library(shiny)   # for web applications
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(RColorBrewer)
-library(data.table)
-library(magrittr)
-library(googlesheets4)
+
+
 
 #timer functionality
 start_time <- Sys.time()

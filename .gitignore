@@ -5,6 +5,7 @@
 .Rproj.user/*
 
 data/*
+app/data/owid_cache.csv
 .DS_Store
 rsconnect/
 
