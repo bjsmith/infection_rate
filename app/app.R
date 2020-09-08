@@ -428,16 +428,8 @@ server <- function(input, output, session) {
     "<em>Cook Islands</em> and <em>Western Samoa</em> currently report COVID-free status, are rated zero risk. Due to their zero-risk status, it hasn't been necessary to include them in the dataset and they are not listed above.<br /><br />",
     "."
   ))})
+  #######################################
   #intervention simulation page
-  
-  output$intsim_notes<-
-    renderUI({
-      withMathJax(HTML(paste0("
-<h4>Notes:</h4>
-<br /><br />
-Refer to the 'Simulation settings' tab for more options.
-")))})
-  
   
   # world_with_covid_data,
   # treatment_effectiveness,
@@ -499,6 +491,7 @@ Refer to the 'Simulation settings' tab for more options.
   
   #basically NZ citizens only.
   sim_world_with_covid_data_statusquo <- reactive({
+    print_elapsed_time("running sim_world_with_covid_data_statusquo....")
     world_w_covid_data <- simulate_treatment_for_countries(
       nogeo_world_basic_data,
       treatment_effectiveness = input$intsim_effectiveness_level4/100,
@@ -507,6 +500,7 @@ Refer to the 'Simulation settings' tab for more options.
       assumed_ifr = input$simsettings_ifr/100,
       traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
       current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
+    print_elapsed_time("returning sim_world_with_covid_data_statusquo")
     return(world_w_covid_data)
     
   })
@@ -564,6 +558,7 @@ Refer to the 'Simulation settings' tab for more options.
   })
   
   get_status_quo_risk <- reactive({
+    
     #just all countries, but we'll only get expected cases from NZ Residents
     status_quo_risk <- 
       sim_world_with_covid_data_statusquo() %>%
@@ -597,6 +592,7 @@ Refer to the 'Simulation settings' tab for more options.
   })
   
   get_intervention_risk <- reactive({
+    print_elapsed_time("running get_intervention_risk")
     countries_in_intervention <- get_countries_allocated_to_levels0to3()
     #this is a bit different to status quo risk
     #because we're applying an intervention to reduce the number of people coming from other countries.
@@ -638,64 +634,9 @@ Refer to the 'Simulation settings' tab for more options.
             intervened_countries_risk
       )
     
+    print_elapsed_time("returning get_intervention_risk")
     return(intervention_risk)
   })
-  
-  get_daily_nz_data <- reactive({
-    daily_nz_data <- get_daily_data(TRUE) %>% filter(Location=="New Zealand")
-    return(daily_nz_data)
-  })
-  
-  output$new_zealand_status_quo <- renderPlot({
-    #1. do a graph of "monthly total" - do a running total over last 30 days
-    daily_nz_data<-get_daily_nz_data()
-    daily_nz_data <-  daily_nz_data %>% 
-      mutate(NewCasesOverLastMonth = rollapply(NewCasesImportAdjusted,30,sum,align='right',fill=NA))
-    graph_data <- daily_nz_data %>% filter(Date>"2020-06-15") %>% 
-      select(Date,NewCasesOverLastMonth,ActiveCases) %>%
-      tidyr::gather(key="Metric",value="Value",2:3)
-    return(
-      ggplot(graph_data %>% filter(Date>"2020-06-15"),aes(x=Date,y=Value))+
-        geom_line()+
-        facet_wrap(~Metric, scales = "free_y",nrow = 2)+
-        labs(title="New Zealand recent activity",subtitle = "Active Cases; New cases over the last 30 days (rolling total)"))
-  })
-  
-  output$cases_at_border_graph <- renderCasesAtBorderGraph(get_status_quo_risk())
-  
-  output$intsim_AreaPlot <- renderPlot({
-    intervention_risk <- get_intervention_risk()
-    generate_areaPlot(intervention_risk)
-  })
-  
-  
-  output$total_risk_graph <-render_total_risk_graph(get_status_quo_risk(),get_intervention_risk(),get_countries_allocated_to_levels0to3())
-  
-  
-  output$validation_description <- renderText({
-    
-    "
-    Here, we compare values to try to check and see whether values from different sources align.
-    
-    The first thing to check: does the predicted number of cases under \"status quo\" line up with the observed number of cases coming in to the country?
-    
-    "
-  })
-  
-  output$validation_description_2 <- renderText({
-    daily_nz_data <- get_daily_nz_data()
-    total_new_cases <- sum(daily_nz_data %>% filter(Date>"2020-06-01") %>% .$NewCases)
-    paste0("
-    What does that imply for our predicted cases getting into the community?
-    Working from the New Zealand rolling new cases graph, we see about 30-40 new cases per month over June to July.
-    
-    The total number of new cases since June 1 in New Zealand is ",as.character(total_new_cases),".
-    
-    With 3 border breaches that should work out to an error rate of 3 in ",as.character(total_new_cases),".
-    
-    ")
-  })
-  
   
   total_risk_text <- render_total_risk_text(
     world_with_covid_data_level0 = sim_world_with_covid_data_level0(),
@@ -703,40 +644,6 @@ Refer to the 'Simulation settings' tab for more options.
     status_quo_risk = get_status_quo_risk(),
     intervention_risk = get_intervention_risk()
   )
-  
-  
-  
-  output$dt_countries_level0<-DT::renderDataTable(
-    countries_level0_df() 
-  )
-  
-  output$dt_countries_level1<-DT::renderDataTable(
-    countries_level1_df() 
-  )
-  
-  output$dt_countries_level2<-DT::renderDataTable(
-    countries_level2_df() 
-    
-  )
-  output$dt_countries_level3<-DT::renderDataTable(
-    countries_level3_df() 
-    
-  )
-  
-  output$intsim_totalrisk<-
-    renderUI({
-      withMathJax(HTML(paste0(
-        total_risk_text()
-      )))
-    })
-
-  
-  output$intsim_level0_header <- simJourneyPanelHeader(0)
-  output$intsim_level1_header <- simJourneyPanelHeader(1)
-  output$intsim_level2_header <- simJourneyPanelHeader(2)
-  output$intsim_level3_header <- simJourneyPanelHeader(3)
-  output$intsim_level4_header <- simJourneyPanelHeader(4)
-  
   
   observeEvent(input$intsim_20countries,{
     print("reacting")
@@ -777,8 +684,110 @@ Refer to the 'Simulation settings' tab for more options.
   })
   
   
+  output$cases_at_border_graph <- renderCasesAtBorderGraph(get_status_quo_risk())
+  
+  output$intsim_AreaPlot <- renderPlot({
+    intervention_risk <- get_intervention_risk()
+    generate_areaPlot(intervention_risk)
+  })
+  
+  
+  output$total_risk_graph <-(#(get_status_quo_risk(),get_intervention_risk(),get_countries_allocated_to_levels0to3())
+    renderPlot({
+      # 
+      # status_quo_risk <- get_status_quo_risk()
+      # 
+      # intervention_risk <- get_intervention_risk()
+      # 
+      
+      get_total_risk_graph(get_status_quo_risk(),get_intervention_risk(),get_countries_allocated_to_levels0to3())
+    })
+  )
+  
+  
+  output$dt_countries_level0<-DT::renderDataTable(
+    countries_level0_df() 
+  )
+  
+  output$dt_countries_level1<-DT::renderDataTable(
+    countries_level1_df() 
+  )
+  
+  output$dt_countries_level2<-DT::renderDataTable(
+    countries_level2_df() 
+    
+  )
+  output$dt_countries_level3<-DT::renderDataTable(
+    countries_level3_df() 
+    
+  )
+  
+  output$intsim_totalrisk<-
+    renderUI({
+      withMathJax(HTML(paste0(
+        total_risk_text()
+      )))
+    })
+  
+  
+  render_intsim_page(input, output,sim_world_with_covid_data_statusquo())#can't include everything :/ but we will try to put what we can in here.
+  
+  
+  ######################################################################
+  ### Validation table.
+  
+  get_daily_nz_data <- reactive({
+    daily_nz_data <- get_daily_data(TRUE) %>% filter(Location=="New Zealand")
+    return(daily_nz_data)
+  })
+  
+  output$new_zealand_status_quo <- renderPlot({
+    #1. do a graph of "monthly total" - do a running total over last 30 days
+    daily_nz_data<-get_daily_nz_data()
+    daily_nz_data <-  daily_nz_data %>% 
+      mutate(NewCasesOverLastMonth = rollapply(NewCasesImportAdjusted,30,sum,align='right',fill=NA))
+    graph_data <- daily_nz_data %>% filter(Date>"2020-06-15") %>% 
+      select(Date,NewCasesOverLastMonth,ActiveCases) %>%
+      tidyr::gather(key="Metric",value="Value",2:3)
+    return(
+      ggplot(graph_data %>% filter(Date>"2020-06-15"),aes(x=Date,y=Value))+
+        geom_line()+
+        facet_wrap(~Metric, scales = "free_y",nrow = 2)+
+        labs(title="New Zealand recent activity",subtitle = "Active Cases; New cases over the last 30 days (rolling total)"))
+  })
+  
+  
+  
+  output$validation_description <- renderText({
+    
+    "
+    Here, we compare values to try to check and see whether values from different sources align.
+    
+    The first thing to check: does the predicted number of cases under \"status quo\" line up with the observed number of cases coming in to the country?
+    
+    "
+  })
+  
+  output$validation_description_2 <- renderText({
+    daily_nz_data <- get_daily_nz_data()
+    total_new_cases <- sum(daily_nz_data %>% filter(Date>"2020-06-01") %>% .$NewCases)
+    paste0("
+    What does that imply for our predicted cases getting into the community?
+    Working from the New Zealand rolling new cases graph, we see about 30-40 new cases per month over June to July.
+    
+    The total number of new cases since June 1 in New Zealand is ",as.character(total_new_cases),".
+    
+    With 3 border breaches that should work out to an error rate of 3 in ",as.character(total_new_cases),".
+    
+    ")
+  })
+  
+  ######################################################################
   #map page
   render_map_page(output,get_filtered_mapped_world_with_covid_data(),month_name)
+  
+  ######################################################################
+  #journey page
   
   journey_input <- eventReactive(input$journey_update, {
     if(input$journey_preflight_tempsymptoms){
@@ -981,13 +990,9 @@ ui <- navbarPage(
                      min=0,
                      max=10^5,step=1000,
                      value = default_current_lockdown_passenger_volume)
-        
-        
       )
     )
   )
-  
-  
 )
 
 # Run the application 

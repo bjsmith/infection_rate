@@ -49,6 +49,37 @@ get_intsim_tabPanel <- function(default_simulation_data,countries_to_choose_from
   ))
 }
 
+render_intsim_page <- function(input, output,sim_world_with_covid_data_statusquo){
+  
+  output$intsim_level0_header <- simJourneyPanelHeader(0)
+  output$intsim_level1_header <- simJourneyPanelHeader(1)
+  output$intsim_level2_header <- simJourneyPanelHeader(2)
+  output$intsim_level3_header <- simJourneyPanelHeader(3)
+  output$intsim_level4_header <- simJourneyPanelHeader(4)
+  
+  
+  output$intsim_notes<-
+    renderUI({
+      withMathJax(HTML(paste0("
+          <h4>Notes:</h4>
+          <br /><br />
+          Refer to the 'Simulation settings' tab for more options.
+          ")))})
+  
+  output$intsim_level0_description <- renderUI({
+    paste0(get_countries_allocated_to_leveln(input,0,sim_world_with_covid_data_statusquo),collapse = ", ")
+  })
+  output$intsim_level1_description <- renderUI({
+    paste0(get_countries_allocated_to_leveln(input,1,sim_world_with_covid_data_statusquo),collapse = ", ")
+  })
+  output$intsim_level2_description <- renderUI({
+    paste0(get_countries_allocated_to_leveln(input,2,sim_world_with_covid_data_statusquo),collapse = ", ")
+  })
+  output$intsim_level3_description <- renderUI({
+    paste0(get_countries_allocated_to_leveln(input,3,sim_world_with_covid_data_statusquo),collapse = ", ")
+  })
+}
+
 render_total_risk_text <- function(
   world_with_covid_data_level0,
   countries_allocated_to_levels0to3,
@@ -198,14 +229,8 @@ renderCasesAtBorderGraph <- function(status_quo_risk){
 }
 
 
-render_total_risk_graph <- function(status_quo_risk,intervention_risk,countries_allocated_to_levels0to3){
-    renderPlot({
-      
-    #status_quo_risk <- get_status_quo_risk()
-  
-    #intervention_risk <- get_intervention_risk()
-    
-    
+get_total_risk_graph <- function(status_quo_risk,intervention_risk,countries_allocated_to_levels0to3){
+
     #nz_resident_risk_label <- nz_resident_risk_df$Location[[1]]
     nz_res_only_label <- "Status quo restricted locations"
     # bubble_other_label <- "Other Bubble Locations"
@@ -313,7 +338,6 @@ render_total_risk_graph <- function(status_quo_risk,intervention_risk,countries_
       #guides(fill=guide_legend(nrow=2,byrow=TRUE))+
       geom_label_repel(aes(y=LabelPosition),color="white",fontface="bold")+
       coord_flip()
-  })
 }
 
 get_intsim_dt<-function(
@@ -354,25 +378,25 @@ get_intsim_dt<-function(
 }
 
 
-get_countries_allocated_to_leveln <- function(input,n,world_with_covid_data_statusquo){
+get_countries_allocated_to_leveln <- function(input,level_n,world_with_covid_data_statusquo){
   
   if(input$intsim_mode=="Advanced"){
-    return(input[[paste0("intsim_countries_level",as.character(n))]])
+    return(input[[paste0("intsim_countries_level",as.character(level_n))]])
   }else if (input$intsim_mode=="Simple"){
     #obtain the current list (probably via the "statusquo" variable)
-    #filter it by the lower-bound of the level below n if n is not zero
+    #filter it by the lower-bound of the level below level_n if level_n is not zero
     #and filter it by this level's limit
     #then return the countries.
-    max_prev <- input[[paste0("intsim_level",as.character(n),"_max_prevalence")]]
+    max_prev <- input[[paste0("intsim_level",as.character(level_n),"_max_prevalence")]]
     locations <- world_with_covid_data_statusquo %>% 
       filter(Location %in% key_interest_countries) %>%
-      filter(InferredActiveCaseTravelerRate<=max_prev)
+      filter(InferredActiveCaseTravelerRate<=max_prev/10^5)
       
       
     
-    if(n>0){
-      min_prev <- input[[paste0("intsim_level",as.character(n-1),"_max_prevalence")]]
-      locations <- locations %>% filter(InferredActiveCaseTravelerRate>min_prev)
+    if(level_n>0){
+      min_prev <- input[[paste0("intsim_level",as.character(level_n-1),"_max_prevalence")]]
+      locations <- locations %>% filter(InferredActiveCaseTravelerRate>min_prev/10^5)
     }
     
     return(locations$Location)
