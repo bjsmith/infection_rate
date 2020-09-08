@@ -547,15 +547,7 @@ Refer to the 'Simulation settings' tab for more options.
                          sim_world_with_covid_data_level3())
     )
   })
-  
-  # 
-  # get_countries_out_of_bubble_risks <- reactive({
-  #   sim_world_with_covid_data_quarantine() %>%
-  #     data.frame %>%
-  #     filter(LifeExp>=life_exp_thresh) %>%
-  #     filter(Location %in% input$intsim_countries_quarantine)
-  #   #use the lower "community cases" figure here because these are going through quarantine.
-  # })
+
   
   #these are untrusted countries, but NZ residents are ALWAYS allowed to return from these ones.
   get_countries_out_of_bubble_untrusted_risks <- reactive({
@@ -577,11 +569,8 @@ Refer to the 'Simulation settings' tab for more options.
       sim_world_with_covid_data_statusquo() %>%
       mutate(
         InterventionLevel=NA,
-        InterventionLabel="None")# %>%
-    # select(Location,
-    #        ExpectedNumberOfCasesInCommunity,
-    #        ExpectedCasesAtBorder
-    # )
+        InterventionLabel="None")
+    
     return(status_quo_risk)
   })
   
@@ -708,81 +697,12 @@ Refer to the 'Simulation settings' tab for more options.
   })
   
   
-  total_risk_text <- reactive({
-    
-    countries_excluded_due_to_data<-
-      sim_world_with_covid_data_level0() %>%
-      data.frame %>%
-      filter(Location %in% get_countries_allocated_to_levels0to3()) %>%
-      filter(LifeExp<life_exp_thresh)
-    
-    
-    #for countries that are let in without quarantine, we want to add 
-    #countries_in_bubble_risks <- get_countries_in_bubble_risks()$ProbabilityOfMoreThanZeroCases
-    #countries_screener_risks <- get_countries_level2_risks()$ProbabilityOfMoreThanZeroCommunityCases
-    #countries_out_of_bubble_risks <- get_countries_out_of_bubble_risks()$ProbabilityOfMoreThanZeroCommunityCases
-    
-    #untrusted_countries_risks <- get_countries_out_of_bubble_untrusted_risks()$ProbabilityOfMoreThanZeroCommunityCases
-    
-    # foreign_risk <- get_foreign_risk()
-    # nz_resident_risk <- get_intervention_risk()
-    intervention_risk <- get_intervention_risk()
-    status_quo_risk <- get_status_quo_risk()
-    increased_risk <- sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)/sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)-1
-    
-    #now...
-    #how do we combine these? 
-    #it is not as simple as adding each up. 
-    #I think we have to multiply the complements then get the complement again.
-    #total_risk_prop<-1-prod(1-na.exclude(c(countries_in_bubble_risks,countries_out_of_bubble_risks,untrusted_countries_risks)))
-    
-    #now we need to add a warning for excluded countries.
-    #total_risk_prop
-    textout<-paste0(
-      "In the status quo where only NZ residents are allowed can enter, we assume ",
-      sum(status_quo_risk$MonthlyArrivalsWeighted,na.rm = TRUE),
-      " travellers will arrive at the border per month. Consequently, we estimate ",
-      signif(sum(status_quo_risk$ExpectedCasesAtBorderUnderLockdown,na.rm = TRUE),2),
-      " positive cases per month will arrive at the border, of which ",
-      signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),2),
-      " will be exposed to the community.",
-      "This represents ",
-      signif(sum(status_quo_risk$ExpectedCasesAtBorder,na.rm=TRUE)/sum(status_quo_risk$StatusQuoMonthlyArrivals,na.rm = TRUE)*10^5,4),
-      " cases per 100k travellers at the border, of which ",
-      signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)/sum(status_quo_risk$StatusQuoMonthlyArrivals,na.rm = TRUE)*10^5,2),
-      " will be exposed to the community.",
-      "<br /> <br />",
-      "In the specified intervention, we estimate ",
-      round(sum(intervention_risk$MonthlyArrivalsWeighted,na.rm=TRUE),0),
-      " travellers will arrive at the border per month. Consequently, we estimate ",
-      signif(sum(intervention_risk$ExpectedCasesAtBorder,na.rm = TRUE),2),
-      " cases per month will arrive at the border, of which ",
-      signif(sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),2),
-      " will be exposed to the community.",
-      " The intervention increases the expected amount of community exposure by ",
-      scales::percent(increased_risk,accuracy = 0.01),
-      ".<br /> <br />",
-      #"The status quo risk of exposing the community to 1 or more cases over a 1-month period is ",
-      #scales::percent(total_risk_prop,accuracy = 0.01),
-      #".\n\n"
-      "Community exposure could be anything from one very brief encounter (e.g., stopping for directions) to an infected individual entering the community undetected."
-    )
-    
-    if(length(countries_excluded_due_to_data$Location)>0){
-      textout<-paste0(textout,
-                      "<br /><br /> COVID-19 Data from the following countries is considered less reliable. 
-NZ resident returnees from these countries are already allowed, but we caution against relying on this data for anything further: " ,
-                      paste0(countries_excluded_due_to_data$Location,collapse = ", "))
-    }
-    
-    
-    
-    textout<-paste0(textout, 
-                    "<br /> <br /><em>Cook Islands</em> and <em>Western Samoa</em> are not explicitly modeled. International sources do not track these locations and they are currently rated zero-risk, due to their COVID-free status and low or zero inbound travel. The situation should be continually monitored for any changes to their current zero-risk status.",
-                    " Their 100% August 2019 combined travel volumes were 21,952.")
-    
-    return(textout)
-  })
+  total_risk_text <- render_total_risk_text(
+    world_with_covid_data_level0 = sim_world_with_covid_data_level0(),
+    countries_allocated_to_levels0to3 = get_countries_allocated_to_levels0to3(),
+    status_quo_risk = get_status_quo_risk(),
+    intervention_risk = get_intervention_risk()
+  )
   
   
   
@@ -984,43 +904,7 @@ ui <- navbarPage(
       )
     )
   ),
-  tabPanel(
-    "Method and assumptions",
-    
-    fluidPage(
-      # Application title
-      titlePanel("COVID-19: Prevalence around the world"),
-      
-      # Sidebar with a slider input for number of bins 
-      sidebarLayout(
-        sidebarPanel(
-          uiOutput("testt")
-          
-        ),
-        
-        # Show a plot of the generated distribution
-        mainPanel(
-          textOutput("graph0header"),
-          leafletOutput("graph0"),
-          textOutput("graph1header"),
-          leafletOutput("graph1"),
-          textOutput("graph2header"),
-          leafletOutput("graph2"),
-          textOutput("graph3header"),
-          leafletOutput("graph3"),
-          textOutput("graph4header"),
-          leafletOutput("graph4"),
-          textOutput("graph5header"),
-          leafletOutput("graph5"),
-          textOutput("graph6header"),
-          leafletOutput("graph6"),
-          # textOutput("graph7header"),
-          # leafletOutput("graph7"),
-          textOutput("graph8header"),
-          leafletOutput("graph8")
-        )
-      )
-    )),
+  get_map_page_tabPanel(),
   tabPanel(
     "Validation",
     fluidPage(
@@ -1086,16 +970,6 @@ ui <- navbarPage(
                      min=0,
                      max=5,step=0.1,
                      value = default_assumed_ifr_percent),
-        # numericInput("simsettings_ifr",
-        #              "Aircraft infection rate (expected number of cases acquired 'in-flight' per pre-existing case):",
-        #              min=0,
-        #              max=10,step=0.001,
-        #              value = default_aircraft_infection_rate),
-        # numericInput("simsettings_maskuse",
-        #              "Reduction in aircraft infections from mask use (%):",
-        #              min=0,
-        #              max=100,step=1,
-        #              value = default_aircraft_mask_effectiveness_percent),
         numericInput("simsettings_traveler_relative_prevalence",
                      "Prevalence of COVID-19 in travellers relative to the population:",
                      min=0,

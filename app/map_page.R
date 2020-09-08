@@ -1,3 +1,44 @@
+get_map_page_tabPanel <- function(){
+  
+  tabPanel(
+    "Method and assumptions",
+    
+    fluidPage(
+      # Application title
+      titlePanel("COVID-19: Prevalence around the world"),
+      
+      # Sidebar with a slider input for number of bins 
+      sidebarLayout(
+        sidebarPanel(
+          uiOutput("testt")
+          
+        ),
+        
+        # Show a plot of the generated distribution
+        mainPanel(
+          textOutput("graph0header"),
+          leafletOutput("graph0"),
+          textOutput("graph1header"),
+          leafletOutput("graph1"),
+          textOutput("graph2header"),
+          leafletOutput("graph2"),
+          textOutput("graph3header"),
+          leafletOutput("graph3"),
+          textOutput("graph4header"),
+          leafletOutput("graph4"),
+          textOutput("graph5header"),
+          leafletOutput("graph5"),
+          textOutput("graph6header"),
+          leafletOutput("graph6"),
+          # textOutput("graph7header"),
+          # leafletOutput("graph7"),
+          textOutput("graph8header"),
+          leafletOutput("graph8")
+        )
+      )
+    ))
+}
+
 render_map_page <- function(output, filtered_mapped_world_with_covid_data,month_name){
   
   output$testt<-

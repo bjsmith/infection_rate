@@ -49,6 +49,78 @@ get_intsim_tabPanel <- function(default_simulation_data,countries_to_choose_from
   ))
 }
 
+render_total_risk_text <- function(
+  world_with_covid_data_level0,
+  countries_allocated_to_levels0to3,
+  status_quo_risk,
+  intervention_risk
+  ){reactive({
+    countries_excluded_due_to_data<-
+      world_with_covid_data_level0 %>%
+      data.frame %>%
+      filter(Location %in% countries_allocated_to_levels0to3) %>%
+      filter(LifeExp<life_exp_thresh)
+    
+    
+    # intervention_risk <- get_intervention_risk()
+    # status_quo_risk <- get_status_quo_risk()
+    increased_risk <- sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)/sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)-1
+    
+    #now...
+    #how do we combine these? 
+    #it is not as simple as adding each up. 
+    #I think we have to multiply the complements then get the complement again.
+    #total_risk_prop<-1-prod(1-na.exclude(c(countries_in_bubble_risks,countries_out_of_bubble_risks,untrusted_countries_risks)))
+    
+    #now we need to add a warning for excluded countries.
+    #total_risk_prop
+    textout<-paste0(
+      "In the status quo where only NZ residents are allowed can enter, we assume ",
+      sum(status_quo_risk$MonthlyArrivalsWeighted,na.rm = TRUE),
+      " travellers will arrive at the border per month. Consequently, we estimate ",
+      signif(sum(status_quo_risk$ExpectedCasesAtBorderUnderLockdown,na.rm = TRUE),2),
+      " positive cases per month will arrive at the border, of which ",
+      signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),2),
+      " will be exposed to the community.",
+      "This represents ",
+      signif(sum(status_quo_risk$ExpectedCasesAtBorder,na.rm=TRUE)/sum(status_quo_risk$StatusQuoMonthlyArrivals,na.rm = TRUE)*10^5,4),
+      " cases per 100k travellers at the border, of which ",
+      signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)/sum(status_quo_risk$StatusQuoMonthlyArrivals,na.rm = TRUE)*10^5,2),
+      " will be exposed to the community.",
+      "<br /> <br />",
+      "In the specified intervention, we estimate ",
+      round(sum(intervention_risk$MonthlyArrivalsWeighted,na.rm=TRUE),0),
+      " travellers will arrive at the border per month. Consequently, we estimate ",
+      signif(sum(intervention_risk$ExpectedCasesAtBorder,na.rm = TRUE),2),
+      " cases per month will arrive at the border, of which ",
+      signif(sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),2),
+      " will be exposed to the community.",
+      " The intervention increases the expected amount of community exposure by ",
+      scales::percent(increased_risk,accuracy = 0.01),
+      ".<br /> <br />",
+      #"The status quo risk of exposing the community to 1 or more cases over a 1-month period is ",
+      #scales::percent(total_risk_prop,accuracy = 0.01),
+      #".\n\n"
+      "Community exposure could be anything from one very brief encounter (e.g., stopping for directions) to an infected individual entering the community undetected."
+    )
+    
+    if(length(countries_excluded_due_to_data$Location)>0){
+      textout<-paste0(textout,
+                      "<br /><br /> COVID-19 Data from the following countries is considered less reliable. 
+  NZ resident returnees from these countries are already allowed, but we caution against relying on this data for anything further: " ,
+                      paste0(countries_excluded_due_to_data$Location,collapse = ", "))
+    }
+    
+    
+    
+    textout<-paste0(textout, 
+                    "<br /> <br /><em>Cook Islands</em> and <em>Western Samoa</em> are not explicitly modeled. International sources do not track these locations and they are currently rated zero-risk, due to their COVID-free status and low or zero inbound travel. The situation should be continually monitored for any changes to their current zero-risk status.",
+                    " Their 100% August 2019 combined travel volumes were 21,952.")
+    
+    return(textout)
+  })
+}
+
 
 renderCasesAtBorderGraph <- function(status_quo_risk){
   return(renderPlot({
