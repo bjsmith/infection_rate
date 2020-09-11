@@ -80,7 +80,7 @@ journey_graph_collection_df <- NULL
 
 ###########main dashboard.
 source("map_page.R")
-debugSource('components/intervention_simulation.R')
+source('components/intervention_simulation.R')
 source('components/proposal.R')
 
 print_elapsed_time("Startin main dashboard creation...")

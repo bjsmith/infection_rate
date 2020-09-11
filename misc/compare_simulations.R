@@ -1,4 +1,4 @@
-debugSource("misc/monte_carlo.R")
+source("misc/monte_carlo.R")
 
 ##### MATCHING MY OWN DATASET
 verbose=FALSE
