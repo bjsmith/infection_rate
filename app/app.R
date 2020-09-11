@@ -1,21 +1,16 @@
 
-#run_date<-as.Date("2020-08-22")
-run_date<-Sys.Date()
-month_name <- format(run_date,"%B")
+default_run_date<-as.Date("2020-08-22")
+#default_run_date<-Sys.Date()
+default_month_name <- format(default_run_date,"%B")
 
 
-debugSource("utils.R")
+source("utils.R")
 print_elapsed_time("START")
 
-debugSource("simulation.R")
+source("simulation.R")
 source("country_classification_rules.R")
 source("simJourneyPanel.R")
-
-
 source("defaults.R")
-
-
-
 source("monte_carlo.R")
 
 
@@ -41,38 +36,33 @@ print_elapsed_time("loaded dependencies")
 # travel_volume_proportion=1,
 # assumed_ifr=0.006,
 # traveler_relative_prevalence=1,
-print_elapsed_time("LOADING DATA")
 
-geo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date)
-print_elapsed_time("RUNNING SIM")
-geo_world_with_covid_data <- simulate_treatment_for_countries(geo_world_basic_data,
-                                                              treatment_effectiveness = default_assumed_effectiveness,
-                                                              extra_spread = 0,
-                                                              assumed_ifr = default_assumed_ifr_percent/100,
-                                                              
-                                                              traveler_relative_prevalence=default_traveler_relative_prevalence,
-                                                              current_lockdown_passenger_volume = default_current_lockdown_passenger_volume
-)
+# default_geo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,default_run_date)
+# print_elapsed_time("RUNNING SIM")
+# default_geo_world_with_covid_data <- simulate_treatment_for_countries(default_geo_world_basic_data,
+#                                                               treatment_effectiveness = default_assumed_effectiveness,
+#                                                               extra_spread = 0,
+#                                                               assumed_ifr = default_assumed_ifr_percent/100,
+#                                                               
+#                                                               traveler_relative_prevalence=default_traveler_relative_prevalence,
+#                                                               current_lockdown_passenger_volume = default_current_lockdown_passenger_volume
+# )
 
-print_elapsed_time("LOADING DATA 2")
-
-nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
-print_elapsed_time("RUNNING SIM 2")
-
-
+print_elapsed_time("LOADING DATA 2...")
+default_nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,default_run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
 default_simulation_data <- simulate_treatment_for_countries(
-  nogeo_world_basic_data,
+  default_nogeo_world_basic_data,
   treatment_effectiveness = default_assumed_effectiveness,
   extra_spread = 0,
   assumed_ifr = default_assumed_ifr_percent/100,
   traveler_relative_prevalence=default_traveler_relative_prevalence,
   current_lockdown_passenger_volume = default_current_lockdown_passenger_volume)
 
-print_elapsed_time("FINISHED SIM 2")
+countries_to_choose_from<-
+  default_nogeo_world_basic_data$Location %>%
+  sort %>%
+  .[.!="New Zealand"]
 
-
-#save.image("environ.RData")
-#load("environ.RData")
 
 small_country_health_data <-data.frame(
   "Country"=c("Samoa", "Cook Islands"),
@@ -80,13 +70,6 @@ small_country_health_data <-data.frame(
 )
 
 
-# display_table<-world_with_covid_data[vals_to_include,]
-######set up general simulator
-
-countries_to_choose_from<-
-  nogeo_world_basic_data$Location %>%
-  sort %>%
-  .[.!="New Zealand"]
 
 source("key_interest_countries.R")
 
@@ -99,9 +82,65 @@ journey_graph_collection_df <- NULL
 source("map_page.R")
 debugSource('components/intervention_simulation.R')
 source('components/proposal.R')
+
+print_elapsed_time("Startin main dashboard creation...")
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
+  #####################
+  #universal
+  get_run_date <- reactive({
+    input$simsettings_run_date
+  })
   
+  get_run_month <- reactive({
+    format(input$simsettings_run_date,"%B")
+  })
+  
+  nogeo_world_basic_data <- reactive({
+    print_elapsed_time("LOADING DATA 2...")
+    return(get_geomapped_covid_data(life_exp_thresh,input$simsettings_run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE))
+  })
+  
+  # 
+  # 
+  # simulation_data <- reactive({
+  #   print_elapsed_time("SIMULATING DATA AGAIN 2...")
+  #   simulate_treatment_for_countries(
+  #   nogeo_world_basic_data(),
+  #   treatment_effectiveness = default_assumed_effectiveness,
+  #   extra_spread = 0,
+  #   assumed_ifr = default_assumed_ifr_percent/100,
+  #   traveler_relative_prevalence=default_traveler_relative_prevalence,
+  #   current_lockdown_passenger_volume = default_current_lockdown_passenger_volume)})
+  
+  
+  
+
+  
+  generate_world_with_covid_data <- reactive({
+    get_intervention_risk()
+  })
+  
+  geo_world_basic_data <- reactive({
+    get_geomapped_covid_data(life_exp_thresh,default_run_date)
+  })
+  generate_mapped_world_with_covid_data <- reactive({
+    simulate_treatment_for_countries(
+      geo_world_basic_data(),
+      treatment_effectiveness = input$intsim_effectiveness_level2/100,
+      extra_spread = default_assumed_spread,
+      assumed_ifr = input$simsettings_ifr/100,
+      traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
+      current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
+  })
+  
+  get_filtered_mapped_world_with_covid_data <- reactive({
+    generate_mapped_world_with_covid_data() %>% 
+      filter(LifeExp>=life_exp_thresh)
+  })
+  
+  ###############################################################
+  #country report
   generate_country_profile_report_params <-reactive({
     
     print(input$locprofile_Location)
@@ -139,24 +178,6 @@ server <- function(input, output, session) {
     return(params)
   })
   
-  generate_world_with_covid_data <- reactive({
-    get_intervention_risk()
-  })
-  
-  generate_mapped_world_with_covid_data <- reactive({
-    simulate_treatment_for_countries(
-      geo_world_basic_data,
-      treatment_effectiveness = input$intsim_effectiveness_level2/100,
-      extra_spread = default_assumed_spread,
-      assumed_ifr = input$simsettings_ifr/100,
-      traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
-      current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
-  })
-  
-  get_filtered_mapped_world_with_covid_data <- reactive({
-    generate_mapped_world_with_covid_data() %>% 
-      filter(LifeExp>=life_exp_thresh)
-  })
   
   get_report_filename <- reactive({
     
@@ -193,7 +214,9 @@ server <- function(input, output, session) {
       ))
   })
   
+  ###############################################################
   #country profile page
+  
   output$downloadable_report <- downloadHandler(
     # For PDF output, change this to "report.pdf"
     filename = "report.pdf",
@@ -275,7 +298,7 @@ server <- function(input, output, session) {
           InfActiveCasesPerMillion,
           PrevalenceRating,
           OutlookRating,
-          DataReliablityRating,#add
+          DataReliabilityRating,#add
           Total2019MonthlyArrivals,
           MonthlyArrivalsWeighted,
           ExpectedCasesAtBorder,
@@ -315,7 +338,7 @@ server <- function(input, output, session) {
           PredictedInfActiveCasesPerMillion,
           OutlookRating,
           LifeExp,
-          DataReliablityRating
+          DataReliabilityRating
         ) %>% as_tibble()
       
       colnames(display_tibble) <- c(#"ISO",
@@ -347,12 +370,7 @@ server <- function(input, output, session) {
   
   )
   
-  
-  #country list page
   output$country_table<-DT::renderDataTable({
-    
-    
-    
     display_tibble<- get_country_table()
     
     display_dt <- DT::datatable(
@@ -415,7 +433,7 @@ server <- function(input, output, session) {
   
   output$countrylist_downloadcsv <- downloadHandler(
     filename = function() {
-      paste("risk_matrix_", run_date, ".csv", sep = "")
+      paste("risk_matrix_", get_run_date(), ".csv", sep = "")
     },
     content = function(file) {
       write.csv(get_country_table(), file, row.names = FALSE)
@@ -428,21 +446,14 @@ server <- function(input, output, session) {
     "<em>Cook Islands</em> and <em>Western Samoa</em> currently report COVID-free status, are rated zero risk. Due to their zero-risk status, it hasn't been necessary to include them in the dataset and they are not listed above.<br /><br />",
     "."
   ))})
+  
   #######################################
   #intervention simulation page
-  
-  # world_with_covid_data,
-  # treatment_effectiveness,
-  # extra_spread,
-  # travel_volume_proportion=1,
-  # assumed_ifr=0.006,
-  # traveler_relative_prevalence=1,
-  # current_lockdown_passenger_volume=NULL
   
   
   sim_world_with_covid_data_level0 <- reactive({
     world_w_covid_data <- simulate_treatment_for_countries(
-      nogeo_world_basic_data,
+      nogeo_world_basic_data(),
       treatment_effectiveness = input$intsim_effectiveness_level0/100,
       extra_spread = input$intsim_extraspread_level0/100,
       travel_volume_proportion = input$intsim_percent_tvolume_level0/100,
@@ -454,7 +465,7 @@ server <- function(input, output, session) {
   
   sim_world_with_covid_data_level1 <- reactive({
     world_w_covid_data <- simulate_treatment_for_countries(
-      nogeo_world_basic_data,
+      nogeo_world_basic_data(),
       treatment_effectiveness = input$intsim_effectiveness_level1/100,
       extra_spread = input$intsim_extraspread_level1/100,
       travel_volume_proportion = input$intsim_percent_tvolume_level1/100,
@@ -466,7 +477,7 @@ server <- function(input, output, session) {
   
   sim_world_with_covid_data_level2 <- reactive({
     world_w_covid_data <- simulate_treatment_for_countries(
-      nogeo_world_basic_data,
+      nogeo_world_basic_data(),
       treatment_effectiveness = input$intsim_effectiveness_level2/100,
       extra_spread = input$intsim_extraspread_level2/100,
       travel_volume_proportion = input$intsim_percent_tvolume_level2/100,
@@ -478,7 +489,7 @@ server <- function(input, output, session) {
   
   sim_world_with_covid_data_level3 <- reactive({
     world_w_covid_data <- simulate_treatment_for_countries(
-      nogeo_world_basic_data,
+      nogeo_world_basic_data(),
       treatment_effectiveness = input$intsim_effectiveness_level3/100,
       extra_spread = input$intsim_extraspread_level3/100,
       travel_volume_proportion = input$intsim_percent_tvolume_level3/100,
@@ -493,7 +504,7 @@ server <- function(input, output, session) {
   sim_world_with_covid_data_statusquo <- reactive({
     print_elapsed_time("running sim_world_with_covid_data_statusquo....")
     world_w_covid_data <- simulate_treatment_for_countries(
-      nogeo_world_basic_data,
+      nogeo_world_basic_data(),
       treatment_effectiveness = input$intsim_effectiveness_level4/100,
       extra_spread = input$intsim_extraspread_level4/100,
       travel_volume_proportion=0,
@@ -507,7 +518,7 @@ server <- function(input, output, session) {
   #NZ citizens only, with the new pre-departure testing
   sim_world_with_covid_data_predeparture_testing <- reactive({
     world_w_covid_data <- simulate_treatment_for_countries(
-      nogeo_world_basic_data,
+      nogeo_world_basic_data(),
       treatment_effectiveness = input$intsim_effectiveness_level3/100,
       extra_spread = input$intsim_extraspread_level3/100,
       travel_volume_proportion=0,
@@ -542,21 +553,6 @@ server <- function(input, output, session) {
     )
   })
 
-  
-  #these are untrusted countries, but NZ residents are ALWAYS allowed to return from these ones.
-  get_countries_out_of_bubble_untrusted_risks <- reactive({
-    #but only pass forward countries that we haven't actually selected
-    sim_world_with_covid_data_statusquo() %>%
-      data.frame %>%
-      filter(
-        (LifeExp<life_exp_thresh) | 
-          (
-            ((Location %in% input$intsim_countries_quarantine)==FALSE) & 
-              ((Location %in% input$intsim_countries_bubble)==FALSE)
-          )
-      ) 
-  })
-  
   get_status_quo_risk <- reactive({
     
     #just all countries, but we'll only get expected cases from NZ Residents
@@ -639,10 +635,10 @@ server <- function(input, output, session) {
   })
   
   total_risk_text <- render_total_risk_text(
-    world_with_covid_data_level0 = sim_world_with_covid_data_level0(),
-    countries_allocated_to_levels0to3 = get_countries_allocated_to_levels0to3(),
-    status_quo_risk = get_status_quo_risk(),
-    intervention_risk = get_intervention_risk()
+    get_world_with_covid_data_level0 = sim_world_with_covid_data_level0,
+    get_countries_allocated_to_levels0to3 = get_countries_allocated_to_levels0to3,
+    get_status_quo_risk = get_status_quo_risk,
+    get_intervention_risk = get_intervention_risk
   )
   
   observeEvent(input$intsim_20countries,{
@@ -653,7 +649,8 @@ server <- function(input, output, session) {
     
     intervention_risk <- get_intervention_risk()
     intervention_risk_keycountries <- 
-      intervention_risk %>% filter(Location %in% key_interest_countries)
+      intervention_risk %>% 
+      filter(Location %in% key_interest_countries)
     
     
     updateSelectInput(
@@ -683,44 +680,24 @@ server <- function(input, output, session) {
     
   })
   
-  
-  output$cases_at_border_graph <- renderCasesAtBorderGraph(get_status_quo_risk())
-  
   output$intsim_AreaPlot <- renderPlot({
     intervention_risk <- get_intervention_risk()
     generate_areaPlot(intervention_risk)
   })
-  
-  
-  output$total_risk_graph <-(#(get_status_quo_risk(),get_intervention_risk(),get_countries_allocated_to_levels0to3())
+  output$total_risk_graph <-(
     renderPlot({
-      # 
-      # status_quo_risk <- get_status_quo_risk()
-      # 
-      # intervention_risk <- get_intervention_risk()
-      # 
-      
       get_total_risk_graph(get_status_quo_risk(),get_intervention_risk(),get_countries_allocated_to_levels0to3())
     })
   )
+  output$cumulative_risk_plot <-renderPlot({
+      get_cumulative_risk_plot(get_status_quo_risk(),get_intervention_risk())
+    })
   
   
-  output$dt_countries_level0<-DT::renderDataTable(
-    countries_level0_df() 
-  )
-  
-  output$dt_countries_level1<-DT::renderDataTable(
-    countries_level1_df() 
-  )
-  
-  output$dt_countries_level2<-DT::renderDataTable(
-    countries_level2_df() 
-    
-  )
-  output$dt_countries_level3<-DT::renderDataTable(
-    countries_level3_df() 
-    
-  )
+  output$dt_countries_level0<-DT::renderDataTable(countries_level0_df())
+  output$dt_countries_level1<-DT::renderDataTable(countries_level1_df())
+  output$dt_countries_level2<-DT::renderDataTable(countries_level2_df())
+  output$dt_countries_level3<-DT::renderDataTable(countries_level3_df())
   
   output$intsim_totalrisk<-
     renderUI({
@@ -735,7 +712,7 @@ server <- function(input, output, session) {
   
   ######################################################################
   ### Validation table.
-  
+  output$cases_at_border_graph <- renderCasesAtBorderGraph(get_status_quo_risk())
   get_daily_nz_data <- reactive({
     daily_nz_data <- get_daily_data(TRUE) %>% filter(Location=="New Zealand")
     return(daily_nz_data)
@@ -784,7 +761,7 @@ server <- function(input, output, session) {
   
   ######################################################################
   #map page
-  render_map_page(output,get_filtered_mapped_world_with_covid_data(),month_name)
+  render_map_page(output,get_filtered_mapped_world_with_covid_data(),get_run_month())
   
   ######################################################################
   #journey page
@@ -842,10 +819,7 @@ server <- function(input, output, session) {
       theme(legend.position="bottom",axis.text.x = element_text(angle = 20))+geom_label(aes(label=scales::percent(remains_infectious_and_in_pipeline,accuracy = 0.01)))+
       scale_y_continuous(labels=scales::percent_format())
   })
-  
-  
-  
-  
+
   
 }
 
@@ -989,7 +963,10 @@ ui <- navbarPage(
                      "Current monthly incoming passenger volume:",
                      min=0,
                      max=10^5,step=1000,
-                     value = default_current_lockdown_passenger_volume)
+                     value = default_current_lockdown_passenger_volume),
+        dateInput("simsettings_run_date",
+                     "Run date:",
+                     value = default_run_date,max = Sys.Date())
       )
     )
   )

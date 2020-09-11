@@ -6,6 +6,54 @@ simulate_treatment_for_countries_with_naive_levels <- function(world_with_covid_
 
 
 }
+# 
+# simulate_treatment_groups_for_countries <- function(
+#   countries_in_intervention,
+#   universalPCR=FALSE
+#   ){
+#   #this is a bit different to status quo risk
+#   #because we're applying an intervention to reduce the number of people coming from other countries.
+#   if(universalPCR){
+#     world_raw <- sim_world_with_covid_data_predeparture_testing()
+#   }else{
+#     world_raw <- sim_world_with_covid_data_statusquo()
+#   }
+#   status_quo_countries <- world_raw %>%
+#     mutate(
+#       InterventionLevel=NA,
+#       InterventionLabel="None")%>% 
+#     filter((Location %in% countries_in_intervention)==FALSE) %>%
+#     mutate(
+#       InterventionLevel=NA,
+#       InterventionLabel="None")
+#   
+#   intervened_countries_risk <- rbind(
+#     sim_world_with_covid_data_level0() %>%
+#       filter(Location %in% get_countries_allocated_to_level0()) %>%
+#       mutate(
+#         InterventionLevel=0),
+#     sim_world_with_covid_data_level1() %>%
+#       filter(Location %in% get_countries_allocated_to_level1()) %>%
+#       mutate(
+#         InterventionLevel=1),
+#     sim_world_with_covid_data_level2() %>%
+#       filter(Location %in% get_countries_allocated_to_level2()) %>%
+#       mutate(
+#         InterventionLevel=2),
+#     sim_world_with_covid_data_level3() %>%
+#       filter(Location %in% get_countries_allocated_to_level3()) %>%
+#       mutate(
+#         InterventionLevel=3)
+#   ) %>% rowwise() %>% mutate(InterventionLabel=get_intervention_name(InterventionLevel))
+#   
+#   intervention_risk <- 
+#     rbind(status_quo_countries ,
+#           intervened_countries_risk
+#     )
+#   
+#   print_elapsed_time("returning get_intervention_risk")
+#   return(intervention_risk)
+# }
 
 simulate_treatment_for_countries <- function(
   world_with_covid_data,
@@ -16,6 +64,8 @@ simulate_treatment_for_countries <- function(
   traveler_relative_prevalence=1,
   current_lockdown_passenger_volume=NULL
   ){
+  
+  print_elapsed_time("loaded dependencies")
   
   dataset_is_geographic <- FALSE
   if("sf" %in% class(world_with_covid_data)){
@@ -196,7 +246,7 @@ simulate_treatment_for_countries <- function(
     rowwise() %>%
     mutate(PrevalenceRating=classify_country_prevalence(LifeExp, InfActiveCasesPerMillion),
            OutlookRating=classify_country_prevalence(LifeExp, PredictedInfActiveCasesPerMillion),
-           DataReliablityRating = classify_country_trust(LifeExp,Location)
+           DataReliabilityRating = classify_country_trust(LifeExp,Location)
            ) %>%
     ungroup()
     

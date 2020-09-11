@@ -1,144 +1,76 @@
-00.04; START
-00.06; loaded dependencies
-00.06; LOADING DATA
-00.06; getting data...
-00.06; retrieving data list...
-00.06; Fetching JH data...
-00.92; JH data retrieved.
-00.96; using cache to get OWID dataset
-01.43; ...retrieved.
-01.43; mutating...
-01.47; summarising...
-01.52; getting jh_long and dxc...
-01.75; retrieving country mapping...
-01.76; ...retrieved.
-01.89; merging manual corrections...
-01.96; calculating active cases...
-02.82; got daily data, getting full data...
-02.82; got data.
-02.87; got life expectancy
-02.87; loading country codes...
-02.89; loading arrivals...
-03.08; filtering arrivals
-03.80; processing
-03.93; getting slopes
-04.62; ...finished.
-04.62; RUNNING SIM
-04.75; LOADING DATA 2
-04.75; getting data...
-04.75; retrieving data list...
-04.75; ...retrieved.
-04.75; mutating...
-04.77; summarising...
-04.90; getting jh_long and dxc...
-05.13; retrieving country mapping...
-05.13; ...retrieved.
-05.32; merging manual corrections...
-05.40; calculating active cases...
-06.07; got daily data, getting full data...
-06.07; got data.
-06.11; got life expectancy
-06.29; loading country codes...
-06.35; loading arrivals...
-06.60; filtering arrivals
-07.27; processing
-07.44; getting slopes
-08.06; ...finished.
-08.06; RUNNING SIM 2
-08.15; FINISHED SIM 2
-11.91; running get_intervention_risk
-11.92; running sim_world_with_covid_data_statusquo....
-12.02; returning sim_world_with_covid_data_statusquo
-12.80; returning get_intervention_risk
-28.25; running get_intervention_risk
-29.26; returning get_intervention_risk
-30.97; running get_intervention_risk
-31.42; returning get_intervention_risk
-43.60; running get_intervention_risk
-43.75; returning get_intervention_risk
-46.16; running get_intervention_risk
-46.47; returning get_intervention_risk
-51.00; running get_intervention_risk
-51.28; returning get_intervention_risk
-01.06; running get_intervention_risk
-01.07; returning get_intervention_risk
-01.10; running get_intervention_risk
-01.11; returning get_intervention_risk
-01.21; running get_intervention_risk
-01.21; returning get_intervention_risk
-01.25; running get_intervention_risk
-01.25; returning get_intervention_risk
-01.42; running get_intervention_risk
-01.42; returning get_intervention_risk
-02.43; running get_intervention_risk
-02.44; returning get_intervention_risk
-02.47; running get_intervention_risk
-02.48; returning get_intervention_risk
-02.51; running get_intervention_risk
-02.52; returning get_intervention_risk
-02.62; running get_intervention_risk
-02.62; returning get_intervention_risk
-02.83; running get_intervention_risk
-02.84; returning get_intervention_risk
-02.87; running get_intervention_risk
-02.88; returning get_intervention_risk
-02.92; running get_intervention_risk
-02.92; returning get_intervention_risk
-02.96; running get_intervention_risk
-02.96; returning get_intervention_risk
-03.18; running get_intervention_risk
-03.19; returning get_intervention_risk
-03.23; running get_intervention_risk
-03.23; returning get_intervention_risk
-03.60; running get_intervention_risk
-03.61; returning get_intervention_risk
-03.95; running get_intervention_risk
-03.95; returning get_intervention_risk
-04.25; running get_intervention_risk
-04.26; returning get_intervention_risk
-04.33; running get_intervention_risk
-04.33; returning get_intervention_risk
-04.39; running get_intervention_risk
-04.40; returning get_intervention_risk
-04.63; running get_intervention_risk
-04.64; returning get_intervention_risk
-04.74; running get_intervention_risk
-04.75; returning get_intervention_risk
-04.81; running get_intervention_risk
-04.81; returning get_intervention_risk
-04.85; running get_intervention_risk
-04.85; returning get_intervention_risk
-04.92; running get_intervention_risk
-04.92; returning get_intervention_risk
-04.96; running get_intervention_risk
-04.97; returning get_intervention_risk
-05.12; running get_intervention_risk
-05.12; returning get_intervention_risk
-05.16; running get_intervention_risk
-05.17; returning get_intervention_risk
-05.89; running get_intervention_risk
-05.90; returning get_intervention_risk
-06.14; running get_intervention_risk
-06.15; returning get_intervention_risk
-06.27; running get_intervention_risk
-06.27; returning get_intervention_risk
-06.37; running get_intervention_risk
-06.38; returning get_intervention_risk
-06.46; running get_intervention_risk
-06.46; returning get_intervention_risk
-06.56; running get_intervention_risk
-06.57; returning get_intervention_risk
-06.81; running get_intervention_risk
-06.82; returning get_intervention_risk
-06.93; running get_intervention_risk
-06.94; returning get_intervention_risk
-07.03; running get_intervention_risk
-07.04; returning get_intervention_risk
-07.07; running get_intervention_risk
-07.08; returning get_intervention_risk
-07.18; running get_intervention_risk
-07.19; returning get_intervention_risk
-07.22; running get_intervention_risk
-07.22; returning get_intervention_risk
-07.30; running get_intervention_risk
-07.31; returning get_intervention_risk
+00.13; START
+00.03; loaded dependencies
+00.00; LOADING DATA 2...
+00.38; getting data...
+00.08; retrieving data list...
+00.00; Fetching JH data...
+01.71; JH data retrieved.
+00.07; getting OWID from github
+03.80; ...retrieved.
+00.00; mutating...
+00.05; summarising...
+00.05; getting jh_long and dxc...
+00.22; retrieving country mapping...
+00.01; ...retrieved.
+00.35; merging manual corrections...
+00.37; calculating active cases...
+01.27; got daily data, getting full data...
+00.00; got data.
+00.05; got life expectancy
+00.17; loading country codes...
+00.06; loading arrivals...
+00.33; filtering arrivals
+00.70; processing
+00.10; getting slopes
+02.11; ...finished.
+00.40; loaded dependencies
+00.69; Startin main dashboard creation...
+05.82; running get_intervention_risk
+00.01; running sim_world_with_covid_data_statusquo....
+00.00; loaded dependencies
+00.00; LOADING DATA 2...
+00.00; getting data...
+00.00; retrieving data list...
+00.00; ...retrieved.
+00.00; mutating...
+00.02; summarising...
+00.13; getting jh_long and dxc...
+00.28; retrieving country mapping...
+00.01; ...retrieved.
+00.15; merging manual corrections...
+00.06; calculating active cases...
+00.74; got daily data, getting full data...
+00.00; got data.
+00.07; got life expectancy
+00.20; loading country codes...
+00.02; loading arrivals...
+00.34; filtering arrivals
+01.02; processing
+00.14; getting slopes
+00.89; ...finished.
+00.11; returning sim_world_with_covid_data_statusquo
+00.09; loaded dependencies
+00.14; loaded dependencies
+00.11; loaded dependencies
+00.13; loaded dependencies
+00.16; returning get_intervention_risk
+15.42; loaded dependencies
+00.00; getting data...
+00.00; retrieving data list...
+00.00; ...retrieved.
+00.00; mutating...
+00.04; summarising...
+00.07; getting jh_long and dxc...
+00.27; retrieving country mapping...
+00.01; ...retrieved.
+00.15; merging manual corrections...
+00.07; calculating active cases...
+00.74; got daily data, getting full data...
+00.00; got data.
+00.08; got life expectancy
+00.01; loading country codes...
+00.07; loading arrivals...
+00.30; filtering arrivals
+00.82; processing
+00.18; getting slopes
+00.75; ...finished.

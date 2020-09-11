@@ -1988,44 +1988,13 @@ geo_world_with_covid_data &lt;- simulate_treatment_for_countries(nogeo_world_bas
       traveler_relative_prevalence=default_traveler_relative_prevalence,
       current_lockdown_passenger_volume = default_current_lockdown_passenger_volume)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiQ2FsbGVkIGZyb206IGV2YWwoZXhwciwgcClcbiJ9 -->
-<pre><code>Called from: eval(expr, p)</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxublxuYGBgIn0= -->
-<pre class="r"><code>n</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiZGVidWcgYXQgfi9Hb29nbGUgRHJpdmUvcG9saXRpY3MvY29yb25hdmlydXMvY29kZS9pbmZlY3Rpb25fcmF0ZS9hcHAvc2ltdWxhdGlvbi5SIzE2Njogd29ybGRfd2l0aF9jb3ZpZF9kYXRhIDwtIHdvcmxkX3dpdGhfY292aWRfZGF0YSAlPiUgbXV0YXRlKEV4cGVjdGVkTnVtYmVyT2ZDYXNlc0luQ29tbXVuaXR5ID0gRXhwZWN0ZWRDYXNlc0F0Qm9yZGVyICogXG4gICAgcHJvYl9pbmZlY3RlZF9hcnJfcmVhY2hlc19jb21tdW5pdHksIEV4cGVjdGVkTnVtYmVyT2ZDYXNlc0luQ29tbXVuaXR5VW5kZXJMb2NrZG93biA9IEV4cGVjdGVkQ2FzZXNBdEJvcmRlclVuZGVyTG9ja2Rvd24gKiBcbiAgICBwcm9iX2luZmVjdGVkX2Fycl9yZWFjaGVzX2NvbW11bml0eSwgVHJlYXRtZW50Q29tbXVuaXR5U3ByZWFkUHJvcG9ydGlvbiA9IHByb2JfaW5mZWN0ZWRfYXJyX3JlYWNoZXNfY29tbXVuaXR5KVxuIn0= -->
-<pre><code>debug at ~/Google Drive/politics/coronavirus/code/infection_rate/app/simulation.R#166: world_with_covid_data &lt;- world_with_covid_data %&gt;% mutate(ExpectedNumberOfCasesInCommunity = ExpectedCasesAtBorder * 
-    prob_infected_arr_reaches_community, ExpectedNumberOfCasesInCommunityUnderLockdown = ExpectedCasesAtBorderUnderLockdown * 
-    prob_infected_arr_reaches_community, TreatmentCommunitySpreadProportion = prob_infected_arr_reaches_community)</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZXh0cmFfc3ByZWFkXG5gYGAifQ== -->
-<pre class="r"><code>extra_spread</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuMDE5XG4ifQ== -->
-<pre><code>[1] 0.019</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuKDEtdHJlYXRtZW50X2VmZmVjdGl2ZW5lc3MpKyhleHRyYV9zcHJlYWQpXG5gYGAifQ== -->
-<pre class="r"><code>(1-treatment_effectiveness)+(extra_spread)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuMDJcbiJ9 -->
-<pre><code>[1] 0.02</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuKDEtdHJlYXRtZW50X2VmZmVjdGl2ZW5lc3MpXG5gYGAifQ== -->
-<pre class="r"><code>(1-treatment_effectiveness)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiWzFdIDAuMDAxXG4ifQ== -->
-<pre><code>[1] 0.001</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuUVxuYGBgIn0= -->
-<pre class="r"><code>Q</code></pre>
-<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuc291cmNlKFwia2V5X2ludGVyZXN0X2NvdW50cmllcy5SXCIpXG4jcHJldHRpZnkgdGhlIGNvbHVtbiBuYW1lc1xuY292aWRfZGF0YV90b19zYXZlPC1cbmNvdmlkX2RhdGEgJT4lIFxuICBmaWx0ZXIoTG9jYXRpb24gJWluJSBrZXlfaW50ZXJlc3RfY291bnRyaWVzKSAlPiVcbiAgYXJyYW5nZShMb2NhdGlvbkNvZGUpICU+JVxuICBtdXRhdGUoXG4gICAgSW5mQWN0aXZlQ2FzZXNQZXJNaWxsaW9uID0gcm91bmQoSW5mQWN0aXZlQ2FzZXNQZXJNaWxsaW9uLDEpLFxuICAgIFByZWRpY3RlZEFjdGl2ZUNhc2VzUGVyTWlsbGlvbiA9IHJvdW5kKFByZWRpY3RlZEFjdGl2ZUNhc2VzUGVyTWlsbGlvbiwxKSxcbiAgICBQcmVkaWN0ZWRBY3RpdmVDYXNlcyA9IHJvdW5kKFByZWRpY3RlZEFjdGl2ZUNhc2VzLDApLFxuICAgIFxuICApICU+JSBcbiAgc2VsZWN0KFxuICAgICNsb2NhdGlvbiBpbmZvXG4gICAgYExvY2F0aW9uIENvZGVgID0gYExvY2F0aW9uQ29kZWAsXG4gICAgYExvY2F0aW9uYCA9IGBMb2NhdGlvbmAsXG4gICAgYFBvcHVsYXRpb25gID0gYFBvcHVsYXRpb25gLFxuICAgIFxuICAgIFxuICAgIFxuICAgICNhc3Nlc3NpbmcgZXhwZWN0ZWQgY2FzZXNcbiAgICBgVG90YWwgQ29uZmlybWVkIENhc2VzYCA9IGBDYXNlc0NvbmZpcm1lZGAsXG4gICAgYFRvdGFsIEZhdGFsaXRpZXNgID0gYERlYXRoc2AsXG4gICAgYFRvdGFsIFJlY292ZXJpZXNgID0gYFJlY292ZXJpZXNgLFxuICAgIGBBY3RpdmUgQ2FzZXNgID0gYEFjdGl2ZUNhc2VzYCxcbiAgICBQcmVkaWN0ZWRBY3RpdmVDYXNlcyA9IFByZWRpY3RlZEFjdGl2ZUNhc2VzLFxuICAgICNoZWFsdGggZGF0YSB0cnVzdFxuICAgIGBMaWZlIEV4cGVjdGFuY3lgID0gYExpZmVFeHBgLFxuICAgIFxuICAgICNhc3Nlc3NpbmcgZXhwZWN0ZWQgcHJldmFsZW5jZVxuICAgIGBNZWFuIGRhaWx5IGZhdGFsaXRpZXMgaW4gbGFzdCA3IGRheXNgID0gYE5ld0RlYXRoc2AsXG4gICAgYE1lYW4gZGFpbHkgY2FzZXMgaW4gbGFzdCA3IGRheXMgb2YgdHdvIHdlZWtzIHByaW9yYD1MYWdnZWRBY3RpdmVDYXNlcyxcbiAgICBgSW5mZWN0aW9uIGRldGVjdGlvbiByYXRpb2AgPSBgSW5mZXJyZWREZXRlY3Rpb25SYXRlYCxcbiAgICBgRXN0aW1hdGVkIGFjdGl2ZSBpbmZlY3Rpb25zYCA9IGBJbmZlcnJlZEFjdGl2ZUNhc2VzYCxcbiAgICBgRXN0aW1hdGVkIFByZXZhbGVuY2UgKHBlciBtaWxsaW9uKWAgPSBgSW5mQWN0aXZlQ2FzZXNQZXJNaWxsaW9uYCxcbiAgICBcbiAgICAjYXNzZXNzIGFueSByZWNlbnQgaW5jcmVhc2UgaW4gY2FzZXMsXG4gICAgYEVzdGltYXRlZCBQcmVkaWN0ZWQgUHJldmFsZW5jZSAocGVyIG1pbGxpb24pYCA9IFByZWRpY3RlZEluZkFjdGl2ZUNhc2VzUGVyTWlsbGlvbixcbiAgICBcbiAgICBcbiAgICAjcmlzayB0byBuZXcgemVhbGFuZFxuICAgICNgTW9udGhseSBhcnJpdmFscyBvZiByZXNpZGVudHMgZnJvbSBsb2NhdGlvbiB0byBOWiBpbiAyMDE5YCA9IGBMb2NhdGlvblJlc2lkZW50TW9udGhseUFycml2YWxzYCxcbiAgICAjYE1vbnRobHkgYXJyaXZhbHMgb2YgcmV0dXJuaW5nIE5aIHJlc2lkZW50cyBmcm9tIGxvY2F0aW9uIGluIDIwMTlgID0gYE5aUmVzTW9udGhseUFycml2YWxzYCxcbiAgICBcbiAgICBgRXhwZWN0ZWQgbW9udGhseSBhcnJpdmFsc2AgPSBgVG90YWxFeHBlY3RlZE1vbnRobHlBcnJpdmFsc2AsXG4gICAgYEV4cGVjdGVkIG1vbnRobHkgYXJyaXZhbHMgd2l0aCBhY3RpdmUgaW5mZWN0aW9uYCA9IGBFeHBlY3RlZE51bWJlck9mQ2FzZXNBbGxgLFxuICAgIGBFeHBlY3RlZCBtb250aGx5IGFycml2YWxzIHdpdGggYWN0aXZlIGluZmVjdGlvbiBwYXNzaW5nIHNjcmVlbmluZ2AgPSBgRXhwZWN0ZWROdW1iZXJPZkNhc2VzRXNjYXBpbmdPbmVTY3JlZW5gLFxuICAgIGBFeHBlY3RlZCBtb250aGx5IGFjdGl2ZSBjYXNlcyBsZWFraW5nIGZyb20gcXVhcmFudGluZWAgPSBgRXhwZWN0ZWROdW1iZXJPZkNhc2VzSW5Db21tdW5pdHlgXG4gIClcbiAgXG5cbmBgYCJ9 -->
-<pre class="r"><code>source(&quot;key_interest_countries.R&quot;)
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuc291cmNlKFxca2V5X2ludGVyZXN0X2NvdW50cmllcy5SXFwpXG4jcHJldHRpZnkgdGhlIGNvbHVtbiBuYW1lc1xuY292aWRfZGF0YV90b19zYXZlPC1cbmNvdmlkX2RhdGEgJT4lIFxuICBmaWx0ZXIoTG9jYXRpb24gJWluJSBrZXlfaW50ZXJlc3RfY291bnRyaWVzKSAlPiVcbiAgYXJyYW5nZShMb2NhdGlvbkNvZGUpICU+JVxuICBtdXRhdGUoXG4gICAgSW5mQWN0aXZlQ2FzZXNQZXJNaWxsaW9uID0gcm91bmQoSW5mQWN0aXZlQ2FzZXNQZXJNaWxsaW9uLDEpLFxuICAgIFByZWRpY3RlZEFjdGl2ZUNhc2VzUGVyTWlsbGlvbiA9IHJvdW5kKFByZWRpY3RlZEFjdGl2ZUNhc2VzUGVyTWlsbGlvbiwxKSxcbiAgICBQcmVkaWN0ZWRBY3RpdmVDYXNlcyA9IHJvdW5kKFByZWRpY3RlZEFjdGl2ZUNhc2VzLDApLFxuICAgIFxuICApICU+JSBcbiAgc2VsZWN0KFxuICAgICNsb2NhdGlvbiBpbmZvXG4gICAgYExvY2F0aW9uIENvZGVgID0gYExvY2F0aW9uQ29kZWAsXG4gICAgYExvY2F0aW9uYCA9IGBMb2NhdGlvbmAsXG4gICAgYFBvcHVsYXRpb25gID0gYFBvcHVsYXRpb25gLFxuICAgIFxuICAgIFxuICAgIFxuICAgICNhc3Nlc3NpbmcgZXhwZWN0ZWQgY2FzZXNcbiAgICBgVG90YWwgQ29uZmlybWVkIENhc2VzYCA9IGBDYXNlc0NvbmZpcm1lZGAsXG4gICAgYFRvdGFsIEZhdGFsaXRpZXNgID0gYERlYXRoc2AsXG4gICAgYFRvdGFsIFJlY292ZXJpZXNgID0gYFJlY292ZXJpZXNgLFxuICAgIGBBY3RpdmUgQ2FzZXNgID0gYEFjdGl2ZUNhc2VzYCxcbiAgICBQcmVkaWN0ZWRBY3RpdmVDYXNlcyA9IFByZWRpY3RlZEFjdGl2ZUNhc2VzLFxuICAgICNoZWFsdGggZGF0YSB0cnVzdFxuICAgIGBMaWZlIEV4cGVjdGFuY3lgID0gYExpZmVFeHBgLFxuICAgIFxuICAgICNhc3Nlc3NpbmcgZXhwZWN0ZWQgcHJldmFsZW5jZVxuICAgIGBNZWFuIGRhaWx5IGZhdGFsaXRpZXMgaW4gbGFzdCA3IGRheXNgID0gYE5ld0RlYXRoc2AsXG4gICAgYE1lYW4gZGFpbHkgY2FzZXMgaW4gbGFzdCA3IGRheXMgb2YgdHdvIHdlZWtzIHByaW9yYD1MYWdnZWRBY3RpdmVDYXNlcyxcbiAgICBgSW5mZWN0aW9uIGRldGVjdGlvbiByYXRpb2AgPSBgSW5mZXJyZWREZXRlY3Rpb25SYXRlYCxcbiAgICBgRXN0aW1hdGVkIGFjdGl2ZSBpbmZlY3Rpb25zYCA9IGBJbmZlcnJlZEFjdGl2ZUNhc2VzYCxcbiAgICBgRXN0aW1hdGVkIFByZXZhbGVuY2UgKHBlciBtaWxsaW9uKWAgPSBgSW5mQWN0aXZlQ2FzZXNQZXJNaWxsaW9uYCxcbiAgICBcbiAgICAjYXNzZXNzIGFueSByZWNlbnQgaW5jcmVhc2UgaW4gY2FzZXMsXG4gICAgYEVzdGltYXRlZCBQcmVkaWN0ZWQgUHJldmFsZW5jZSAocGVyIG1pbGxpb24pYCA9IFByZWRpY3RlZEluZkFjdGl2ZUNhc2VzUGVyTWlsbGlvbixcbiAgICBcbiAgICBcbiAgICAjcmlzayB0byBuZXcgemVhbGFuZFxuICAgICNgTW9udGhseSBhcnJpdmFscyBvZiByZXNpZGVudHMgZnJvbSBsb2NhdGlvbiB0byBOWiBpbiAyMDE5YCA9IGBMb2NhdGlvblJlc2lkZW50TW9udGhseUFycml2YWxzYCxcbiAgICAjYE1vbnRobHkgYXJyaXZhbHMgb2YgcmV0dXJuaW5nIE5aIHJlc2lkZW50cyBmcm9tIGxvY2F0aW9uIGluIDIwMTlgID0gYE5aUmVzTW9udGhseUFycml2YWxzYCxcbiAgICBcbiAgICBgRXhwZWN0ZWQgbW9udGhseSBhcnJpdmFsc2AgPSBgVG90YWxFeHBlY3RlZE1vbnRobHlBcnJpdmFsc2AsXG4gICAgYEV4cGVjdGVkIG1vbnRobHkgYXJyaXZhbHMgd2l0aCBhY3RpdmUgaW5mZWN0aW9uYCA9IGBFeHBlY3RlZE51bWJlck9mQ2FzZXNBbGxgLFxuICAgIGBFeHBlY3RlZCBtb250aGx5IGFycml2YWxzIHdpdGggYWN0aXZlIGluZmVjdGlvbiBwYXNzaW5nIHNjcmVlbmluZ2AgPSBgRXhwZWN0ZWROdW1iZXJPZkNhc2VzRXNjYXBpbmdPbmVTY3JlZW5gLFxuICAgIGBFeHBlY3RlZCBtb250aGx5IGFjdGl2ZSBjYXNlcyBsZWFraW5nIGZyb20gcXVhcmFudGluZWAgPSBgRXhwZWN0ZWROdW1iZXJPZkNhc2VzSW5Db21tdW5pdHlgXG4gIClcbiAgXG5cbmBgYFxuYGBgIn0= -->
+<pre class="r"><code>```r
+source(\key_interest_countries.R\)
 #prettify the column names
 covid_data_to_save&lt;-
 covid_data %&gt;% 
@@ -2076,37 +2045,84 @@ covid_data %&gt;%
   )
   
 </code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuICB3cml0ZV9jc3YoY292aWRfZGF0YV90b19zYXZlLFwiLi4vLi4vZGF0YS9jb3ZpZF9kYXRhX3Jpc2tfbWF0cml4LmNzdlwiKVxuYGBgIn0= -->
-<pre class="r"><code>  write_csv(covid_data_to_save,&quot;../../data/covid_data_risk_matrix.csv&quot;)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuIyBsaWJyYXJ5KGdvb2dsZWRyaXZlKVxuIyBcbiMgXG4jIFxuIyBkcml2ZV9scygpXG4jIGZpbGUgPC0gZHJpdmVfdXBsb2FkKFxuIyAgIGRyaXZlX2V4YW1wbGUoXCJjaGlja2VuLmNzdlwiKSxcbiMgICB0eXBlID0gXCJzcHJlYWRzaGVldFwiXG4jICAgKVxuIyBcbiMgZHJpdmVfdXBsb2FkKGNvdmlkX2RhdGEpXG5gYGAifQ== -->
-<pre class="r"><code># library(googledrive)
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuICB3cml0ZV9jc3YoY292aWRfZGF0YV90b19zYXZlLFxcLi4vLi4vZGF0YS9jb3ZpZF9kYXRhX3Jpc2tfbWF0cml4LmNzdlxcKVxuYGBgXG5gYGAifQ== --&gt;
+
+```r
+```r
+  write_csv(covid_data_to_save,\../../data/covid_data_risk_matrix.csv\)</code></pre>
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuIyBsaWJyYXJ5KGdvb2dsZWRyaXZlKVxuIyBcbiMgXG4jIFxuIyBkcml2ZV9scygpXG4jIGZpbGUgPC0gZHJpdmVfdXBsb2FkKFxuIyAgIGRyaXZlX2V4YW1wbGUoXFxjaGlja2VuLmNzdlxcKSxcbiMgICB0eXBlID0gXFxzcHJlYWRzaGVldFxcXG4jICAgKVxuIyBcbiMgZHJpdmVfdXBsb2FkKGNvdmlkX2RhdGEpXG5gYGBcbmBgYCJ9 --&gt;
+
+```r
+```r
+# library(googledrive)
 # 
 # 
 # 
 # drive_ls()
 # file &lt;- drive_upload(
-#   drive_example(&quot;chicken.csv&quot;),
-#   type = &quot;spreadsheet&quot;
+#   drive_example(\chicken.csv\),
+#   type = \spreadsheet\
 #   )
 # 
 # drive_upload(covid_data)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-chunk-end -->
-<!-- rnb-text-begin -->
-<!-- rnb-text-end -->
-<!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuI2xpYnJhcnkoZ2dwbG90MilcbmdncGxvdChjb3ZpZF9kYXRhX3RvX3NhdmUgJT4lIGZpbHRlcihQb3B1bGF0aW9uPjEwXjYgJiBgTGlmZSBFeHBlY3RhbmN5YD49NzApLGFlcyh4PWBFc3RpbWF0ZWQgUHJldmFsZW5jZSAocGVyIG1pbGxpb24pYCx5PXNsb3BlXzdkYXlzLGxhYmVsPUxvY2F0aW9uKSkrXG4gIGdlb21fcG9pbnQoKStnZW9tX2xhYmVsKCkrc2NhbGVfeV9sb2cxMChsaW1pdHM9YygwLjEsMTAwMCkpK3NjYWxlX3hfbG9nMTAoKVxuXG4jIyMjIFRPIERPIE5FWFQ6IGRyYXcgNy1kYXkgc2xvcGVzIG9mOlxuICMtIG5ldyBjYXNlc1xuIy0gY29uZmlybWVkIGNhc2VzXG4jIC0gbG9nIG9mIGNvbmZpcm1lZCBjYXNlc1xuIyAtIGxvZyBvZiBuZXcgY2FzZXNcbiMgYW5kIHNlZSB3aGljaCBpcyBQUkVESUNUSVZFIG9mIGEgc3Vic3RhbnRpYWwgaW5jcmVhc2UgaW4gcHJldmFsZW5jZSA3IGRheXMgbGF0ZXJcbiMgSSBleHBlY3QgdGhhdC4uLlxuIyBsb2coY29uZmlybWVkIGNhc2VzKSBpcyBub3QgZ29pbmcgdG8gYmUgdmVyeSBnb29kIGF0IHBpY2tpbmcgdXAgYSBcInNlY29uZCB3YXZlXCIgYmVjYXVzZSB0aGUgbmV3IGNhc2VzIGFyZSBhIHNtYWxsZXIgcHJvcG9ydGlvbiBvZiBhbGwgY2FzZXNcbiMgbG9nKG5ldyBjYXNlcykgd2lsbCBiZSBxdWl0ZSBzZW5zaXRpdmUgdG8gcmlzaW5nIG51bWJlcnMgb2YgbmV3IGNhc2VzLCB3b24ndCBpZ25vcmUgc2Vjb25kIHdhdmVzLCBhbmQgd2lsbCBiZSBtb3JlIHNlbnNpdGl2ZSB0byBzbWFsbCBudW1iZXJzIChwb3NzaWJsZSBlbWVyZ2luZyBwYW5kZW1pYylcbiMgbmV3IGNhc2VzIHdpbGwgYmUgc2Vuc2l0aXZlIHRvIHJpc2luZyBudW1iZXJzLCB3b24ndCBpZ25vcmUgc2Vjb25kIHdhdmVzLCBidXQgd2lsbCBmb2N1cyBvbiBsYXJnZXIgdHJlbmRzLiBUaGlzIG1pZ2h0IGJlIGJldHRlcj9cbiMgY29uZmlybWVkIGNhc2VzIGFzIGFuIGFic29sdXRlIG1lYXN1cmUgd2lsbCBub3QgZGlzdGluZ3Vpc2ggYmV0d2VlbiBhIGxhcmdlciBjb3VudHJ5IHdpdGggc3RlYWR5IG51bWJlcnMgb2YgbmV3IGNhc2VzIGFuZCBhIHNtYWxsIGNvdW50cnkgd2l0aCByaXNpbmcgY2FzZXMuXG4jIHNvIGl0IHNob3VsZCBiZSBlaXRoZXIgbmV3IGNhc2VzIG9yIGxvZyhuZXcgY2FzZXMpXG5gYGAifQ== -->
-<pre class="r"><code>#library(ggplot2)
+<pre><code>
+&lt;!-- rnb-source-end --&gt;
+
+&lt;!-- rnb-chunk-end --&gt;
+
+
+&lt;!-- rnb-text-begin --&gt;
+
+
+
+
+&lt;!-- rnb-text-end --&gt;
+
+
+&lt;!-- rnb-chunk-begin --&gt;
+
+
+&lt;!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuI2xpYnJhcnkoZ2dwbG90MilcbmdncGxvdChjb3ZpZF9kYXRhX3RvX3NhdmUgJT4lIGZpbHRlcihQb3B1bGF0aW9uPjEwXjYgJiBgTGlmZSBFeHBlY3RhbmN5YD49NzApLGFlcyh4PWBFc3RpbWF0ZWQgUHJldmFsZW5jZSAocGVyIG1pbGxpb24pYCx5PXNsb3BlXzdkYXlzLGxhYmVsPUxvY2F0aW9uKSkrXG4gIGdlb21fcG9pbnQoKStnZW9tX2xhYmVsKCkrc2NhbGVfeV9sb2cxMChsaW1pdHM9YygwLjEsMTAwMCkpK3NjYWxlX3hfbG9nMTAoKVxuXG4jIyMjIFRPIERPIE5FWFQ6IGRyYXcgNy1kYXkgc2xvcGVzIG9mOlxuICMtIG5ldyBjYXNlc1xuIy0gY29uZmlybWVkIGNhc2VzXG4jIC0gbG9nIG9mIGNvbmZpcm1lZCBjYXNlc1xuIyAtIGxvZyBvZiBuZXcgY2FzZXNcbiMgYW5kIHNlZSB3aGljaCBpcyBQUkVESUNUSVZFIG9mIGEgc3Vic3RhbnRpYWwgaW5jcmVhc2UgaW4gcHJldmFsZW5jZSA3IGRheXMgbGF0ZXJcbiMgSSBleHBlY3QgdGhhdC4uLlxuIyBsb2coY29uZmlybWVkIGNhc2VzKSBpcyBub3QgZ29pbmcgdG8gYmUgdmVyeSBnb29kIGF0IHBpY2tpbmcgdXAgYSBcXHNlY29uZCB3YXZlXFwgYmVjYXVzZSB0aGUgbmV3IGNhc2VzIGFyZSBhIHNtYWxsZXIgcHJvcG9ydGlvbiBvZiBhbGwgY2FzZXNcbiMgbG9nKG5ldyBjYXNlcykgd2lsbCBiZSBxdWl0ZSBzZW5zaXRpdmUgdG8gcmlzaW5nIG51bWJlcnMgb2YgbmV3IGNhc2VzLCB3b24ndCBpZ25vcmUgc2Vjb25kIHdhdmVzLCBhbmQgd2lsbCBiZSBtb3JlIHNlbnNpdGl2ZSB0byBzbWFsbCBudW1iZXJzIChwb3NzaWJsZSBlbWVyZ2luZyBwYW5kZW1pYylcbiMgbmV3IGNhc2VzIHdpbGwgYmUgc2Vuc2l0aXZlIHRvIHJpc2luZyBudW1iZXJzLCB3b24ndCBpZ25vcmUgc2Vjb25kIHdhdmVzLCBidXQgd2lsbCBmb2N1cyBvbiBsYXJnZXIgdHJlbmRzLiBUaGlzIG1pZ2h0IGJlIGJldHRlcj9cbiMgY29uZmlybWVkIGNhc2VzIGFzIGFuIGFic29sdXRlIG1lYXN1cmUgd2lsbCBub3QgZGlzdGluZ3Vpc2ggYmV0d2VlbiBhIGxhcmdlciBjb3VudHJ5IHdpdGggc3RlYWR5IG51bWJlcnMgb2YgbmV3IGNhc2VzIGFuZCBhIHNtYWxsIGNvdW50cnkgd2l0aCByaXNpbmcgY2FzZXMuXG4jIHNvIGl0IHNob3VsZCBiZSBlaXRoZXIgbmV3IGNhc2VzIG9yIGxvZyhuZXcgY2FzZXMpXG5gYGBcbmBgYCJ9 --&gt;
+
+```r
+```r
+#library(ggplot2)
 ggplot(covid_data_to_save %&gt;% filter(Population&gt;10^6 &amp; `Life Expectancy`&gt;=70),aes(x=`Estimated Prevalence (per million)`,y=slope_7days,label=Location))+
   geom_point()+geom_label()+scale_y_log10(limits=c(0.1,1000))+scale_x_log10()
 
@@ -2117,11 +2133,12 @@ ggplot(covid_data_to_save %&gt;% filter(Population&gt;10^6 &amp; `Life Expectanc
 # - log of new cases
 # and see which is PREDICTIVE of a substantial increase in prevalence 7 days later
 # I expect that...
-# log(confirmed cases) is not going to be very good at picking up a &quot;second wave&quot; because the new cases are a smaller proportion of all cases
+# log(confirmed cases) is not going to be very good at picking up a \second wave\ because the new cases are a smaller proportion of all cases
 # log(new cases) will be quite sensitive to rising numbers of new cases, won&#39;t ignore second waves, and will be more sensitive to small numbers (possible emerging pandemic)
 # new cases will be sensitive to rising numbers, won&#39;t ignore second waves, but will focus on larger trends. This might be better?
 # confirmed cases as an absolute measure will not distinguish between a larger country with steady numbers of new cases and a small country with rising cases.
 # so it should be either new cases or log(new cases)</code></pre>
+<p>```</p>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->

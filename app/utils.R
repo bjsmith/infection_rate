@@ -38,7 +38,7 @@ print_elapsed_time <- function(msg){
   dif <- this_time - last_time
   startdif <- this_time - start_time
   cat(paste0(
-    sprintf("%05.2f", startdif),
+    sprintf("%05.2f", dif),
     "; ", msg,"\n"),file=timer_filepath,append=TRUE)
   last_time <<- this_time
 }
@@ -424,7 +424,7 @@ get_daily_data <- function(separate_aussie_states_and_hk){
 #this function should exclude all analysis including calculation of rates of disease
 #focus should be on importing and cleaning data.
 get_geomapped_covid_data <- function(
-  life_exp_thresh=50,run_date=Sys.Date(),separate_aussie_states_and_hk=FALSE,include_geo_data=TRUE){
+  life_exp_thresh=50,run_date=NA,separate_aussie_states_and_hk=FALSE,include_geo_data=TRUE){
   
   if(separate_aussie_states_and_hk & include_geo_data){
     stop("Cannot include geo data and separate australian states; don't have polygons for Australian states.")
@@ -509,7 +509,7 @@ get_geomapped_covid_data <- function(
   colnames(arrivals)[1] <- "MonthLabel"
   #pick out the month we are interested in
   month_code <- paste0("2019M",str_pad(as.character(lubridate::month(run_date)),2,side="left",pad="0"))
-  
+  #month_code <- "2019M09"
   
   foreign_arrivals_this_month <- arrivals %>% 
     filter(MonthLabel==month_code) %>% 
@@ -727,115 +727,3 @@ get_max_quantiles <- function(display_data,col_of_interest,max_quantiles=8){
 }
 
 
-generate_areaPlot <- function(covid_data){
-  
-  #get initial dataset
-  current_risk_per_thousand<-sum(covid_data$ExpectedCasesAtBorderUnderLockdown,na.rm=TRUE)/sum(covid_data$MonthlyArrivalsLockdownScaled2,na.rm=TRUE)*1000
-  
-  #we draw an area plot that needs coordinates
-  #ordered by InferredActiveCaseTravelerRate from lowest to highest
-  #coloured by PrevalenceRating
-  #each country needs two data points in our area plot - the start and the end of it.
-  #and we need a cumulative graph
-  relevant_data <- covid_data %>% 
-    filter(Location %in% key_interest_countries) %>%
-    arrange(InferredActiveCaseTravelerRate) %>%
-    mutate(Arrivals=Total2019MonthlyArrivals)%>%
-    select(Location,Arrivals,InferredActiveCaseTravelerRate,PrevalenceRating) %>%
-    mutate(CumulativeTravelExclusive=cumsum(Arrivals)-Arrivals,
-           CumulativeTravelInclusive=cumsum(Arrivals)
-    )
-  
-  
-  #shape into what we want
-  
-  all_rects <-
-    relevant_data %>% 
-    mutate(CasesPerThousand=InferredActiveCaseTravelerRate*10^3) %>%
-    mutate(bottom=0,
-           RectLabel=Location,
-           top=CasesPerThousand,
-           left=CumulativeTravelExclusive,
-           right=CumulativeTravelInclusive,
-           label_xpos=CumulativeTravelExclusive + Arrivals/2,
-           label_ypos=0)
-  
-  all_rects <- all_rects %>%
-    mutate(RectId=1:nrow(all_rects)#,
-           #GroupId=as.numeric(NA)
-    )
-  
-  
-  
-  #re-arrange labels
-  threshold <- max(all_rects$CumulativeTravelInclusive)/30
-  for (rect_i in 2:nrow(all_rects)){
-    #now for each row, set the rectgroup to the minimum rectID where the row label_xpos has less than a certain difference.
-    current_rectID<-all_rects[[rect_i,"RectId"]]
-    current_xpos <- all_rects[[rect_i,"label_xpos"]]
-    group_base_rect_candidates <- all_rects %>% filter(label_xpos > (current_xpos - threshold) & RectId<current_rectID)
-    if(nrow(group_base_rect_candidates)>0){
-      group_base_rect<-group_base_rect_candidates[1,]
-      #print(paste0(group_base_rect$Location, " taking ", all_rects[[rect_i,"Location"]]))
-      group_base_rect_id <- group_base_rect$RectId
-      #and move the xpos back to reflect the change.
-      all_rects[[rect_i,"label_xpos"]] <- group_base_rect[["label_xpos"]]
-      #now merge the labels
-      #print(group_base_rect_id)
-      all_rects <- all_rects %>% 
-        mutate(RectLabel=ifelse(RectId==group_base_rect_id,
-                                paste0(RectLabel,"\n",all_rects[[rect_i,"RectLabel"]]),
-                                RectLabel
-        ))
-      
-      all_rects[[rect_i,"RectLabel"]] = ""
-    }
-  }
-  #set up colours for levels
-  
-  level_rects <- all_rects %>% 
-    filter(PrevalenceRating!="Unknown") %>%
-    group_by(PrevalenceRating) %>% 
-    summarise(
-      left = min(CumulativeTravelExclusive,na.rm = TRUE),
-      right = max(CumulativeTravelInclusive,na.rm = TRUE),
-      top=max(all_rects$CasesPerThousand,na.rm = TRUE)*2,
-      bottom=-max(all_rects$CasesPerThousand,na.rm = TRUE),
-      max_prevalence=max(InferredActiveCaseTravelerRate,na.rm = TRUE)
-    ) %>% 
-    arrange(max_prevalence)
-  
-  
-  #return the plot
-  return(
-    ggplot(all_rects,aes(xmin=left, xmax=right, ymin=bottom,ymax=top))+
-           #draw the levels
-           geom_rect(data=level_rects,mapping=aes(xmin=left, xmax=right, ymin=bottom,ymax=top,fill=PrevalenceRating),
-                     alpha=0.5,
-                     fill=brewer.pal(n = nrow(level_rects), name = "Blues"))+
-           geom_text_repel(data=level_rects,mapping=aes(left, label=PrevalenceRating),segment.color = "transparent",
-                           y=max(all_rects$CasesPerThousand,na.rm=TRUE)*2/3,
-                           hjust=1,
-                           size=3,
-                           color="black",
-                           fill=brewer.pal(n = nrow(level_rects), name = "Blues"))+
-           #draw the countries
-           geom_vline(aes(xintercept=CumulativeTravelInclusive),linetype="dotted",color="#aaaaaa")+
-           geom_rect(color="#9999ff",fill="#000055",alpha=0.8)+
-           geom_text(aes(label_xpos,y=label_ypos,label=RectLabel),
-                     angle=30,size=3,hjust=1,vjust=1)+
-           #draw the current average prevalence
-           geom_hline(yintercept = current_risk_per_thousand,color="#cc0000")+
-           geom_text(x=0,y=current_risk_per_thousand,vjust=0,hjust=0,color="#cc0000",label="Status quo aggregate traveller risk\n",size=3)+
-           #set the scales and style
-            geom_vline(xintercept=0,color="#aaaaaa")+
-           scale_x_continuous(name="Cumulative expected travellers per month", labels=scales::comma_format(),)+
-           scale_y_continuous(name="Cases per 1,000 travellers",breaks = c(0,2,4,6,8,10,12),minor_breaks = NULL)+
-           coord_cartesian(ylim=c(-max(all_rects$CasesPerThousand,na.rm=TRUE)/4,max(all_rects$CasesPerThousand,na.rm=TRUE)))+
-           theme_minimal()+
-           theme(panel.grid.major.x = element_blank(),
-                 panel.grid.minor.x = element_blank())+
-          labs(title="Risk prior to applying any interventions")
-  )
-  
-}

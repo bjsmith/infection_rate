@@ -261,3 +261,97 @@ ggplot(all_rects,aes(xmin=left, xmax=right, ymin=bottom,ymax=top))+
 
 
 ```
+
+
+## progressive graph
+
+this is a line graph that shows the cumulative number of cases and passengers added as we add countries from the least risky to the most.
+
+Would this be fundamentally the same as our previous graph?
+
+It's a bit different: we show cumulative cases per month against cumulative traveller volume per month.
+
+Probably quite simple to render - we need a table where each row includes a label and a cumulative count...
+
+
+
+
+```{r}
+
+geo_world_with_covid_data <- simulate_treatment_for_countries(nogeo_world_basic_data,
+                                                    treatment_effectiveness = default_assumed_effectiveness,
+                                                    extra_spread = 0,
+                                                     assumed_ifr = default_assumed_ifr_percent/100,
+                                                     travel_volume_proportion=0.2,
+                                                     traveler_relative_prevalence=default_traveler_relative_prevalence,
+                                                    current_lockdown_passenger_volume=default_current_lockdown_passenger_volume
+                                                     )
+covid_data<-geo_world_with_covid_data
+```
+
+```{r}
+covid_data <- 
+    covid_data %>% 
+  filter(!is.na(ExpectedNumberOfCasesInCommunity) & !is.na(MonthlyArrivalsWeighted)) %>%
+    mutate(InterventionApplied =
+             if_else(
+               (PrevalenceRating %in% c("COVID-free","Low","Moderate","High") &
+                 Location %in% key_interest_countries)
+               ,TRUE,FALSE)
+    )
+  
+cumulative_intervention_graph <- covid_data %>% 
+  arrange(InterventionApplied,InferredActiveCaseTravelerRate) %>%
+  select(Location,ExpectedNumberOfCasesInCommunity,MonthlyArrivalsWeighted,
+         PrevalenceRating,InferredActiveCaseTravelerRate,
+         InterventionApplied
+  ) %>%
+  mutate(CumulativeExpectedCases=cumsum(ExpectedNumberOfCasesInCommunity),
+         CumulativeExpectedTravellers=cumsum(MonthlyArrivalsWeighted),
+         PointLabel=if_else(InterventionApplied,Location,as.character(NA)),
+         Scenario="Intervention"
+  ) %>%
+  select(-ExpectedNumberOfCasesInCommunity,-MonthlyArrivalsWeighted)
+  
+
+#we might want to add the status quo....
+status_quo_cumulative_graph <- covid_data %>%
+  arrange(InferredActiveCaseTravelerRate) %>%
+  select(Location,ExpectedNumberOfCasesInCommunityUnderLockdown,StatusQuoMonthlyArrivals,
+           PrevalenceRating,InferredActiveCaseTravelerRate
+    ) %>%
+    mutate(CumulativeExpectedCases=cumsum(ExpectedNumberOfCasesInCommunityUnderLockdown),
+           CumulativeExpectedTravellers=cumsum(StatusQuoMonthlyArrivals),
+           PointLabel=as.character(NA),
+           Scenario="StatusQuo",
+           InterventionApplied=FALSE
+           ) %>%
+  select(-ExpectedNumberOfCasesInCommunityUnderLockdown,-StatusQuoMonthlyArrivals)
+
+cumulative_graph <- rbind(cumulative_intervention_graph,status_quo_cumulative_graph)
+  
+```
+
+
+
+```{r}
+status_quo_risk <-max((cumulative_graph %>% filter(Scenario=="StatusQuo"))$CumulativeExpectedCases)
+ggplot(cumulative_graph,
+       aes(x=CumulativeExpectedTravellers,y=CumulativeExpectedCases,label=PointLabel,color=interaction(InterventionApplied,Scenario),group=Scenario))+
+  geom_line()+geom_point()+geom_label_repel(size=2)+
+  scale_color_manual(values=c("green","black","red"))+
+  scale_x_continuous(name="Cumulative expected travellers per month", labels=scales::comma_format())+
+  geom_hline(yintercept = status_quo_risk,color="#cc0000")+
+  geom_text(x=0,y=status_quo_risk,vjust=0,hjust=0,color="#cc0000",label="Status quo aggregate traveller risk\n",size=3)+
+
+  guides(color="none")+
+  scale_y_continuous(
+  #scale_y_log10(
+    name="Cumulative expected cases per Month",
+                labels=function(x){as.character(x)},
+                minor_breaks = NULL)+
+  theme_minimal()+
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
