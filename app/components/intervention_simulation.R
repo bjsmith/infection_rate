@@ -412,6 +412,7 @@ get_countries_allocated_to_leveln <- function(input,level_n,world_with_covid_dat
 }
 
 get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
+  print_elapsed_time("preparing cumulative risk plot data...")
   ##compile data
   data_tidy <- function(covid_data){
     covid_data <- 
@@ -497,7 +498,7 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
 }
 
 generate_areaPlot <- function(covid_data){
-  
+  print_elapsed_time("preparing areaPlot data...")
   #get initial dataset
   current_risk_per_thousand<-sum(covid_data$ExpectedCasesAtBorderUnderLockdown,na.rm=TRUE)/sum(covid_data$MonthlyArrivalsLockdownScaled2,na.rm=TRUE)*1000
   
@@ -574,7 +575,7 @@ generate_areaPlot <- function(covid_data){
     ) %>% 
     arrange(max_prevalence)
   
-  
+  print_elapsed_time("generating areaPlot...")
   #return the plot
   return(
     ggplot(all_rects,aes(xmin=left, xmax=right, ymin=bottom,ymax=top))+

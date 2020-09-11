@@ -867,7 +867,7 @@ ui <- navbarPage(
                             "Show countries with at least this number of travellers per month:",
                             min=0,max=100000,
                             step=500,
-                            value=500)
+                            value=2000)
         ),
         column(1,
                # Button
