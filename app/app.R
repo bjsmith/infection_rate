@@ -827,6 +827,9 @@ server <- function(input, output, session) {
 ui <- navbarPage(
   "Opening the border: What's the risk?",
   selected="Intervention simulation",
+  footer=div(class = "footer",
+             includeHTML("footer.html")
+  ),
   tabPanel(
     "Location Profiles",
     fluidPage(
