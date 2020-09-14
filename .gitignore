@@ -6,6 +6,9 @@
 
 data/*
 app/data/owid_cache.csv
+data/timer.log
+/app/data/timer.log
+*/timer.log
 owid_cache.csv
 .DS_Store
 rsconnect/
