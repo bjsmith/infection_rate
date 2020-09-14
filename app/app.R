@@ -1114,8 +1114,12 @@ paste0(countries_excluded_due_to_data$Location,collapse = ", "))
 ui <- navbarPage(
   "Opening the border: What's the risk?",
   selected="Intervention simulation",
+  footer=div(class = "footer",
+             includeHTML("footer.html")
+  ),
   tabPanel(
     "Location Profiles",
+
     fluidPage(
       titlePanel("Location Profiles"),
       # sidebarLayout(
