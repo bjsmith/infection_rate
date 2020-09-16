@@ -23,12 +23,7 @@ get_intsim_tabPanel <- function(default_simulation_data,countries_to_choose_from
                                             selected=default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "High") %>% .$Location),
           get_simJourneyPanel_from_level_id(4,choices= c("(all other countries)"),
                                             selected= c("(all other countries)")),
-          uiOutput("intsim_notes"),
-          selectInput(inputId = "intsim_mode",
-                      label="Panel mode",
-                      choices = c("Simple","Advanced"),
-                      selected = "Simple"
-          )
+          uiOutput("intsim_notes")
         ),
         mainPanel(
           titlePanel("Total risk per month"),
@@ -329,7 +324,7 @@ get_total_risk_graph <- function(status_quo_risk,intervention_risk,countries_all
                          #breaks=0:plot_max,
                          minor_breaks = NULL, 
                          #limits = c(0,plot_max)#,
-                         #limits=c(0,20),
+                         limits=c(0,0.6)
                          #position="right"
       )+
       #scale_fill_brewer(palette="Set3")+
@@ -337,6 +332,7 @@ get_total_risk_graph <- function(status_quo_risk,intervention_risk,countries_all
       theme(legend.position = "none",legend.box="vertical",legend.margin=margin(),text=element_text(face = "bold"),
             axis.text = element_text(size=16)
       )+
+      #coord_cartesian(ylim=c(0,0.65))+
       #guides(fill=guide_legend(nrow=2,byrow=TRUE))+
       geom_label_repel(aes(y=LabelPosition),color="white",fontface="bold")+
       coord_flip()
@@ -382,11 +378,11 @@ get_intsim_dt<-function(
 
 get_countries_allocated_to_leveln <- function(input,level_n,world_with_covid_data_statusquo){
   
-  if(input$intsim_mode=="Advanced"){
+  if(input$simsettings_mode=="Advanced"){
     #print_elapsed_time("Advanced:")
     #print_elapsed_time(input[[paste0("intsim_countries_level",as.character(level_n))]])
     return(input[[paste0("intsim_countries_level",as.character(level_n))]])
-  }else if (input$intsim_mode=="Simple"){
+  }else if (input$simsettings_mode=="Simple"){
     #obtain the current list (probably via the "statusquo" variable)
     #filter it by the lower-bound of the level below level_n if level_n is not zero
     #and filter it by this level's limit
@@ -407,7 +403,7 @@ get_countries_allocated_to_leveln <- function(input,level_n,world_with_covid_dat
     
     return(locations$Location)
   }else{
-    stop("Unknown intsim_mode.")
+    stop("Unknown simsettings_mode.")
   }
 }
 

@@ -23,6 +23,7 @@ res1<-run_sim(
   p_flight_infection_risk_per_case_contact = 0.005*.15, #with mask wearing
   temp_and_symptoms_test_to_avoid_boarding=c(0)
 )
+res1
 
 
 res2<-run_sim(

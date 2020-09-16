@@ -11,8 +11,8 @@ source("simulation.R")
 source("country_classification_rules.R")
 source("simJourneyPanel.R")
 source("defaults.R")
-source("monte_carlo.R")
-
+source("journey_simulation_procedural.R")
+verbose<-FALSE
 
 print_elapsed_time("loaded dependencies")
 #Ben J:
@@ -772,7 +772,7 @@ server <- function(input, output, session) {
 
 ui <- navbarPage(
   "Opening the border: What's the risk?",
-  selected="Intervention simulation",
+  selected="Journey design",
   footer=div(class = "footer",
              includeHTML("footer.html")
   ),
@@ -881,7 +881,12 @@ ui <- navbarPage(
                      value = default_current_lockdown_passenger_volume),
         dateInput("simsettings_run_date",
                      "Run date:",
-                     value = default_run_date,max = Sys.Date())
+                     value = default_run_date,max = Sys.Date()),
+        selectInput(inputId = "simsettings_mode",
+                    label="Simulation mode",
+                    choices = c("Simple","Advanced"),
+                    selected = "Simple"
+        )
       )
     )
   )

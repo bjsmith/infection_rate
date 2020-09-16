@@ -33,7 +33,6 @@ run_sim <- function(
   #not infectious on 0th day of infection.
   
   p_pcr_detectable_by_day <- c(0,0, 0,5, 40, 65, 75, 80, 85, 82, 80, 78, 76, 74, 72, 70, 68, 66, 64, 62, 60, 58,rep(0,20))/100
-  #we really need a probability distribution over that 0.4 but we're not at that level of sophistication just yet...
   p_symptomatic_by_day <- plnorm(0:40, 1.621,0.418)*0.4
   p_infection_remains_infectious_by_day <<- c(0,rep(1,14),0.75,0.5,0.25,rep(0,30))
   get_p_case_remains_infectious <- function(case_list_weight,case_list_day_begin,t){
@@ -54,7 +53,9 @@ run_sim <- function(
   sim_days_before_flight_start = 20
   
   days_to_measure <- sim_days_before_flight_start+quarantine_release_day
-  community_exposure <- vector("numeric",days_to_measure)
+  community_exposure_by_day <- vector("numeric",days_to_measure)
+  proportional_infections_by_day <- vector("numeric",days_to_measure)
+  p_infectious_in_pipeline_by_day <- vector("numeric",days_to_measure)
   
 
   #duration_to_flight
@@ -73,15 +74,21 @@ run_sim <- function(
     
     if(duration_to_flight==0){ #include equal infections of day of flight
       warning("excluded day of flight from infections. No special accounting for airport risk occurs.")
+      
     }
     if(duration_to_flight<0){ #exclude day of flight
-    #if(duration_to_flight<=0){ #exclude day of flight
+    #if(duration_to_flight<=0){ #include day of flight
       case_list_day_begin[length(case_list_day_begin) + 1] <- t
       if(set_density_at_1_per_day){ #just for debugging
-        case_list_weight[length(case_list_weight) + 1] <- 1
+        proportional_infections_by_day[t] <- 1
       }else{
-        case_list_weight[length(case_list_weight) + 1] <- 1/sum(p_infection_remains_infectious_by_day)
+        proportional_infections_by_day[t] <- 1/sum(p_infection_remains_infectious_by_day)
+        #we add cases using this very specific and odd figure so that we're scaling to 1 infectious case over the whole period
+        #that way we can talk about percentage of infectious cases
+        #I think we need to think about this a little bit more....
+        #was easier when it was a uniform distribution.
       }
+      case_list_weight[length(case_list_weight) + 1] <- proportional_infections_by_day[t]
       
         #this weight should really be divided by the sum of our "remains infectious" value
         #but we'll leave that to start.
@@ -114,6 +121,7 @@ run_sim <- function(
       #weighted down by case_list_weight
       #not necessarily a days worth of cases
       case_list_day_begin[length(case_list_day_begin) + 1] <- t
+      proportional_infections_by_day[t] <- infectiousness_on_flight_per_case
       case_list_weight[length(case_list_weight) + 1] <- infectiousness_on_flight_per_case
     }
     
@@ -137,6 +145,7 @@ run_sim <- function(
       #not necessarily a days worth of cases
       case_list_day_begin[length(case_list_day_begin) + 1] <- t
       case_list_weight[length(case_list_weight) + 1] <- expected_infections_today
+      proportional_infections_by_day[t] <- expected_infections_today
     }
     
     #mark the cases by the days since they occured again
@@ -157,7 +166,7 @@ run_sim <- function(
       #this is the odds of any individual breaking out on any day
       #we need the current 
       expected_quarantine_breaches_today <- current_infectious_cases_sum*breach_odds_per_case
-      community_exposure[t]=+expected_quarantine_breaches_today
+      community_exposure_by_day[t]=+expected_quarantine_breaches_today
       
     }
     #then the next day, we're gonna let the travelers out.
@@ -167,7 +176,7 @@ run_sim <- function(
       
       #this is the probability that each case is detected and removed
       #we now adjust our weights
-      community_exposure[t]=+current_infectious_cases_sum
+      community_exposure_by_day[t]=+current_infectious_cases_sum
       printv("cases detected are removed and results shown on next day")
     }
 
@@ -197,7 +206,9 @@ run_sim <- function(
         p_case_list_detected <- test_set_combined_prob#p_pcr_detectable_by_day[case_list_days_since_case+1]*(1/test_possibilities)
         printv(p_case_list_detected)
         # printv("\n")
-        case_list_weight <- case_list_weight*(1-p_case_list_detected)
+        cases_detected_by_tests <- case_list_weight*p_case_list_detected
+        case_list_weight <- case_list_weight - cases_detected_by_tests
+        #so the cases detected are the reciprocal of this????
         print("cases detected are removed and results shown on next day")
       }
       
@@ -270,9 +281,9 @@ run_sim <- function(
       printv("total infectious cases in the journey at the moment:")
       printv(current_infectious_cases_sum)
       printv("expected community exposure today:")
-      printv(community_exposure[t])
+      printv(community_exposure_by_day[t])
       # print("log community exposure, by day, to date:")
-      # print(log(community_exposure))
+      # print(log(community_exposure_by_day))
       
     }
 
@@ -281,10 +292,9 @@ run_sim <- function(
     #            "p_remains_in_pipeline" = case_list_weight,
     #            "p_remains_infectious" = p_case_remains_infectious)
     
+    p_infectious_in_pipeline_by_day[t] <- sum(current_infectious_cases)
+    
   }
-  
-
-  
   
   return(list(
     "data_by_infection_source" = data.frame(
@@ -294,8 +304,11 @@ run_sim <- function(
       "p_remains_infectious_and_in_pipeline" = current_infectious_cases),
     "data_by_day" = data.frame(
       "days_past_flight"= 1:days_to_measure - sim_days_before_flight_start,
-      "p_community_exposure" = community_exposure),
-    "total_community_exposure" = sum(community_exposure)
+      "p_community_exposure_by_day" = community_exposure_by_day,
+      "proportional_infections_by_day" = proportional_infections_by_day,
+      "p_infectious_in_pipeline_by_day" = p_infectious_in_pipeline_by_day
+      ),
+    "total_community_exposure_by_day" = sum(community_exposure_by_day)
     )
   )
 }

@@ -44,7 +44,7 @@ simJourneyPanel <- function(
   
   if(!is.na(max_prev_per_100k)){
     prevalence_panel <- 
-      conditionalPanel(condition = "input.intsim_mode=='Simple'",
+      conditionalPanel(condition = "input.simsettings_mode=='Simple'",
                        sliderInput(paste0("intsim_level",level_id,"_max_prevalence"),
                                    "Maximum prevalence (per 100k) for country to be in this level:",
                                    min=max_prev_per_100k/10,max=max(max_prev_per_100k*10,1),
@@ -54,7 +54,7 @@ simJourneyPanel <- function(
                        )
   }else{
     prevalence_panel <- 
-      conditionalPanel(condition = "input.intsim_mode=='Simple'",
+      conditionalPanel(condition = "input.simsettings_mode=='Simple'",
                        htmlOutput(paste0("intsim_level",level_id,"_description"))
       )
   }
@@ -63,7 +63,7 @@ simJourneyPanel <- function(
     wellPanel(
       uiOutput(paste0("intsim_level",level_id,"_header")),
       prevalence_panel,
-      conditionalPanel(condition = "input.intsim_mode=='Advanced'",
+      conditionalPanel(condition = "input.simsettings_mode=='Advanced'",
       selectInput(paste0("intsim_countries_level",level_id),
                   paste0("Locations:"),
                   choices = choices,
@@ -75,7 +75,7 @@ simJourneyPanel <- function(
                    min=1,
                    max=100,step=1,
                    value = default_volume),
-      conditionalPanel(condition = "input.intsim_mode=='Advanced'",
+      conditionalPanel(condition = "input.simsettings_mode=='Advanced'",
         numericInput(paste0("intsim_effectiveness_level",level_id),
                      "Effectiveness (%):",
                      min=0,
