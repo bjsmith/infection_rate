@@ -140,6 +140,23 @@ server <- function(input, output, session) {
       filter(LifeExp>=life_exp_thresh)
   })
   
+  observeEvent(input$simsettings_mode, {
+    if(input$simsettings_mode=="Advanced"){
+      showTab(inputId = "mainNavbarPage", target = "Validation")
+      showTab(inputId = "mainNavbarPage", target = "Method and assumptions")
+      
+      hideTab(inputId = "mainNavbarPage", target = "Prevalence map")
+    }else if (input$simsettings_mode=="Simple"){
+      hideTab(inputId = "mainNavbarPage", target = "Validation")
+      hideTab(inputId = "mainNavbarPage", target = "Method and assumptions")
+      
+      showTab(inputId = "mainNavbarPage", target = "Prevalence map")
+    }else{
+      stop("Unrecognized simsettings_mode")
+    }
+    
+  })
+  
   ###############################################################
   #country report
   generate_country_profile_report_params <-reactive({
@@ -777,6 +794,7 @@ server <- function(input, output, session) {
 
 ui <- navbarPage(
   "Opening the border: What's the risk?",
+  id="mainNavbarPage",
   selected="Journey design",
   footer=div(class = "footer",
              includeHTML("footer.html")
@@ -855,7 +873,6 @@ ui <- navbarPage(
         width = 12
       )
     )
-    
   ),
   get_journey_page_tabPanel(),
   tabPanel(

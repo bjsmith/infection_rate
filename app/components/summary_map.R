@@ -46,11 +46,18 @@ render_summary_map <- function(input,output,filtered_mapped_world_with_covid_dat
     
   output$summary_map_prevalence_map<-renderLeaflet({
     #filter based on the run filter
+    data_to_show <- filtered_mapped_world_with_covid_data
+    map_filter <- input$summary_map_DisplayFilter
+    if (map_filter=="Key Destinations and Travel Partners"){
+      #only countries with the reliabilityRating 
+      data_to_show <- data_to_show %>% filter(DataReliabilityRating=="trustworthy" & Total2019MonthlyArrivals>=2000)
+    }
     
-    show_leaflet(data_to_show = filtered_mapped_world_with_covid_data %>% filter(!is.na(InfActiveCasesPerMillion)),
-                 primary_col = "InfActiveCasesPerMillion",
+    
+    show_leaflet(data_to_show = data_to_show,
+                 primary_col = "InferredActiveCaseTravelerRate",
                  rounding_func = function(x){scales::comma(signif(x,2))},
-                 legend_title =  "Inferred active cases per million people <br /> (likely to underestimate in countries<br /> with poor death recording)",
+                 legend_title =  "Prevalence per million people",
                  quant_grades = 4,
                  pal_reverse = FALSE
     )
