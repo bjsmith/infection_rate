@@ -21,11 +21,12 @@ run_sim <- function(
   pcr_test_to_remain_in_quarantine = c(5),
   quarantine_release_day = 6,
   #temp_and_symptoms_test_to_avoid_boarding = c(0),
-  p_flight_infection_risk_per_case_contact = 0.005*.15, #with mask wearing
+  p_flight_infection_risk_per_case = 0.005*.15, #with mask wearing
   quarantine_contacts_per_day=2,
+  quarantine_health_check=TRUE,
   set_density_at_1_per_day = FALSE
   ){
-  warning("flight risk variable ignored.")
+  
   #let's start a list of all cases started in the prior 14 days from day 0
   # case_list_day_begin = c()
   # case_list_weight = c()
@@ -92,6 +93,9 @@ run_sim <- function(
   #pre-departure test.
   #cycle through each pre-departure test
   for (pre_departure_test in pcr_test_list_to_avoid_boarding){
+    if (length(pre_departure_test)==0){
+      next
+    }
     
     #choose the day for the test from the range allowed, for each subject in the test
     day_for_pd_test<- sample(unlist(pre_departure_test),cases_n,replace = TRUE)
@@ -123,7 +127,7 @@ run_sim <- function(
   #how many cases begin on the flight?
   #let's not make this probabilistic; let's just multiply the probability by the number of cases...
   #the only probabilistic use this would have would be to model across low, medium, high scenarios and we are not currently doing that.
-  cases_begun_on_flight<-ceiling(sum(cases_infectious_on_flight)* 0.43/100)
+  cases_begun_on_flight<-ceiling(sum(cases_infectious_on_flight)* p_flight_infection_risk_per_case)
   #cases_begun_on_flight <- rbinom(n=1,size=sum(cases_infectious_on_flight),prob = 0.43/100)
   
   #now add any cases that come from in-flight spread.
@@ -158,15 +162,18 @@ run_sim <- function(
     
     #for symptomatic patients
     is_undetected <- is.na(cases_df$detected_day_rtf)
-    health_check_odds<-1/3
-    #calculate health check.
-    printv("doing health check")
-    printv("symptomatic today:")
-    health_check_test_success<-health_check_odds>runif(sum(is_symptomatic_today&is_undetected))#just for symptomatic patients.
-    printv("health check success:")
-    printv(sum(health_check_test_success))
-    cases_df[is_symptomatic_today & is_undetected,][which(health_check_test_success),]$detected_day_rtf<-t
-    #now mark these as detected...
+    if(quarantine_health_check){
+      health_check_odds<-1/3
+      #calculate health check.
+      printv("doing health check")
+      printv("symptomatic today:")
+      health_check_test_success<-health_check_odds>runif(sum(is_symptomatic_today&is_undetected))#just for symptomatic patients.
+      printv("health check success:")
+      printv(sum(health_check_test_success))
+      cases_df[is_symptomatic_today & is_undetected,][which(health_check_test_success),]$detected_day_rtf<-t
+      #now mark these as detected...
+    }
+    
     
     #calculate breach risk on this day
     community_exposure_by_day[t+sim_days_before_flight_start]<-community_exposure_by_day[t+sim_days_before_flight_start] + breach_odds_per_day*sum(is_infectious_today)

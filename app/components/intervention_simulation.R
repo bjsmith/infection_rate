@@ -100,6 +100,12 @@ render_total_risk_text <- function(
     #I think we have to multiply the complements then get the complement again.
     #total_risk_prop<-1-prod(1-na.exclude(c(countries_in_bubble_risks,countries_out_of_bubble_risks,untrusted_countries_risks)))
     
+    print(status_quo_risk %>% select(Location,ExpectedNumberOfCasesInCommunity,PrevalenceRating,DataReliabilityRating,InterventionLevel) %>% filter(!is.na(ExpectedNumberOfCasesInCommunity)) %>% arrange(-ExpectedNumberOfCasesInCommunity),
+          n=60)
+    print(intervention_risk %>% select(Location,ExpectedNumberOfCasesInCommunity,PrevalenceRating,DataReliabilityRating,InterventionLevel) %>% filter(!is.na(ExpectedNumberOfCasesInCommunity)) %>% arrange(-ExpectedNumberOfCasesInCommunity),
+          n=60)
+    
+    
     #now we need to add a warning for excluded countries.
     #total_risk_prop
     textout<-paste0(
@@ -108,7 +114,7 @@ render_total_risk_text <- function(
       " travellers will arrive at the border per month. Consequently, we estimate ",
       signif(sum(status_quo_risk$ExpectedCasesAtBorderUnderLockdown,na.rm = TRUE),2),
       " positive cases per month will arrive at the border, of which ",
-      signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),2),
+      signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),5),
       " will be exposed to the community.",
       "This represents ",
       signif(sum(status_quo_risk$ExpectedCasesAtBorder,na.rm=TRUE)/sum(status_quo_risk$StatusQuoMonthlyArrivals,na.rm = TRUE)*10^5,4),
@@ -121,7 +127,7 @@ render_total_risk_text <- function(
       " travellers will arrive at the border per month. Consequently, we estimate ",
       signif(sum(intervention_risk$ExpectedCasesAtBorder,na.rm = TRUE),2),
       " cases per month will arrive at the border, of which ",
-      signif(sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),2),
+      signif(sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),5),
       " will be exposed to the community.",
       " The intervention increases the expected amount of community exposure by ",
       scales::percent(increased_risk,accuracy = 0.01),
@@ -322,9 +328,9 @@ get_total_risk_graph <- function(status_quo_risk,intervention_risk,countries_all
       scale_x_discrete(name="")+
       scale_y_continuous(name="Expected cases per month",
                          #breaks=0:plot_max,
-                         minor_breaks = NULL, 
+                         minor_breaks = NULL#, 
                          #limits = c(0,plot_max)#,
-                         limits=c(0,0.6)
+                         #limits=c(0,0.6)
                          #position="right"
       )+
       #scale_fill_brewer(palette="Set3")+

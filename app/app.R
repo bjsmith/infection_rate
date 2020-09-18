@@ -82,6 +82,7 @@ source("map_page.R")
 source('components/intervention_simulation.R')
 source('components/journey_page.R')
 source('components/proposal.R')
+source('components/summary_map.R')
 
 print_elapsed_time("Startin main dashboard creation...")
 # Define server logic required to draw a histogram
@@ -629,7 +630,7 @@ server <- function(input, output, session) {
       rbind(status_quo_countries ,
             intervened_countries_risk
       )
-    
+
     print_elapsed_time("returning get_intervention_risk")
     return(intervention_risk)
   })
@@ -764,6 +765,10 @@ server <- function(input, output, session) {
   render_map_page(output,get_filtered_mapped_world_with_covid_data(),get_run_month())
   
   ######################################################################
+  #SUMMARY map page
+  render_summary_map(input = input,output = output, get_filtered_mapped_world_with_covid_data(),get_run_month())
+  
+  ######################################################################
   #journey page
   
   render_journey_page(input,output)
@@ -836,6 +841,7 @@ ui <- navbarPage(
       )
     )
   ),
+  get_summary_map_tabPanel(default_run_date = default_run_date),
   get_map_page_tabPanel(),
   tabPanel(
     "Validation",
