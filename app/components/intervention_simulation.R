@@ -518,6 +518,14 @@ generate_areaPlot <- function(covid_data){
            CumulativeTravelInclusive=cumsum(Arrivals)
     )
   
+  relevant_data <- relevant_data %>% 
+    mutate(Location=str_replace(Location,"Australian Capital Territory","ACT")) %>%
+    mutate(Location=str_replace(Location,"Northern Territory","NT")) %>%
+    mutate(Location=str_replace(Location,"Western Australia","WA")) %>% 
+    mutate(Location=str_replace(Location,"Western Australia","WA")) %>% 
+    mutate(Location=str_replace(Location,"New South Wales","NSW")) %>% 
+    mutate(Location=str_replace(Location,"South Australia","SA"))
+  
   
   #shape into what we want
   
@@ -540,7 +548,7 @@ generate_areaPlot <- function(covid_data){
   
   
   #re-arrange labels
-  threshold <- max(all_rects$CumulativeTravelInclusive)/30
+  threshold <- max(all_rects$CumulativeTravelInclusive)/25
   for (rect_i in 2:nrow(all_rects)){
     #now for each row, set the rectgroup to the minimum rectID where the row label_xpos has less than a certain difference.
     current_rectID<-all_rects[[rect_i,"RectId"]]
@@ -589,13 +597,14 @@ generate_areaPlot <- function(covid_data){
                       y=max(all_rects$CasesPerThousand,na.rm=TRUE)*2/3,
                       hjust=1,
                       size=3,
+                      fontface="bold",
                       color="black",
                       fill=brewer.pal(n = nrow(level_rects), name = "Blues"))+
       #draw the countries
       geom_vline(aes(xintercept=CumulativeTravelInclusive),linetype="dotted",color="#aaaaaa")+
       geom_rect(color="#9999ff",fill="#000055",alpha=0.8)+
       geom_text(aes(label_xpos,y=label_ypos,label=RectLabel),
-                angle=30,size=3,hjust=1,vjust=1)+
+                angle=50,size=3,hjust=1,vjust=1,lineheight = 0.7,fontface="bold")+
       #draw the current average prevalence
       geom_hline(yintercept = current_risk_per_thousand,color="#cc0000")+
       annotate(geom="text",x=0,y=current_risk_per_thousand,vjust=0,hjust=0,color="#cc0000",label="Status quo aggregate traveller risk\n",size=3)+
@@ -606,9 +615,9 @@ generate_areaPlot <- function(covid_data){
       coord_cartesian(ylim=c(-max(all_rects$CasesPerThousand,na.rm=TRUE)/4,max(all_rects$CasesPerThousand,na.rm=TRUE)))+
       theme_minimal()+
       theme(panel.grid.major.x = element_blank(),
-            panel.grid.minor.x = element_blank())+
+            panel.grid.minor.x = element_blank()
+            )+
       labs(title="Risk prior to applying any interventions")
   )
-  
 }
 
