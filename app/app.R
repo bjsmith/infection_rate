@@ -1,6 +1,6 @@
 
-default_run_date<-as.Date("2020-08-22")
-#default_run_date<-Sys.Date()
+#default_run_date<-as.Date("2020-08-22")
+default_run_date<-Sys.Date()
 default_month_name <- format(default_run_date,"%B")
 
 

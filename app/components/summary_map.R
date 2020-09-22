@@ -1,6 +1,6 @@
 library(shiny)
 #summary_map.R
-
+#https://stackoverflow.com/questions/64001136/setting-up-two-rshiny-input-values-for-the-same-value-across-different-tab-panel/64001953#64001953
 get_summary_map_tabPanel <- function(default_run_date){
   return(
     tabPanel(
