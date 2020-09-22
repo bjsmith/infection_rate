@@ -1,7 +1,7 @@
 
 #shiny
 library(shiny)
-#library(shinyjs)
+library(shinyjs)
 library(dplyr)
 
 #data
@@ -13,6 +13,7 @@ library(readr)
 library(stringr)
 library(magrittr)
 library(googlesheets4)
+library(zoo)
 
 #visual
 library(ggplot2) # tidyverse vis package
@@ -23,7 +24,6 @@ library(leaflet)
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(RColorBrewer)
-
 
 
 #timer functionality
@@ -159,40 +159,68 @@ get_data_closure <- function() {
   data_list <- NULL
   
   f <- function() {
-    #warning("loading data from cache for testing purposes")
-    #save(data_list,file="../../data/data-snapshot.RData")
-    #load(file = "../../data/data-snapshot.RData")
-    #return(data_list)
     if(is.null(data_list)){
-      print_elapsed_time("Fetching JH data...")
+      
+      # a function we use repeatedly for different datasets to either retrieve from a local cache (fast, but potentially out of date) or download from an online source
+      get_cache_or_live_data<-function(live_data_function,cache_filepath,cache_expiry_in_minutes=60){
+        if(file.exists(cache_filepath)){
+          if(as.double(difftime(Sys.time(),file.info(cache_filepath)$mtime,units="mins"))<cache_expiry_in_minutes){
+            #the cache exists and it's less than 60 minutes old
+            #use it
+            
+            returned_data <- read_csv(cache_filepath)
+            print_elapsed_time("...used cache to get data.")
+            return(returned_data)
+          }else{
+            returned_data <- live_data_function()
+            
+          }
+        }else{
+          returned_data <- live_data_function()
+        }
+        print_elapsed_time("retrieved data from live datasource, caching...")
+        write_csv(returned_data,path = cache_filepath)
+        print_elapsed_time("...cached.")
+        return(returned_data)
+      }
+      
       dl_local<-list()
-      jh_cases_recovered<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")
-      jh_cases_recovered$EventType<-"Recoveries"
-      jh_cases_confirmed <- readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
-      jh_cases_confirmed$EventType<-"CasesConfirmed"
-      jh_deaths<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
-      jh_deaths$EventType<-"Deaths"
-      #need to filter by shared columns because the source has been known to not update these at the same time.
-      shared_cols <- intersect(intersect(colnames(jh_deaths),colnames(jh_cases_recovered)),colnames(jh_cases_confirmed))
-      jh_data<-rbind(jh_cases_confirmed[,shared_cols],jh_cases_recovered[,shared_cols],jh_deaths[,shared_cols])
       
-      print_elapsed_time("JH data retrieved.")
-      dl_local[["jh_data"]] <- jh_data
+      retrieve_jh_data <- function(){
+        print_elapsed_time("Fetching JH data...")
+        
+        
+        jh_cases_recovered<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_recovered_global.csv")
+        jh_cases_recovered$EventType<-"Recoveries"
+        jh_cases_confirmed <- readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+        jh_cases_confirmed$EventType<-"CasesConfirmed"
+        jh_deaths<-readr::read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv")
+        jh_deaths$EventType<-"Deaths"
+        #need to filter by shared columns because the source has been known to not update these at the same time.
+        shared_cols <- intersect(intersect(colnames(jh_deaths),colnames(jh_cases_recovered)),colnames(jh_cases_confirmed))
+        jh_data<-rbind(jh_cases_confirmed[,shared_cols],jh_cases_recovered[,shared_cols],jh_deaths[,shared_cols])
+        return(jh_data)
+      }
       
-      print("Fetching local data...")
+      print_elapsed_time("Getting JH data...")
+      
+      
+      dl_local[["jh_data"]] <- get_cache_or_live_data(retrieve_jh_data,"data/jh_cache.csv",cache_expiry_in_minutes = 120)
+      
+      
+      print("Fetching local pop data...")
       world_pop <- readr::read_csv("data/mapping/world_population/API_SP.POP.TOTL_DS2_en_csv_v2_1217749.csv") %>%
         select(`Country Code`,`Country Name`,`2019`)
       
       dl_local[["world_pop"]] <- world_pop
       
       
-      print("fetching google sheets data...")
+      print_elapsed_time("fetching google sheets data...")
       #library(googlesheets4)
       # Or, if you don't use multiple Google identities, you can be more vague:
       #gs4_auth_configure(api_key = "AIzaSyAnEAdoH-yLBO1rvhmAD-kkKR9TMYqI0Rs")
       #gs4_auth_configure(app = google_app)
       google_sheets_cache_filepath <- "data/manual_corrections_cache.csv"
-      owid_cache_filepath <- "data/owid_cache.csv"
       get_manual_corrections_from_gsheet <- function(save_path){
         print('connecting to google sheet to get manual corrections')
         options(gargle_oauth_email = "newzealandborderriskapp@gmail.com")
@@ -201,45 +229,18 @@ get_data_closure <- function() {
         #set this for now, but we may need to follow the instructions below:
         manual_corrections <- read_sheet("1hkpfinHpxT1KcTI8umh55aaiFug12jKKSMZoae4ttlA")
         #write it to a CSV
-        write_csv(manual_corrections,path = google_sheets_cache_filepath)
         return(manual_corrections)
       }
-      if(file.exists(google_sheets_cache_filepath)){
-        if(as.double(difftime(Sys.time(),file.info(google_sheets_cache_filepath)$mtime,units="mins"))<60){
-          #the cache exists and it's less than 60 minutes old
-          #use it
-          print("using cache to get manual corrections")
-          manual_corrections <- read_csv(google_sheets_cache_filepath)
-        }else{
-          manual_corrections <- get_manual_corrections_from_gsheet(google_sheets_cache_filepath)
-        }
-      }else{
-        manual_corrections <- get_manual_corrections_from_gsheet(google_sheets_cache_filepath)
-      }
+      dl_local[["manual_corrections"]] <- get_cache_or_live_data(get_manual_corrections_from_gsheet,google_sheets_cache_filepath,cache_expiry_in_minutes = 60)
       
-      dl_local[["manual_corrections"]] <- manual_corrections
-      
-      print("fetching ourworldindata data...")
-      
-      if(file.exists(owid_cache_filepath)){
-        if(as.double(difftime(Sys.time(),file.info(owid_cache_filepath)$mtime,units="mins"))<60*8){
-          #the cache exists and it's less than 60 minutes old
-          #use it
-          print_elapsed_time("using cache to get OWID dataset")
-          owid_fullset <- read_csv(owid_cache_filepath)
-        }else{
-          print_elapsed_time("getting OWID from github")
-          owid_fullset<-readr::read_csv("https://github.com/owid/covid-19-data/raw/master/public/data/owid-covid-data.csv")
-          write_csv(owid_fullset,path = owid_cache_filepath)
-        }
-      }else{
-        print_elapsed_time("getting OWID from github")
+      print_elapsed_time("fetching ourworldindata data...")
+      owid_cache_filepath <- "data/owid_cache.csv"
+      retrieve_owid_dataset<- function(){
         owid_fullset<-readr::read_csv("https://github.com/owid/covid-19-data/raw/master/public/data/owid-covid-data.csv")
-        write_csv(owid_fullset,path = owid_cache_filepath)
+        return(owid_fullset)
       }
       
-      
-      dl_local[["owid_fullset"]] <- owid_fullset
+      dl_local[["owid_fullset"]] <- get_cache_or_live_data(retrieve_owid_dataset, owid_cache_filepath,cache_expiry_in_minutes = 180)
       
       data_list <<- dl_local
     }else{
@@ -400,7 +401,7 @@ get_daily_data <- function(separate_aussie_states_and_hk){
   print_elapsed_time("calculating active cases...")
   ########### calculate active cases.
   
-  library(zoo)
+  
   jh_dxc <- jh_dxc %>%
     group_by(CountryDivisionCodeMixed) %>%
     arrange(Date) %>% mutate(ActiveCases1Raw = CasesConfirmed-Deaths-Recoveries) %>%
@@ -416,6 +417,7 @@ get_daily_data <- function(separate_aussie_states_and_hk){
   
   #https://www.nsw.gov.au/covid-19/find-facts-about-covid-19
   
+  print_elapsed_time("...daily data retrieval complete.")
   return(jh_dxc)
 }
 

@@ -84,7 +84,7 @@ source('components/journey_page.R')
 source('components/proposal.R')
 source('components/summary_map.R')
 
-print_elapsed_time("Startin main dashboard creation...")
+print_elapsed_time("Creating server component...")
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
   #####################
@@ -92,13 +92,30 @@ server <- function(input, output, session) {
   get_run_date <- reactive({
     input$simsettings_run_date
   })
-  
   get_run_month <- reactive({
     format(input$simsettings_run_date,"%B")
   })
   
+  #we tie these two date inputs together to function the same.
+  # observeEvent(input$summary_map_run_date,{updateDateInput(session,inputId = "simsettings_run_date",value=input$summary_map_run_date)})
+  observeEvent(input$simsettings_run_date,{
+    print("date changed...")
+  #   #updateDateInput(session,inputId = "summary_map_run_date",value=input$simsettings_run_date)
+  #   input$summary_map_run_date <- input$simsettings_run_date
+     runjs(paste0(
+       'document.getElementsByClassName("navbar-brand")[0].innerText="',
+       app_display_title, ' (',input$simsettings_run_date,')',
+       '"'))
+  #   #html("navbar-brand",as.character(input$simsettings_run_date))
+  } 
+  )
+  
+
+  
+
+  
   nogeo_world_basic_data <- reactive({
-    print_elapsed_time("LOADING DATA 2...")
+    print_elapsed_time("LOADING DATA VIA REACTIVE...")
     return(get_geomapped_covid_data(life_exp_thresh,input$simsettings_run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE))
   })
   
@@ -783,7 +800,7 @@ server <- function(input, output, session) {
   
   ######################################################################
   #SUMMARY map page
-  render_summary_map(input = input,output = output, get_filtered_mapped_world_with_covid_data(),get_run_month())
+  render_summary_map(input = input,output = output,session=session, get_filtered_mapped_world_with_covid_data(),get_run_month())
   
   ######################################################################
   #journey page
@@ -792,10 +809,13 @@ server <- function(input, output, session) {
 }
 
 
+print_elapsed_time("Creating UI component...")
+app_display_title <- "Border relaxation measures"
+
 ui <- navbarPage(
-  "Opening the border: What's the risk?",
+  app_display_title,
   id="mainNavbarPage",
-  selected="Journey design",
+  selected="Intervention simulation",
   footer=div(class = "footer",
              includeHTML("footer.html")
   ),
@@ -878,6 +898,7 @@ ui <- navbarPage(
   tabPanel(
     "Simulation settings",
     fluidPage(
+      useShinyjs(),#have to put this somewhere; I've arbitrarily put it in the simSettings page.
       titlePanel("Simulation Settings"),
       mainPanel(
         # numericInput("intsim_quarantine_failure_odds",
@@ -915,5 +936,6 @@ ui <- navbarPage(
   )
 )
 
+print_elapsed_time("Running Shiny Application...")
 # Run the application 
 shinyApp(ui = ui, server = server)

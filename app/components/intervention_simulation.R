@@ -100,10 +100,10 @@ render_total_risk_text <- function(
     #I think we have to multiply the complements then get the complement again.
     #total_risk_prop<-1-prod(1-na.exclude(c(countries_in_bubble_risks,countries_out_of_bubble_risks,untrusted_countries_risks)))
     
-    print(status_quo_risk %>% select(Location,ExpectedNumberOfCasesInCommunity,PrevalenceRating,DataReliabilityRating,InterventionLevel) %>% filter(!is.na(ExpectedNumberOfCasesInCommunity)) %>% arrange(-ExpectedNumberOfCasesInCommunity),
-          n=60)
-    print(intervention_risk %>% select(Location,ExpectedNumberOfCasesInCommunity,PrevalenceRating,DataReliabilityRating,InterventionLevel) %>% filter(!is.na(ExpectedNumberOfCasesInCommunity)) %>% arrange(-ExpectedNumberOfCasesInCommunity),
-          n=60)
+    # print(status_quo_risk %>% select(Location,ExpectedNumberOfCasesInCommunity,PrevalenceRating,DataReliabilityRating,InterventionLevel) %>% filter(!is.na(ExpectedNumberOfCasesInCommunity)) %>% arrange(-ExpectedNumberOfCasesInCommunity),
+    #       n=60)
+    # print(intervention_risk %>% select(Location,ExpectedNumberOfCasesInCommunity,PrevalenceRating,DataReliabilityRating,InterventionLevel) %>% filter(!is.na(ExpectedNumberOfCasesInCommunity)) %>% arrange(-ExpectedNumberOfCasesInCommunity),
+    #       n=60)
     
     
     #now we need to add a warning for excluded countries.

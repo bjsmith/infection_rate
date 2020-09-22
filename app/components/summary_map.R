@@ -11,12 +11,12 @@ get_summary_map_tabPanel <- function(default_run_date){
                  titlePanel("Prevalence map")),
           column(2,
                  h4("View settings")),
-          column(3,
-                 dateInput("summary_map_run_date",
-                           "Run date:",
-                           value = default_run_date,max = Sys.Date())
-                 
-          ),
+          # column(3,
+          #        dateInput("summary_map_run_date",
+          #                  "Run date:",
+          #                  value = default_run_date,max = Sys.Date())
+          #        
+          # ),
           column(4,
                  selectInput(
                    "summary_map_DisplayFilter",
@@ -40,7 +40,8 @@ get_summary_map_tabPanel <- function(default_run_date){
     )
   )
 }
-render_summary_map <- function(input,output,filtered_mapped_world_with_covid_data,month_name){
+render_summary_map <- function(input,output,session,filtered_mapped_world_with_covid_data,month_name){
+  
   
   #write code to synchronize the date picker on this page with the date picker on the settings page.
     
