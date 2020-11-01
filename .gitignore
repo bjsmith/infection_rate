@@ -8,6 +8,9 @@ data/*
 app/data/owid_cache.csv
 data/timer.log
 /app/data/timer.log
+app/data/jh_cache.csv
+app/data/manual_corrections_cache.csv
+app/data/timer.log
 */timer.log
 owid_cache.csv
 .DS_Store
