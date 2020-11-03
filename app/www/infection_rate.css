@@ -1,0 +1,38 @@
+h1{
+  margin-right: auto; margin-left: auto; text-align: center;
+}
+
+h2{
+  margin-right: auto; margin-left: auto; text-align: center;
+}
+
+/*.header{
+  
+}*/
+
+.subheader{
+  margin-right: auto; margin-left: auto; text-align: center;
+  color: #008cba;
+}
+
+#effective_date{
+  text-align:right;
+  margin-right:auto;
+  margin-bottom:1em;
+}
+
+div[data-value="Summary"]{
+  text-align:center;
+}
+div[data-value="Summary"] button{
+  margin-top:2em;
+  margin-bottom:2em;
+}
+/*
+#summary_page_summary_full_text,#summary_page_method_full_text,#summary_page_recommendations_full_text{
+
+  
+}
+#summary_page_method{
+  
+}*/

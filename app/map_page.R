@@ -1,7 +1,7 @@
 get_map_page_tabPanel <- function(){
   
   tabPanel(
-    "Method and assumptions",
+    "Method and Approach",
     
     fluidPage(
       # Application title

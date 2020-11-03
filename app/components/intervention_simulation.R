@@ -586,6 +586,14 @@ generate_areaPlot <- function(covid_data){
     arrange(max_prevalence)
   
   print_elapsed_time("generating areaPlot...")
+  #let's scale it to a maximum of 20 points
+  #what does that look like?
+  y_by_options = c(1,2,4,5,10,20,40,50,100,200,400,500) #shouldn't really go above 4 or 5...
+  max_cpt = max(all_rects$CasesPerThousand,na.rm=TRUE)
+  print(max_cpt)
+  print((max_cpt/y_by_options))
+  y_by <- min(y_by_options[(max_cpt/y_by_options)<=20])
+  y_scale_sequence = seq(0,max(all_rects$CasesPerThousand,na.rm=TRUE)+y_by,y_by)
   #return the plot
   return(
     ggplot(all_rects,aes(xmin=left, xmax=right, ymin=bottom,ymax=top))+
@@ -611,7 +619,7 @@ generate_areaPlot <- function(covid_data){
       #set the scales and style
       geom_vline(xintercept=0,color="#aaaaaa")+
       scale_x_continuous(name="Cumulative expected travellers per month", labels=scales::comma_format(),)+
-      scale_y_continuous(name="Cases per 1,000 travellers",breaks = c(0,2,4,6,8,10,12),minor_breaks = NULL)+
+      scale_y_continuous(name="Cases per 1,000 travellers",breaks = y_scale_sequence,minor_breaks = NULL)+
       coord_cartesian(ylim=c(-max(all_rects$CasesPerThousand,na.rm=TRUE)/4,max(all_rects$CasesPerThousand,na.rm=TRUE)))+
       theme_minimal()+
       theme(panel.grid.major.x = element_blank(),
