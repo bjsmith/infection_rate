@@ -28,11 +28,15 @@ div[data-value="Summary"] button{
   margin-top:2em;
   margin-bottom:2em;
 }
-/*
-#summary_page_summary_full_text,#summary_page_method_full_text,#summary_page_recommendations_full_text{
 
-  
+.navbar {
+  display:flex;
+  align-items: center;
+  flex-direction:column;
+  margin:auto;
 }
-#summary_page_method{
-  
+
+/*
+.col-sm-8 {
+  float:none;
 }*/
