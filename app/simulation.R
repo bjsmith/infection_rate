@@ -98,6 +98,8 @@ simulate_treatment_for_countries <- function(
       #we infer that the detection rate is completely unknown
       #this indicates probably quite severe under-reporting
       (NewDeathsImportAdjusted>0) & (LaggedNewCases==0) ~ as.double(NA),
+      #to be conservative, if there are FEWER deaths than expected we don't infer fewer cases than are actually observed
+      (CaseFatalityRatio/assumed_ifr)<1.0~1.0,
       #otherwise we set it using our formula
       TRUE~(CaseFatalityRatio/assumed_ifr)
     )
