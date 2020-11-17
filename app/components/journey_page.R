@@ -1,4 +1,12 @@
 journey_data_collection <- list()
+
+get_journey_page_under_construction_tabPanel <- function(){
+  return(
+    tabPanel("Journey design",
+             titlePanel("Under construction")
+             )
+  )
+}
 get_journey_page_tabPanel <- function(){
   return(
     tabPanel(

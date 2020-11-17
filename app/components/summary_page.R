@@ -19,7 +19,8 @@ get_summary_page_tabPanel <- function(){
         actionButton("summary_page_recommendations",
                      "Read more",class="btn btn-primary"),
         hr(),
-        h2("Team")
+        h2("Team"),
+        includeHTML("components/team.html")
       )
     )
   )

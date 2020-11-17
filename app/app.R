@@ -1,10 +1,14 @@
 
-#default_run_date<-as.Date("2020-08-22")
-default_run_date<-Sys.Date()
-default_month_name <- format(default_run_date,"%B")
 
 
 source("utils.R")
+#this will take a while if the data has not been cached, but it has to be done at some point
+data_list <- get_data()
+last_manual_correction_date <- max(as.Date(data_list$manual_corrections$`Date recorded`),na.rm=TRUE)
+#default_run_date<-as.Date("2020-08-22")
+default_run_date<-last_manual_correction_date#Sys.Date()
+default_month_name <- format(default_run_date,"%B")
+
 print_elapsed_time("START")
 
 source("simulation.R")
@@ -85,7 +89,13 @@ server <- function(input, output, session) {
   observeEvent(input$simsettings_run_date,{
     print("date changed...")
     output$effective_date <- renderUI({
-      gsub("  ", " ",format(as.Date(input$simsettings_run_date,format="%Y-%m-%d"),format="%A %e %B %Y"))
+      friendly_date <- gsub("  ", " ",format(as.Date(input$simsettings_run_date,format="%Y-%m-%d"),format="%A %e %B %Y"))
+      if(input$simsettings_run_date== last_manual_correction_date){
+        return(HTML(friendly_date))
+      }else{
+        return(HTML(paste0(friendly_date, "<br /> (MIQ cases may not be accurately excluded for this date at this time)")))
+      }
+      
     })
     
     
@@ -285,6 +295,7 @@ server <- function(input, output, session) {
         wwcd1 %>%
         select(#LocationCode, 
           Location, #Population, #total_cases,
+          ActiveCasesRaw,
           ActiveCases,#InferredActiveCases,
           InfActiveCasesPerMillion,
           PrevalenceRating,
@@ -299,7 +310,8 @@ server <- function(input, output, session) {
       colnames(display_tibble) <- c(#"ISO",
         "Location",
         #"Population",
-        "Active Cases",
+        "Active cases (Imported and local)",
+        "Active cases (excluding imported cases where possible)",
         "Prevalence (infections / mil)",
         "Prevalence Rating",
         "Outlook Rating",
@@ -319,6 +331,7 @@ server <- function(input, output, session) {
           owid_population_density, #add
           owid_new_tests_per_million, #add
           owid_tests_per_case, #add
+          ActiveCasesRaw,
           ActiveCases,
           NewDeaths, #add
           InfActiveCasesPerMillion,
@@ -336,7 +349,8 @@ server <- function(input, output, session) {
         "Population density",
         "New tests / mil (last 7 days average)",
         "New tests / Case (last 7 days average)",
-        "Active Cases",
+        "Active cases (Imported and local)",
+        "Active cases (excluding imported cases where possible)",
         "New deaths (last 7 days average)",
         "Prevalence (infections / mil)",
         "Prevalence Rating",
@@ -357,6 +371,7 @@ server <- function(input, output, session) {
           LaggedNewCases,
           NewDeaths,
           InferredDetectionRate,
+          ActiveCasesRaw,
           ActiveCases,
           InferredActiveCases,
           InfActiveCasesPerMillion,
@@ -373,7 +388,8 @@ server <- function(input, output, session) {
         "Cases confirmed 14-21 days ago (daily average)",
         "Deaths last 7 days (daily average)",
         "Inferred detection rate",
-        "Active cases",
+        "Active cases (Imported and local)",
+        "Active cases (excluding imported cases where possible)",
         "Est. active infections",
         "Prevalence (infections / mil)",
         "Prevalence Rating",
@@ -469,7 +485,7 @@ server <- function(input, output, session) {
   output$country_table_notes <- renderUI({HTML(paste0(
     "Estimated arrivals per month are calculated assuming arrivals under existing quarantine regime, plus a ", 
     "% of 2019 arrivals, corresponding to each intervention, as set on the \"Intervention simulation\" tab. In reality these will differ from treatment to treatment.<br/> <br/> ",
-    "<em>Cook Islands</em> and <em>Western Samoa</em> currently report COVID-free status, are rated zero risk. Due to their zero-risk status, it hasn't been necessary to include them in the dataset and they are not listed above.<br /><br />",
+    "<em>Cook Islands</em> and <em>Samoa</em> currently report COVID-free status, are rated zero risk. Due to their zero-risk status, it hasn't been necessary to include them in the dataset and they are not listed above.<br /><br />",
     "."
   ))})
   
@@ -666,7 +682,7 @@ server <- function(input, output, session) {
     get_status_quo_risk = get_status_quo_risk,
     get_intervention_risk = get_intervention_risk
   )
-  
+
   observeEvent(input$intsim_20countries,{
     print("reacting")
     #shinyjs::hide(id = "intsim_level1_max_prevalence")
@@ -706,25 +722,6 @@ server <- function(input, output, session) {
     
   })
   
-  output$intsim_AreaPlot <- renderPlot({
-    intervention_risk <- get_intervention_risk()
-    generate_areaPlot(intervention_risk)
-  })
-  output$total_risk_graph <-(
-    renderPlot({
-      get_total_risk_graph(get_status_quo_risk(),get_intervention_risk(),get_countries_allocated_to_levels0to3())
-    })
-  )
-  output$cumulative_risk_plot <-renderPlot({
-      get_cumulative_risk_plot(get_status_quo_risk(),get_intervention_risk())
-    })
-  
-  
-  output$dt_countries_level0<-DT::renderDataTable(countries_level0_df())
-  output$dt_countries_level1<-DT::renderDataTable(countries_level1_df())
-  output$dt_countries_level2<-DT::renderDataTable(countries_level2_df())
-  output$dt_countries_level3<-DT::renderDataTable(countries_level3_df())
-  
   output$intsim_totalrisk<-
     renderUI({
       withMathJax(HTML(paste0(
@@ -733,7 +730,16 @@ server <- function(input, output, session) {
     })
   
   
-  render_intsim_page(input, output,sim_world_with_covid_data_statusquo())#can't include everything :/ but we will try to put what we can in here.
+  render_intsim_page(input, output,session,
+                     sim_world_with_covid_data_statusquo = sim_world_with_covid_data_statusquo(),
+                     status_quo_risk = get_status_quo_risk(),intervention_risk = get_intervention_risk(),
+                     countries_level0_df = countries_level0_df(),
+                     countries_level1_df = countries_level1_df(),
+                     countries_level2_df = countries_level2_df(),
+                     countries_level3_df = countries_level3_df(),
+                     countries_allocated_to_levels0to3 = get_countries_allocated_to_levels0to3()
+                     
+                     )#can't include everything :/ but we will try to put what we can in here.
   
   
   ######################################################################
@@ -800,7 +806,7 @@ server <- function(input, output, session) {
   ######################################################################
   #journey page
   
-  render_journey_page(input,output)
+  #render_journey_page(input,output)
 }
 
 
@@ -814,14 +820,14 @@ ui <- fluidPage(
     tags$link(rel = "stylesheet", type = "text/css", href = "infection_rate.css")
   ),
   div(class="header", includeHTML("header.html")),
-  uiOutput("effective_date"),
+  htmlOutput("effective_date"),
     navbarPage(
     title=app_display_title,
     id="mainNavbarPage",
     selected="Summary",
     get_summary_page_tabPanel(),
     get_map_page_tabPanel(),
-    get_journey_page_tabPanel(),
+    get_journey_page_under_construction_tabPanel(),
     tabPanel(
       "Location Profiles",
       fluidPage(
@@ -853,7 +859,7 @@ ui <- fluidPage(
                                 "Comprehensive high-level",
                                 "Prevalence detail",
                                 "Raw"), 
-                              selected = "Classic",
+                              selected = "Prevalence detail",
                               inline = FALSE
                  )
           ),

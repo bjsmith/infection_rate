@@ -7,6 +7,8 @@
 data/*
 app/data/owid_cache.csv
 data/timer.log
+app/data/*
+/app/data/*
 /app/data/timer.log
 app/data/jh_cache.csv
 app/data/manual_corrections_cache.csv

@@ -1,8 +1,11 @@
 
-key_interest_countries <- c("US","China (mainland)","Fiji","United Kingdom",
+key_interest_countries <- c("United States", # renamed from "US" to "United States"
+                            "China (mainland)","Fiji","United Kingdom",
                             "Japan","India","Cook Islands",
-                            "Samoa","Canada","Korea, South",
-                            "Germany","Indonesia","Taiwan*",
+                            "Samoa","Canada",
+                            "South Korea",#renamed from "Korea, South" to "South Korea"
+                            "Germany","Indonesia",
+                            "Taiwan", #renamed from "Taiwan*" to "Taiwan"
                             "Singapore","Hong Kong, China",
                             "Thailand","Philippines",
                             "Malaysia","France",

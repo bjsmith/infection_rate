@@ -18,3 +18,4 @@ sum(world_w_covid_data$ExpectedNumberOfCasesInCommunityUnderLockdown,na.rm=TRUE)
 fractions(exp(mean(c(log(1/34),log(12/9000)))))
 
 fractions(exp(mean(c(log(1/30),log(12/9000)))))
+

@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base href="_w_f9bc77b0/">
+    <script type="text/javascript">
+(function() {
+  var workerId = '_w_f9bc77b0';
+  // remove base href if worker ID is in url
+  if (window.location.href.indexOf(workerId) > 0) {
+    document.querySelector('base').removeAttribute('href');
+  }
+})();
+</script>
+
+      <script type="text/javascript">
+      var __connect = {
+        shinyPre101: false
+      }
+      </script>
+      
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+  <script type="application/shiny-singletons">603e796bcfc2ab3685167d58c426f64c15a95192</script>
+  <script type="application/html-dependencies">json2[2014.02.04];jquery[3.5.1];shiny[1.5.0];bootstrap[3.4.1];htmlwidgets[1.5.1];leaflet[1.3.1];leafletfix[1.0.0];Proj4Leaflet[1.0.1];rstudio_leaflet[1.3.1];leaflet-binding[2.0.3];ionrangeslider[2.1.6];strftime[0.9.2];selectize[0.11.2];font-awesome[5.13.0];datatables-css[0.0.0];datatables-binding[0.14];crosstalk[1.0.0];bootstrap-datepicker[1.6.4]</script>
+<script src="shared/json2-min.js"></script>
+<script src="shared/jquery.min.js"></script>
+<link href="shared/shiny.css" rel="stylesheet" />
+<script src="shared/shiny.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="shared/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+<script src="shared/bootstrap/js/bootstrap.min.js"></script>
+<script src="shared/bootstrap/shim/html5shiv.min.js"></script>
+<script src="shared/bootstrap/shim/respond.min.js"></script>
+<script src="htmlwidgets-1.5.1/htmlwidgets.js"></script>
+<link href="leaflet-1.3.1/leaflet.css" rel="stylesheet" />
+<script src="leaflet-1.3.1/leaflet.js"></script>
+<link href="leafletfix-1.0.0/leafletfix.css" rel="stylesheet" />
+<script src="Proj4Leaflet-1.0.1/proj4-compressed.js"></script>
+<script src="Proj4Leaflet-1.0.1/proj4leaflet.js"></script>
+<link href="rstudio_leaflet-1.3.1/rstudio_leaflet.css" rel="stylesheet" />
+<script src="leaflet-binding-2.0.3/leaflet.js"></script>
+<link href="shared/ionrangeslider/css/ion.rangeSlider.css" rel="stylesheet" />
+<link href="shared/ionrangeslider/css/ion.rangeSlider.skinShiny.css" rel="stylesheet" />
+<script src="shared/ionrangeslider/js/ion.rangeSlider.min.js"></script>
+<script src="shared/strftime/strftime-min.js"></script>
+<link href="shared/selectize/css/selectize.bootstrap3.css" rel="stylesheet" />
+<!--[if lt IE 9]>
+<script src="shared/selectize/js/es5-shim.min.js"></script>
+<![endif]-->
+<script src="shared/selectize/js/selectize.min.js"></script>
+<link href="font-awesome-5.13.0/css/all.min.css" rel="stylesheet" />
+<link href="font-awesome-5.13.0/css/v4-shims.min.css" rel="stylesheet" />
+<link href="datatables-css-0.0.0/datatables-crosstalk.css" rel="stylesheet" />
+<script src="datatables-binding-0.14/datatables.js"></script>
+<link href="crosstalk-1.0.0/css/crosstalk.css" rel="stylesheet" />
+<script src="crosstalk-1.0.0/js/crosstalk.min.js"></script>
+<link href="shared/datepicker/css/bootstrap-datepicker3.min.css" rel="stylesheet" />
+<script src="shared/datepicker/js/bootstrap-datepicker.min.js"></script>
+<script>
+(function() {
+  var datepicker = $.fn.datepicker.noConflict();
+  $.fn.bsDatepicker = datepicker;
+})();
+</script>  <link rel="stylesheet" type="text/css" href="bootstrap.css"/>
+  <link rel="stylesheet" type="text/css" href="infection_rate.css"/>
+  <title></title>
+  <link rel="stylesheet" type="text/css" href="summmary_page.css"/>
+  <title>Summary</title>
+  <title>COVID-19: Prevalence around the world</title>
+  <title>Location Profiles</title>
+  <title>Intervention simulation</title>
+  <title>Total risk per month</title>
+  <title>Level 0 countries (no risk)</title>
+  <title>Level 1 countries (low risk)</title>
+  <title>Level 2 countries (medium risk)</title>
+  <title>Level 3 countries (high risk)</title>
+  <title>COVID-19: Location Risk Matrix</title>
+  <title>Validation</title>
+  <title>Prevalence map</title>
+  <style>.shinyjs-hide { display: none !important; }</style>
+  <script>Shiny.addCustomMessageHandler('shinyjs-show', function(params) { shinyjs.debugMessage('shinyjs: calling function "show" with parameters:'); shinyjs.debugMessage(params); shinyjs.show(params);});
+Shiny.addCustomMessageHandler('shinyjs-hide', function(params) { shinyjs.debugMessage('shinyjs: calling function "hide" with parameters:'); shinyjs.debugMessage(params); shinyjs.hide(params);});
+Shiny.addCustomMessageHandler('shinyjs-toggle', function(params) { shinyjs.debugMessage('shinyjs: calling function "toggle" with parameters:'); shinyjs.debugMessage(params); shinyjs.toggle(params);});
+Shiny.addCustomMessageHandler('shinyjs-enable', function(params) { shinyjs.debugMessage('shinyjs: calling function "enable" with parameters:'); shinyjs.debugMessage(params); shinyjs.enable(params);});
+Shiny.addCustomMessageHandler('shinyjs-disable', function(params) { shinyjs.debugMessage('shinyjs: calling function "disable" with parameters:'); shinyjs.debugMessage(params); shinyjs.disable(params);});
+Shiny.addCustomMessageHandler('shinyjs-toggleState', function(params) { shinyjs.debugMessage('shinyjs: calling function "toggleState" with parameters:'); shinyjs.debugMessage(params); shinyjs.toggleState(params);});
+Shiny.addCustomMessageHandler('shinyjs-addClass', function(params) { shinyjs.debugMessage('shinyjs: calling function "addClass" with parameters:'); shinyjs.debugMessage(params); shinyjs.addClass(params);});
+Shiny.addCustomMessageHandler('shinyjs-removeClass', function(params) { shinyjs.debugMessage('shinyjs: calling function "removeClass" with parameters:'); shinyjs.debugMessage(params); shinyjs.removeClass(params);});
+Shiny.addCustomMessageHandler('shinyjs-toggleClass', function(params) { shinyjs.debugMessage('shinyjs: calling function "toggleClass" with parameters:'); shinyjs.debugMessage(params); shinyjs.toggleClass(params);});
+Shiny.addCustomMessageHandler('shinyjs-html', function(params) { shinyjs.debugMessage('shinyjs: calling function "html" with parameters:'); shinyjs.debugMessage(params); shinyjs.html(params);});
+Shiny.addCustomMessageHandler('shinyjs-onevent', function(params) { shinyjs.debugMessage('shinyjs: calling function "onevent" with parameters:'); shinyjs.debugMessage(params); shinyjs.onevent(params);});
+Shiny.addCustomMessageHandler('shinyjs-alert', function(params) { shinyjs.debugMessage('shinyjs: calling function "alert" with parameters:'); shinyjs.debugMessage(params); shinyjs.alert(params);});
+Shiny.addCustomMessageHandler('shinyjs-logjs', function(params) { shinyjs.debugMessage('shinyjs: calling function "logjs" with parameters:'); shinyjs.debugMessage(params); shinyjs.logjs(params);});
+Shiny.addCustomMessageHandler('shinyjs-runjs', function(params) { shinyjs.debugMessage('shinyjs: calling function "runjs" with parameters:'); shinyjs.debugMessage(params); shinyjs.runjs(params);});
+Shiny.addCustomMessageHandler('shinyjs-reset', function(params) { shinyjs.debugMessage('shinyjs: calling function "reset" with parameters:'); shinyjs.debugMessage(params); shinyjs.reset(params);});
+Shiny.addCustomMessageHandler('shinyjs-delay', function(params) { shinyjs.debugMessage('shinyjs: calling function "delay" with parameters:'); shinyjs.debugMessage(params); shinyjs.delay(params);});
+Shiny.addCustomMessageHandler('shinyjs-click', function(params) { shinyjs.debugMessage('shinyjs: calling function "click" with parameters:'); shinyjs.debugMessage(params); shinyjs.click(params);});</script>
+  <script src="shinyjs/shinyjs-default-funcs.js"></script>
+  <script>shinyjs.debug = false;</script>
+  <title>Simulation Settings</title>
+<script src="__assets__/sockjs-0.3.min.js"></script>
+<script src="__assets__/shiny-server-client.min.js"></script>
+<script>preShinyInit({reconnect:true,reconnectTimeout:15000,disableProtocols:["xdr-streaming","xdr-polling","websocket"],transportDebugging:false,token:true,workerId:true,subappTag:true,extendSession:true,fixupInternalLinks:true});</script>
+<link rel="stylesheet" type="text/css" href="__assets__/rstudio-connect.css"/>
+</head>
+<body>
+<script type="text/javascript" src="/__static__/components/iframe-resizer/js/iframeResizer.contentWindow.min.js"></script>
+<script type="text/javascript" src="/__static__/frontend/scripts/shinyapps.frame.content.js"></script>
+<script type="text/javascript" src="/__static__/frontend/scripts/shinyapps.js"></script>
+
+  <div class="container-fluid">
+    <div class="header">
+<h1>NZ SAFE BORDER</h1>
+<div class="subheader">A risk-based and evidence based approach to safely reconnecting New Zealand with the world</div></div>
+    <div id="effective_date" class="shiny-html-output"></div>
+    <nav class="navbar navbar-default navbar-static-top" role="navigation">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <span class="navbar-brand"></span>
+        </div>
+        <ul class="nav navbar-nav shiny-tab-input" id="mainNavbarPage" data-tabsetid="4113">
+          <li class="active">
+            <a href="#tab-4113-1" data-toggle="tab" data-value="Summary">Summary</a>
+          </li>
+          <li>
+            <a href="#tab-4113-2" data-toggle="tab" data-value="Method and Approach">Method and Approach</a>
+          </li>
+          <li>
+            <a href="#tab-4113-3" data-toggle="tab" data-value="Journey design">Journey design</a>
+          </li>
+          <li>
+            <a href="#tab-4113-4" data-toggle="tab" data-value="Location Profiles">Location Profiles</a>
+          </li>
+          <li>
+            <a href="#tab-4113-5" data-toggle="tab" data-value="Intervention simulation">Intervention simulation</a>
+          </li>
+          <li>
+            <a href="#tab-4113-6" data-toggle="tab" data-value="Risk Matrix">Risk Matrix</a>
+          </li>
+          <li>
+            <a href="#tab-4113-7" data-toggle="tab" data-value="Validation">Validation</a>
+          </li>
+          <li>
+            <a href="#tab-4113-8" data-toggle="tab" data-value="Prevalence map">Prevalence map</a>
+          </li>
+          <li>
+            <a href="#tab-4113-9" data-toggle="tab" data-value="Simulation settings">Simulation settings</a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+    <div class="container-fluid">
+      <div class="tab-content" data-tabsetid="4113">
+        <div class="tab-pane active" data-value="Summary" id="tab-4113-1">
+          <div class="container-fluid">
+            <h2>Summary</h2>
+            <div id="summary_page_summary_full_text" class="shiny-html-output"></div>
+            <hr/>
+            <h2>Method and Approach</h2>
+            <div id="summary_page_method_full_text" class="shiny-html-output"></div>
+            <button class="btn btn-default action-button btn btn-primary" id="summary_page_method" type="button">Read more</button>
+            <hr/>
+            <h2>Recommendations</h2>
+            <div id="summary_page_recommendations_full_text" class="shiny-html-output"></div>
+            <button class="btn btn-default action-button btn btn-primary" id="summary_page_recommendations" type="button">Read more</button>
+            <hr/>
+            <h2>Team</h2>
+          </div>
+        </div>
+        <div class="tab-pane" data-value="Method and Approach" id="tab-4113-2">
+          <div class="container-fluid">
+            <h2>COVID-19: Prevalence around the world</h2>
+            <div class="row">
+              <div class="col-sm-4">
+                <form class="well">
+                  <div id="testt" class="shiny-html-output"></div>
+                </form>
+              </div>
+              <div class="col-sm-8">
+                <div id="graph0header" class="shiny-text-output"></div>
+                <div id="graph0" style="width:100%; height:400px; " class="leaflet html-widget html-widget-output"></div>
+                <div id="graph1header" class="shiny-text-output"></div>
+                <div id="graph1" style="width:100%; height:400px; " class="leaflet html-widget html-widget-output"></div>
+                <div id="graph2header" class="shiny-text-output"></div>
+                <div id="graph2" style="width:100%; height:400px; " class="leaflet html-widget html-widget-output"></div>
+                <div id="graph3header" class="shiny-text-output"></div>
+                <div id="graph3" style="width:100%; height:400px; " class="leaflet html-widget html-widget-output"></div>
+                <div id="graph4header" class="shiny-text-output"></div>
+                <div id="graph4" style="width:100%; height:400px; " class="leaflet html-widget html-widget-output"></div>
+                <div id="graph5header" class="shiny-text-output"></div>
+                <div id="graph5" style="width:100%; height:400px; " class="leaflet html-widget html-widget-output"></div>
+                <div id="graph6header" class="shiny-text-output"></div>
+                <div id="graph6" style="width:100%; height:400px; " class="leaflet html-widget html-widget-output"></div>
+                <div id="graph8header" class="shiny-text-output"></div>
+                <div id="graph8" style="width:100%; height:400px; " class="leaflet html-widget html-widget-output"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-pane" data-value="Journey design" id="tab-4113-3">
+          <div class="row">
+            <div class="col-sm-4">
+              <form class="well">
+                <div data-display-if="input.simsettings_mode==&#39;Simple&#39;" data-ns-prefix="">
+                  <div class="form-group shiny-input-container">
+                    <div class="checkbox">
+                      <label>
+                        <input id="journey_preflight_test_toggle" type="checkbox" checked="checked"/>
+                        <span>Run Pre-flight PCR test</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="form-group shiny-input-container">
+                    <label class="control-label" for="journey_aircraft_mask_usage">Journey Aircraft Mask Usage (%)</label>
+                    <input class="js-range-slider" id="journey_aircraft_mask_usage" data-min="0" data-max="100" data-from="20" data-step="1" data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-keyboard="true" data-data-type="number"/>
+                  </div>
+                  <div class="form-group shiny-input-container">
+                    <div class="checkbox">
+                      <label>
+                        <input id="journey_miq_health_check_toggle" type="checkbox" checked="checked"/>
+                        <span>Run daily health check in quarantine</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <div data-display-if="input.simsettings_mode==&#39;Advanced&#39;" data-ns-prefix="">
+                  <div class="form-group shiny-input-container">
+                    <label class="control-label" for="journey_preflight_test_dates">Preflight PCR on ONE randomly selected date of the following:</label>
+                    <div>
+                      <select id="journey_preflight_test_dates" multiple="multiple"><option value="1">1</option>
+<option value="2" selected>2</option>
+<option value="3" selected>3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+<option value="6">6</option>
+<option value="7">7</option></select>
+                      <script type="application/json" data-for="journey_preflight_test_dates">{}</script>
+                    </div>
+                  </div>
+                  <div class="form-group shiny-input-container">
+                    <label class="control-label" for="journey_postflight_test_dates">Quarantine PCR on ALL of the following days:</label>
+                    <div>
+                      <select id="journey_postflight_test_dates" multiple="multiple"><option value="0">0</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3" selected>3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+<option value="6">6</option>
+<option value="7">7</option>
+<option value="8">8</option>
+<option value="9">9</option>
+<option value="10">10</option>
+<option value="11">11</option>
+<option value="12" selected>12</option>
+<option value="13">13</option>
+<option value="14">14</option>
+<option value="15">15</option></select>
+                      <script type="application/json" data-for="journey_postflight_test_dates">{}</script>
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group shiny-input-container">
+                  <label class="control-label" for="journey_quar_length">Quarantine length:</label>
+                  <div>
+                    <select id="journey_quar_length"><option value="0">0</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">4</option>
+<option value="5">5</option>
+<option value="6">6</option>
+<option value="7">7</option>
+<option value="8">8</option>
+<option value="9">9</option>
+<option value="10">10</option>
+<option value="11">11</option>
+<option value="12">12</option>
+<option value="13">13</option>
+<option value="14" selected>14</option>
+<option value="15">15</option></select>
+                    <script type="application/json" data-for="journey_quar_length" data-nonempty="">{}</script>
+                  </div>
+                </div>
+                <button id="journey_reset" type="button" class="btn btn-default action-button">Reset</button>
+                <button class="btn btn-default action-button btn btn-primary" id="journey_update" type="button">Update View</button>
+              </form>
+            </div>
+            <div class="col-sm-8">
+              <div id="journey_infectious_by_day" class="shiny-plot-output" style="width: 100% ; height: 400px"></div>
+              <div id="journey_sum_total_vis" class="shiny-plot-output" style="width: 100% ; height: 400px"></div>
+              <div data-display-if="input.simsettings_mode==&#39;Advanced&#39;" data-ns-prefix="">
+                <div id="journey_vis" class="shiny-plot-output" style="width: 100% ; height: 400px"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-pane" data-value="Location Profiles" id="tab-4113-4">
+          <div class="container-fluid">
+            <h2>Location Profiles</h2>
+            <div id="Location Profile Options" class="shiny-text-output"></div>
+            <div class="form-group shiny-input-container">
+              <label class="control-label" for="locprofile_Location">Select a location to profile:</label>
+              <div>
+                <select id="locprofile_Location"><option value="US" selected>US</option>
+<option value="China (mainland)">China (mainland)</option>
+<option value="Fiji">Fiji</option>
+<option value="United Kingdom">United Kingdom</option>
+<option value="Japan">Japan</option>
+<option value="India">India</option>
+<option value="Cook Islands">Cook Islands</option>
+<option value="Samoa">Samoa</option>
+<option value="Canada">Canada</option>
+<option value="Korea, South">Korea, South</option>
+<option value="Germany">Germany</option>
+<option value="Indonesia">Indonesia</option>
+<option value="Taiwan*">Taiwan*</option>
+<option value="Singapore">Singapore</option>
+<option value="Hong Kong, China">Hong Kong, China</option>
+<option value="Thailand">Thailand</option>
+<option value="Philippines">Philippines</option>
+<option value="Malaysia">Malaysia</option>
+<option value="France">France</option>
+<option value="New South Wales, Australia">New South Wales, Australia</option>
+<option value="Victoria, Australia">Victoria, Australia</option>
+<option value="Queensland, Australia">Queensland, Australia</option>
+<option value="South Australia, Australia">South Australia, Australia</option>
+<option value="Western Australia, Australia">Western Australia, Australia</option>
+<option value="Tasmania, Australia">Tasmania, Australia</option>
+<option value="Northern Territory, Australia">Northern Territory, Australia</option>
+<option value="Australian Capital Territory, Australia">Australian Capital Territory, Australia</option>
+<option value="Vietnam">Vietnam</option>
+<option value="Ireland">Ireland</option>
+<option value="Italy">Italy</option>
+<option value="South Africa">South Africa</option>
+<option value="Spain">Spain</option></select>
+                <script type="application/json" data-for="locprofile_Location" data-nonempty="">{}</script>
+              </div>
+            </div>
+            <a id="downloadable_report" class="btn btn-default shiny-download-link " href="" target="_blank" download>
+              <i class="fa fa-download"></i>
+              Generate report
+            </a>
+          </div>
+        </div>
+        <div class="tab-pane" data-value="Intervention simulation" id="tab-4113-5">
+          <div class="container-fluid">
+            <h2>Intervention simulation</h2>
+            <div class="row">
+              <div class="col-sm-4">
+                <form class="well">
+                  <button class="btn btn-default action-button btn btn-primary" id="intsim_20countries" type="button">Set to 20 country reference list</button>
+                  <div class="form-group shiny-input-container">
+                    <div class="checkbox">
+                      <label>
+                        <input id="intsim_universalPCR" type="checkbox"/>
+                        <span>Include universal pre-departure PCR for Level 4 travellers in intervention</span>
+                      </label>
+                    </div>
+                  </div>
+                  <div class="well">
+                    <div id="intsim_level0_header" class="shiny-html-output"></div>
+                    <div data-display-if="input.simsettings_mode==&#39;Simple&#39;" data-ns-prefix="">
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_level0_max_prevalence">Maximum prevalence (per 100k) for country to be in this level:</label>
+                        <input class="js-range-slider" id="intsim_level0_max_prevalence" data-min="0" data-max="1" data-from="0" data-step="0.1" data-grid="true" data-grid-num="10" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-keyboard="true" data-data-type="number"/>
+                      </div>
+                      <div id="intsim_level0_description" class="shiny-html-output"></div>
+                    </div>
+                    <div data-display-if="input.simsettings_mode==&#39;Advanced&#39;" data-ns-prefix="">
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_countries_level0">Locations:</label>
+                        <div>
+                          <select id="intsim_countries_level0" multiple="multiple"><option value="Afghanistan">Afghanistan</option>
+<option value="Albania">Albania</option>
+<option value="Algeria">Algeria</option>
+<option value="Andorra">Andorra</option>
+<option value="Angola">Angola</option>
+<option value="Antigua and Barbuda">Antigua and Barbuda</option>
+<option value="Argentina">Argentina</option>
+<option value="Armenia">Armenia</option>
+<option value="Australian Capital Territory, Australia" selected>Australian Capital Territory, Australia</option>
+<option value="Austria">Austria</option>
+<option value="Azerbaijan">Azerbaijan</option>
+<option value="Bahamas">Bahamas</option>
+<option value="Bahrain">Bahrain</option>
+<option value="Bangladesh">Bangladesh</option>
+<option value="Barbados">Barbados</option>
+<option value="Belarus">Belarus</option>
+<option value="Belgium">Belgium</option>
+<option value="Belize">Belize</option>
+<option value="Benin">Benin</option>
+<option value="Bhutan">Bhutan</option>
+<option value="Bolivia">Bolivia</option>
+<option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
+<option value="Botswana">Botswana</option>
+<option value="Brazil">Brazil</option>
+<option value="Brunei">Brunei</option>
+<option value="Bulgaria">Bulgaria</option>
+<option value="Burkina Faso">Burkina Faso</option>
+<option value="Burma">Burma</option>
+<option value="Burundi">Burundi</option>
+<option value="Cabo Verde">Cabo Verde</option>
+<option value="Cambodia">Cambodia</option>
+<option value="Cameroon">Cameroon</option>
+<option value="Canada">Canada</option>
+<option value="Central African Republic">Central African Republic</option>
+<option value="Chad">Chad</option>
+<option value="Chile">Chile</option>
+<option value="China (mainland)">China (mainland)</option>
+<option value="Colombia">Colombia</option>
+<option value="Congo (Brazzaville)">Congo (Brazzaville)</option>
+<option value="Congo (Kinshasa)">Congo (Kinshasa)</option>
+<option value="Costa Rica">Costa Rica</option>
+<option value="Cote d&#39;Ivoire">Cote d'Ivoire</option>
+<option value="Croatia">Croatia</option>
+<option value="Cuba">Cuba</option>
+<option value="Cyprus">Cyprus</option>
+<option value="Czechia">Czechia</option>
+<option value="Denmark">Denmark</option>
+<option value="Djibouti">Djibouti</option>
+<option value="Dominica">Dominica</option>
+<option value="Dominican Republic">Dominican Republic</option>
+<option value="Ecuador">Ecuador</option>
+<option value="Egypt">Egypt</option>
+<option value="El Salvador">El Salvador</option>
+<option value="Equatorial Guinea">Equatorial Guinea</option>
+<option value="Eritrea">Eritrea</option>
+<option value="Estonia">Estonia</option>
+<option value="Eswatini">Eswatini</option>
+<option value="Ethiopia">Ethiopia</option>
+<option value="Fiji">Fiji</option>
+<option value="Finland">Finland</option>
+<option value="France">France</option>
+<option value="Gabon">Gabon</option>
+<option value="Gambia">Gambia</option>
+<option value="Georgia">Georgia</option>
+<option value="Germany">Germany</option>
+<option value="Ghana">Ghana</option>
+<option value="Greece">Greece</option>
+<option value="Grenada">Grenada</option>
+<option value="Guinea">Guinea</option>
+<option value="Guinea-Bissau">Guinea-Bissau</option>
+<option value="Guyana">Guyana</option>
+<option value="Haiti">Haiti</option>
+<option value="Honduras">Honduras</option>
+<option value="Hong Kong, China">Hong Kong, China</option>
+<option value="Hungary">Hungary</option>
+<option value="Iceland">Iceland</option>
+<option value="India">India</option>
+<option value="Indonesia">Indonesia</option>
+<option value="Iran">Iran</option>
+<option value="Iraq">Iraq</option>
+<option value="Ireland">Ireland</option>
+<option value="Israel">Israel</option>
+<option value="Italy">Italy</option>
+<option value="Jamaica">Jamaica</option>
+<option value="Japan">Japan</option>
+<option value="Jordan">Jordan</option>
+<option value="Kazakhstan">Kazakhstan</option>
+<option value="Kenya">Kenya</option>
+<option value="Korea, South">Korea, South</option>
+<option value="Kuwait">Kuwait</option>
+<option value="Kyrgyzstan">Kyrgyzstan</option>
+<option value="Laos">Laos</option>
+<option value="Latvia">Latvia</option>
+<option value="Lebanon">Lebanon</option>
+<option value="Liberia">Liberia</option>
+<option value="Libya">Libya</option>
+<option value="Lithuania">Lithuania</option>
+<option value="Luxembourg">Luxembourg</option>
+<option value="Madagascar">Madagascar</option>
+<option value="Malawi">Malawi</option>
+<option value="Malaysia">Malaysia</option>
+<option value="Maldives">Maldives</option>
+<option value="Mali">Mali</option>
+<option value="Malta">Malta</option>
+<option value="Mauritania">Mauritania</option>
+<option value="Mauritius">Mauritius</option>
+<option value="Mexico">Mexico</option>
+<option value="Moldova">Moldova</option>
+<option value="Monaco">Monaco</option>
+<option value="Mongolia">Mongolia</option>
+<option value="Montenegro">Montenegro</option>
+<option value="Morocco">Morocco</option>
+<option value="Mozambique">Mozambique</option>
+<option value="Namibia">Namibia</option>
+<option value="Nepal">Nepal</option>
+<option value="Netherlands">Netherlands</option>
+<option value="New South Wales, Australia">New South Wales, Australia</option>
+<option value="Nicaragua">Nicaragua</option>
+<option value="Niger">Niger</option>
+<option value="Nigeria">Nigeria</option>
+<option value="North Macedonia">North Macedonia</option>
+<option value="Northern Territory, Australia" selected>Northern Territory, Australia</option>
+<option value="Norway">Norway</option>
+<option value="Oman">Oman</option>
+<option value="Pakistan">Pakistan</option>
+<option value="Panama">Panama</option>
+<option value="Papua New Guinea">Papua New Guinea</option>
+<option value="Paraguay">Paraguay</option>
+<option value="Peru">Peru</option>
+<option value="Philippines">Philippines</option>
+<option value="Poland">Poland</option>
+<option value="Portugal">Portugal</option>
+<option value="Qatar">Qatar</option>
+<option value="Queensland, Australia" selected>Queensland, Australia</option>
+<option value="Romania">Romania</option>
+<option value="Russia">Russia</option>
+<option value="Rwanda">Rwanda</option>
+<option value="Saint Kitts and Nevis">Saint Kitts and Nevis</option>
+<option value="Saint Lucia">Saint Lucia</option>
+<option value="Saint Vincent and the Grenadines">Saint Vincent and the Grenadines</option>
+<option value="San Marino">San Marino</option>
+<option value="Sao Tome and Principe">Sao Tome and Principe</option>
+<option value="Saudi Arabia">Saudi Arabia</option>
+<option value="Senegal">Senegal</option>
+<option value="Serbia">Serbia</option>
+<option value="Seychelles">Seychelles</option>
+<option value="Sierra Leone">Sierra Leone</option>
+<option value="Singapore">Singapore</option>
+<option value="Slovakia">Slovakia</option>
+<option value="Slovenia">Slovenia</option>
+<option value="Somalia">Somalia</option>
+<option value="South Africa">South Africa</option>
+<option value="South Australia, Australia">South Australia, Australia</option>
+<option value="South Sudan">South Sudan</option>
+<option value="Spain">Spain</option>
+<option value="Sri Lanka">Sri Lanka</option>
+<option value="Sudan">Sudan</option>
+<option value="Suriname">Suriname</option>
+<option value="Sweden">Sweden</option>
+<option value="Switzerland">Switzerland</option>
+<option value="Syria">Syria</option>
+<option value="Taiwan*" selected>Taiwan*</option>
+<option value="Tanzania">Tanzania</option>
+<option value="Tasmania, Australia" selected>Tasmania, Australia</option>
+<option value="Thailand">Thailand</option>
+<option value="Timor-Leste">Timor-Leste</option>
+<option value="Togo">Togo</option>
+<option value="Trinidad and Tobago">Trinidad and Tobago</option>
+<option value="Tunisia">Tunisia</option>
+<option value="Turkey">Turkey</option>
+<option value="Uganda">Uganda</option>
+<option value="Ukraine">Ukraine</option>
+<option value="United Arab Emirates">United Arab Emirates</option>
+<option value="United Kingdom">United Kingdom</option>
+<option value="Uruguay">Uruguay</option>
+<option value="US">US</option>
+<option value="Uzbekistan">Uzbekistan</option>
+<option value="Venezuela">Venezuela</option>
+<option value="Victoria, Australia">Victoria, Australia</option>
+<option value="Vietnam">Vietnam</option>
+<option value="Western Australia, Australia">Western Australia, Australia</option>
+<option value="Yemen">Yemen</option>
+<option value="Zambia">Zambia</option>
+<option value="Zimbabwe">Zimbabwe</option></select>
+                          <script type="application/json" data-for="intsim_countries_level0">{}</script>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group shiny-input-container">
+                      <label class="control-label" for="intsim_percent_tvolume_level0">Traveler volume (% of 2019 levels, adjusted for lockdown levels):</label>
+                      <input id="intsim_percent_tvolume_level0" type="number" class="form-control" value="20" min="1" max="100" step="1"/>
+                    </div>
+                    <div data-display-if="input.simsettings_mode==&#39;Advanced&#39;" data-ns-prefix="">
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_effectiveness_level0">Effectiveness (%):</label>
+                        <input id="intsim_effectiveness_level0" type="number" class="form-control" value="0" min="0" max="100" step="1"/>
+                      </div>
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_extraspread_level0">Extra spread (%):</label>
+                        <input id="intsim_extraspread_level0" type="number" class="form-control" value="0.43" min="0" max="100" step="0.1"/>
+                      </div>
+                      <div id="intsim_level0_notes" class="shiny-text-output"></div>
+                    </div>
+                  </div>
+                  <div class="well">
+                    <div id="intsim_level1_header" class="shiny-html-output"></div>
+                    <div data-display-if="input.simsettings_mode==&#39;Simple&#39;" data-ns-prefix="">
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_level1_max_prevalence">Maximum prevalence (per 100k) for country to be in this level:</label>
+                        <input class="js-range-slider" id="intsim_level1_max_prevalence" data-min="0.1" data-max="10" data-from="1" data-step="0.1" data-grid="true" data-grid-num="9.9" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-keyboard="true" data-data-type="number"/>
+                      </div>
+                      <div id="intsim_level1_description" class="shiny-html-output"></div>
+                    </div>
+                    <div data-display-if="input.simsettings_mode==&#39;Advanced&#39;" data-ns-prefix="">
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_countries_level1">Locations:</label>
+                        <div>
+                          <select id="intsim_countries_level1" multiple="multiple"><option value="Afghanistan">Afghanistan</option>
+<option value="Albania">Albania</option>
+<option value="Algeria">Algeria</option>
+<option value="Andorra">Andorra</option>
+<option value="Angola">Angola</option>
+<option value="Antigua and Barbuda">Antigua and Barbuda</option>
+<option value="Argentina">Argentina</option>
+<option value="Armenia">Armenia</option>
+<option value="Australian Capital Territory, Australia">Australian Capital Territory, Australia</option>
+<option value="Austria">Austria</option>
+<option value="Azerbaijan">Azerbaijan</option>
+<option value="Bahamas">Bahamas</option>
+<option value="Bahrain">Bahrain</option>
+<option value="Bangladesh">Bangladesh</option>
+<option value="Barbados">Barbados</option>
+<option value="Belarus">Belarus</option>
+<option value="Belgium">Belgium</option>
+<option value="Belize">Belize</option>
+<option value="Benin">Benin</option>
+<option value="Bhutan">Bhutan</option>
+<option value="Bolivia">Bolivia</option>
+<option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
+<option value="Botswana">Botswana</option>
+<option value="Brazil">Brazil</option>
+<option value="Brunei">Brunei</option>
+<option value="Bulgaria">Bulgaria</option>
+<option value="Burkina Faso">Burkina Faso</option>
+<option value="Burma">Burma</option>
+<option value="Burundi">Burundi</option>
+<option value="Cabo Verde">Cabo Verde</option>
+<option value="Cambodia">Cambodia</option>
+<option value="Cameroon">Cameroon</option>
+<option value="Canada">Canada</option>
+<option value="Central African Republic">Central African Republic</option>
+<option value="Chad">Chad</option>
+<option value="Chile">Chile</option>
+<option value="China (mainland)" selected>China (mainland)</option>
+<option value="Colombia">Colombia</option>
+<option value="Congo (Brazzaville)">Congo (Brazzaville)</option>
+<option value="Congo (Kinshasa)">Congo (Kinshasa)</option>
+<option value="Costa Rica">Costa Rica</option>
+<option value="Cote d&#39;Ivoire">Cote d'Ivoire</option>
+<option value="Croatia">Croatia</option>
+<option value="Cuba">Cuba</option>
+<option value="Cyprus">Cyprus</option>
+<option value="Czechia">Czechia</option>
+<option value="Denmark">Denmark</option>
+<option value="Djibouti">Djibouti</option>
+<option value="Dominica">Dominica</option>
+<option value="Dominican Republic">Dominican Republic</option>
+<option value="Ecuador">Ecuador</option>
+<option value="Egypt">Egypt</option>
+<option value="El Salvador">El Salvador</option>
+<option value="Equatorial Guinea">Equatorial Guinea</option>
+<option value="Eritrea">Eritrea</option>
+<option value="Estonia">Estonia</option>
+<option value="Eswatini">Eswatini</option>
+<option value="Ethiopia">Ethiopia</option>
+<option value="Fiji">Fiji</option>
+<option value="Finland">Finland</option>
+<option value="France">France</option>
+<option value="Gabon">Gabon</option>
+<option value="Gambia">Gambia</option>
+<option value="Georgia">Georgia</option>
+<option value="Germany">Germany</option>
+<option value="Ghana">Ghana</option>
+<option value="Greece">Greece</option>
+<option value="Grenada">Grenada</option>
+<option value="Guinea">Guinea</option>
+<option value="Guinea-Bissau">Guinea-Bissau</option>
+<option value="Guyana">Guyana</option>
+<option value="Haiti">Haiti</option>
+<option value="Honduras">Honduras</option>
+<option value="Hong Kong, China">Hong Kong, China</option>
+<option value="Hungary">Hungary</option>
+<option value="Iceland">Iceland</option>
+<option value="India">India</option>
+<option value="Indonesia">Indonesia</option>
+<option value="Iran">Iran</option>
+<option value="Iraq">Iraq</option>
+<option value="Ireland">Ireland</option>
+<option value="Israel">Israel</option>
+<option value="Italy">Italy</option>
+<option value="Jamaica">Jamaica</option>
+<option value="Japan">Japan</option>
+<option value="Jordan">Jordan</option>
+<option value="Kazakhstan">Kazakhstan</option>
+<option value="Kenya">Kenya</option>
+<option value="Korea, South">Korea, South</option>
+<option value="Kuwait">Kuwait</option>
+<option value="Kyrgyzstan">Kyrgyzstan</option>
+<option value="Laos">Laos</option>
+<option value="Latvia">Latvia</option>
+<option value="Lebanon">Lebanon</option>
+<option value="Liberia">Liberia</option>
+<option value="Libya">Libya</option>
+<option value="Lithuania">Lithuania</option>
+<option value="Luxembourg">Luxembourg</option>
+<option value="Madagascar">Madagascar</option>
+<option value="Malawi">Malawi</option>
+<option value="Malaysia">Malaysia</option>
+<option value="Maldives">Maldives</option>
+<option value="Mali">Mali</option>
+<option value="Malta">Malta</option>
+<option value="Mauritania">Mauritania</option>
+<option value="Mauritius">Mauritius</option>
+<option value="Mexico">Mexico</option>
+<option value="Moldova">Moldova</option>
+<option value="Monaco">Monaco</option>
+<option value="Mongolia">Mongolia</option>
+<option value="Montenegro">Montenegro</option>
+<option value="Morocco">Morocco</option>
+<option value="Mozambique">Mozambique</option>
+<option value="Namibia">Namibia</option>
+<option value="Nepal">Nepal</option>
+<option value="Netherlands">Netherlands</option>
+<option value="New South Wales, Australia" selected>New South Wales, Australia</option>
+<option value="Nicaragua">Nicaragua</option>
+<option value="Niger">Niger</option>
+<option value="Nigeria">Nigeria</option>
+<option value="North Macedonia">North Macedonia</option>
+<option value="Northern Territory, Australia">Northern Territory, Australia</option>
+<option value="Norway">Norway</option>
+<option value="Oman">Oman</option>
+<option value="Pakistan">Pakistan</option>
+<option value="Panama">Panama</option>
+<option value="Papua New Guinea">Papua New Guinea</option>
+<option value="Paraguay">Paraguay</option>
+<option value="Peru">Peru</option>
+<option value="Philippines">Philippines</option>
+<option value="Poland">Poland</option>
+<option value="Portugal">Portugal</option>
+<option value="Qatar">Qatar</option>
+<option value="Queensland, Australia">Queensland, Australia</option>
+<option value="Romania">Romania</option>
+<option value="Russia">Russia</option>
+<option value="Rwanda">Rwanda</option>
+<option value="Saint Kitts and Nevis">Saint Kitts and Nevis</option>
+<option value="Saint Lucia">Saint Lucia</option>
+<option value="Saint Vincent and the Grenadines">Saint Vincent and the Grenadines</option>
+<option value="San Marino">San Marino</option>
+<option value="Sao Tome and Principe">Sao Tome and Principe</option>
+<option value="Saudi Arabia">Saudi Arabia</option>
+<option value="Senegal">Senegal</option>
+<option value="Serbia">Serbia</option>
+<option value="Seychelles">Seychelles</option>
+<option value="Sierra Leone">Sierra Leone</option>
+<option value="Singapore" selected>Singapore</option>
+<option value="Slovakia">Slovakia</option>
+<option value="Slovenia">Slovenia</option>
+<option value="Somalia">Somalia</option>
+<option value="South Africa">South Africa</option>
+<option value="South Australia, Australia">South Australia, Australia</option>
+<option value="South Sudan">South Sudan</option>
+<option value="Spain">Spain</option>
+<option value="Sri Lanka">Sri Lanka</option>
+<option value="Sudan">Sudan</option>
+<option value="Suriname">Suriname</option>
+<option value="Sweden">Sweden</option>
+<option value="Switzerland">Switzerland</option>
+<option value="Syria">Syria</option>
+<option value="Taiwan*">Taiwan*</option>
+<option value="Tanzania">Tanzania</option>
+<option value="Tasmania, Australia">Tasmania, Australia</option>
+<option value="Thailand" selected>Thailand</option>
+<option value="Timor-Leste">Timor-Leste</option>
+<option value="Togo">Togo</option>
+<option value="Trinidad and Tobago">Trinidad and Tobago</option>
+<option value="Tunisia">Tunisia</option>
+<option value="Turkey">Turkey</option>
+<option value="Uganda">Uganda</option>
+<option value="Ukraine">Ukraine</option>
+<option value="United Arab Emirates">United Arab Emirates</option>
+<option value="United Kingdom">United Kingdom</option>
+<option value="Uruguay">Uruguay</option>
+<option value="US">US</option>
+<option value="Uzbekistan">Uzbekistan</option>
+<option value="Venezuela">Venezuela</option>
+<option value="Victoria, Australia" selected>Victoria, Australia</option>
+<option value="Vietnam" selected>Vietnam</option>
+<option value="Western Australia, Australia" selected>Western Australia, Australia</option>
+<option value="Yemen">Yemen</option>
+<option value="Zambia">Zambia</option>
+<option value="Zimbabwe">Zimbabwe</option></select>
+                          <script type="application/json" data-for="intsim_countries_level1">{}</script>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group shiny-input-container">
+                      <label class="control-label" for="intsim_percent_tvolume_level1">Traveler volume (% of 2019 levels, adjusted for lockdown levels):</label>
+                      <input id="intsim_percent_tvolume_level1" type="number" class="form-control" value="20" min="1" max="100" step="1"/>
+                    </div>
+                    <div data-display-if="input.simsettings_mode==&#39;Advanced&#39;" data-ns-prefix="">
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_effectiveness_level1">Effectiveness (%):</label>
+                        <input id="intsim_effectiveness_level1" type="number" class="form-control" value="70.1" min="0" max="100" step="1"/>
+                      </div>
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_extraspread_level1">Extra spread (%):</label>
+                        <input id="intsim_extraspread_level1" type="number" class="form-control" value="0.3" min="0" max="100" step="0.1"/>
+                      </div>
+                      <div id="intsim_level1_notes" class="shiny-text-output"></div>
+                    </div>
+                  </div>
+                  <div class="well">
+                    <div id="intsim_level2_header" class="shiny-html-output"></div>
+                    <div data-display-if="input.simsettings_mode==&#39;Simple&#39;" data-ns-prefix="">
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_level2_max_prevalence">Maximum prevalence (per 100k) for country to be in this level:</label>
+                        <input class="js-range-slider" id="intsim_level2_max_prevalence" data-min="1" data-max="100" data-from="10" data-step="1" data-grid="true" data-grid-num="9.9" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-keyboard="true" data-data-type="number"/>
+                      </div>
+                      <div id="intsim_level2_description" class="shiny-html-output"></div>
+                    </div>
+                    <div data-display-if="input.simsettings_mode==&#39;Advanced&#39;" data-ns-prefix="">
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_countries_level2">Locations:</label>
+                        <div>
+                          <select id="intsim_countries_level2" multiple="multiple"><option value="Afghanistan">Afghanistan</option>
+<option value="Albania">Albania</option>
+<option value="Algeria">Algeria</option>
+<option value="Andorra">Andorra</option>
+<option value="Angola">Angola</option>
+<option value="Antigua and Barbuda">Antigua and Barbuda</option>
+<option value="Argentina">Argentina</option>
+<option value="Armenia">Armenia</option>
+<option value="Australian Capital Territory, Australia">Australian Capital Territory, Australia</option>
+<option value="Austria">Austria</option>
+<option value="Azerbaijan">Azerbaijan</option>
+<option value="Bahamas">Bahamas</option>
+<option value="Bahrain">Bahrain</option>
+<option value="Bangladesh">Bangladesh</option>
+<option value="Barbados">Barbados</option>
+<option value="Belarus">Belarus</option>
+<option value="Belgium">Belgium</option>
+<option value="Belize">Belize</option>
+<option value="Benin">Benin</option>
+<option value="Bhutan">Bhutan</option>
+<option value="Bolivia">Bolivia</option>
+<option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
+<option value="Botswana">Botswana</option>
+<option value="Brazil">Brazil</option>
+<option value="Brunei">Brunei</option>
+<option value="Bulgaria">Bulgaria</option>
+<option value="Burkina Faso">Burkina Faso</option>
+<option value="Burma">Burma</option>
+<option value="Burundi">Burundi</option>
+<option value="Cabo Verde">Cabo Verde</option>
+<option value="Cambodia">Cambodia</option>
+<option value="Cameroon">Cameroon</option>
+<option value="Canada">Canada</option>
+<option value="Central African Republic">Central African Republic</option>
+<option value="Chad">Chad</option>
+<option value="Chile">Chile</option>
+<option value="China (mainland)">China (mainland)</option>
+<option value="Colombia">Colombia</option>
+<option value="Congo (Brazzaville)">Congo (Brazzaville)</option>
+<option value="Congo (Kinshasa)">Congo (Kinshasa)</option>
+<option value="Costa Rica">Costa Rica</option>
+<option value="Cote d&#39;Ivoire">Cote d'Ivoire</option>
+<option value="Croatia">Croatia</option>
+<option value="Cuba">Cuba</option>
+<option value="Cyprus">Cyprus</option>
+<option value="Czechia">Czechia</option>
+<option value="Denmark">Denmark</option>
+<option value="Djibouti">Djibouti</option>
+<option value="Dominica">Dominica</option>
+<option value="Dominican Republic">Dominican Republic</option>
+<option value="Ecuador">Ecuador</option>
+<option value="Egypt">Egypt</option>
+<option value="El Salvador">El Salvador</option>
+<option value="Equatorial Guinea">Equatorial Guinea</option>
+<option value="Eritrea">Eritrea</option>
+<option value="Estonia">Estonia</option>
+<option value="Eswatini">Eswatini</option>
+<option value="Ethiopia">Ethiopia</option>
+<option value="Fiji">Fiji</option>
+<option value="Finland">Finland</option>
+<option value="France">France</option>
+<option value="Gabon">Gabon</option>
+<option value="Gambia">Gambia</option>
+<option value="Georgia">Georgia</option>
+<option value="Germany">Germany</option>
+<option value="Ghana">Ghana</option>
+<option value="Greece">Greece</option>
+<option value="Grenada">Grenada</option>
+<option value="Guinea">Guinea</option>
+<option value="Guinea-Bissau">Guinea-Bissau</option>
+<option value="Guyana">Guyana</option>
+<option value="Haiti">Haiti</option>
+<option value="Honduras">Honduras</option>
+<option value="Hong Kong, China" selected>Hong Kong, China</option>
+<option value="Hungary">Hungary</option>
+<option value="Iceland">Iceland</option>
+<option value="India">India</option>
+<option value="Indonesia">Indonesia</option>
+<option value="Iran">Iran</option>
+<option value="Iraq">Iraq</option>
+<option value="Ireland">Ireland</option>
+<option value="Israel">Israel</option>
+<option value="Italy">Italy</option>
+<option value="Jamaica">Jamaica</option>
+<option value="Japan">Japan</option>
+<option value="Jordan">Jordan</option>
+<option value="Kazakhstan">Kazakhstan</option>
+<option value="Kenya">Kenya</option>
+<option value="Korea, South">Korea, South</option>
+<option value="Kuwait">Kuwait</option>
+<option value="Kyrgyzstan">Kyrgyzstan</option>
+<option value="Laos">Laos</option>
+<option value="Latvia">Latvia</option>
+<option value="Lebanon">Lebanon</option>
+<option value="Liberia">Liberia</option>
+<option value="Libya">Libya</option>
+<option value="Lithuania">Lithuania</option>
+<option value="Luxembourg">Luxembourg</option>
+<option value="Madagascar">Madagascar</option>
+<option value="Malawi">Malawi</option>
+<option value="Malaysia">Malaysia</option>
+<option value="Maldives">Maldives</option>
+<option value="Mali">Mali</option>
+<option value="Malta">Malta</option>
+<option value="Mauritania">Mauritania</option>
+<option value="Mauritius">Mauritius</option>
+<option value="Mexico">Mexico</option>
+<option value="Moldova">Moldova</option>
+<option value="Monaco">Monaco</option>
+<option value="Mongolia">Mongolia</option>
+<option value="Montenegro">Montenegro</option>
+<option value="Morocco">Morocco</option>
+<option value="Mozambique">Mozambique</option>
+<option value="Namibia">Namibia</option>
+<option value="Nepal">Nepal</option>
+<option value="Netherlands">Netherlands</option>
+<option value="New South Wales, Australia">New South Wales, Australia</option>
+<option value="Nicaragua">Nicaragua</option>
+<option value="Niger">Niger</option>
+<option value="Nigeria">Nigeria</option>
+<option value="North Macedonia">North Macedonia</option>
+<option value="Northern Territory, Australia">Northern Territory, Australia</option>
+<option value="Norway">Norway</option>
+<option value="Oman">Oman</option>
+<option value="Pakistan">Pakistan</option>
+<option value="Panama">Panama</option>
+<option value="Papua New Guinea">Papua New Guinea</option>
+<option value="Paraguay">Paraguay</option>
+<option value="Peru">Peru</option>
+<option value="Philippines">Philippines</option>
+<option value="Poland">Poland</option>
+<option value="Portugal">Portugal</option>
+<option value="Qatar">Qatar</option>
+<option value="Queensland, Australia">Queensland, Australia</option>
+<option value="Romania">Romania</option>
+<option value="Russia">Russia</option>
+<option value="Rwanda">Rwanda</option>
+<option value="Saint Kitts and Nevis">Saint Kitts and Nevis</option>
+<option value="Saint Lucia">Saint Lucia</option>
+<option value="Saint Vincent and the Grenadines">Saint Vincent and the Grenadines</option>
+<option value="San Marino">San Marino</option>
+<option value="Sao Tome and Principe">Sao Tome and Principe</option>
+<option value="Saudi Arabia">Saudi Arabia</option>
+<option value="Senegal">Senegal</option>
+<option value="Serbia">Serbia</option>
+<option value="Seychelles">Seychelles</option>
+<option value="Sierra Leone">Sierra Leone</option>
+<option value="Singapore">Singapore</option>
+<option value="Slovakia">Slovakia</option>
+<option value="Slovenia">Slovenia</option>
+<option value="Somalia">Somalia</option>
+<option value="South Africa">South Africa</option>
+<option value="South Australia, Australia" selected>South Australia, Australia</option>
+<option value="South Sudan">South Sudan</option>
+<option value="Spain">Spain</option>
+<option value="Sri Lanka">Sri Lanka</option>
+<option value="Sudan">Sudan</option>
+<option value="Suriname">Suriname</option>
+<option value="Sweden">Sweden</option>
+<option value="Switzerland">Switzerland</option>
+<option value="Syria">Syria</option>
+<option value="Taiwan*">Taiwan*</option>
+<option value="Tanzania">Tanzania</option>
+<option value="Tasmania, Australia">Tasmania, Australia</option>
+<option value="Thailand">Thailand</option>
+<option value="Timor-Leste">Timor-Leste</option>
+<option value="Togo">Togo</option>
+<option value="Trinidad and Tobago">Trinidad and Tobago</option>
+<option value="Tunisia">Tunisia</option>
+<option value="Turkey">Turkey</option>
+<option value="Uganda">Uganda</option>
+<option value="Ukraine">Ukraine</option>
+<option value="United Arab Emirates">United Arab Emirates</option>
+<option value="United Kingdom">United Kingdom</option>
+<option value="Uruguay">Uruguay</option>
+<option value="US">US</option>
+<option value="Uzbekistan">Uzbekistan</option>
+<option value="Venezuela">Venezuela</option>
+<option value="Victoria, Australia">Victoria, Australia</option>
+<option value="Vietnam">Vietnam</option>
+<option value="Western Australia, Australia">Western Australia, Australia</option>
+<option value="Yemen">Yemen</option>
+<option value="Zambia">Zambia</option>
+<option value="Zimbabwe">Zimbabwe</option></select>
+                          <script type="application/json" data-for="intsim_countries_level2">{}</script>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group shiny-input-container">
+                      <label class="control-label" for="intsim_percent_tvolume_level2">Traveler volume (% of 2019 levels, adjusted for lockdown levels):</label>
+                      <input id="intsim_percent_tvolume_level2" type="number" class="form-control" value="20" min="1" max="100" step="1"/>
+                    </div>
+                    <div data-display-if="input.simsettings_mode==&#39;Advanced&#39;" data-ns-prefix="">
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_effectiveness_level2">Effectiveness (%):</label>
+                        <input id="intsim_effectiveness_level2" type="number" class="form-control" value="91.8" min="0" max="100" step="1"/>
+                      </div>
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_extraspread_level2">Extra spread (%):</label>
+                        <input id="intsim_extraspread_level2" type="number" class="form-control" value="0.48" min="0" max="100" step="0.1"/>
+                      </div>
+                      <div id="intsim_level2_notes" class="shiny-text-output"></div>
+                    </div>
+                  </div>
+                  <div class="well">
+                    <div id="intsim_level3_header" class="shiny-html-output"></div>
+                    <div data-display-if="input.simsettings_mode==&#39;Simple&#39;" data-ns-prefix="">
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_level3_max_prevalence">Maximum prevalence (per 100k) for country to be in this level:</label>
+                        <input class="js-range-slider" id="intsim_level3_max_prevalence" data-min="10" data-max="1000" data-from="100" data-step="10" data-grid="true" data-grid-num="9.9" data-grid-snap="false" data-prettify-separator="," data-prettify-enabled="true" data-keyboard="true" data-data-type="number"/>
+                      </div>
+                      <div id="intsim_level3_description" class="shiny-html-output"></div>
+                    </div>
+                    <div data-display-if="input.simsettings_mode==&#39;Advanced&#39;" data-ns-prefix="">
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_countries_level3">Locations:</label>
+                        <div>
+                          <select id="intsim_countries_level3" multiple="multiple"><option value="Afghanistan">Afghanistan</option>
+<option value="Albania">Albania</option>
+<option value="Algeria">Algeria</option>
+<option value="Andorra">Andorra</option>
+<option value="Angola">Angola</option>
+<option value="Antigua and Barbuda">Antigua and Barbuda</option>
+<option value="Argentina">Argentina</option>
+<option value="Armenia">Armenia</option>
+<option value="Australian Capital Territory, Australia">Australian Capital Territory, Australia</option>
+<option value="Austria">Austria</option>
+<option value="Azerbaijan">Azerbaijan</option>
+<option value="Bahamas">Bahamas</option>
+<option value="Bahrain">Bahrain</option>
+<option value="Bangladesh">Bangladesh</option>
+<option value="Barbados">Barbados</option>
+<option value="Belarus">Belarus</option>
+<option value="Belgium">Belgium</option>
+<option value="Belize">Belize</option>
+<option value="Benin">Benin</option>
+<option value="Bhutan">Bhutan</option>
+<option value="Bolivia">Bolivia</option>
+<option value="Bosnia and Herzegovina">Bosnia and Herzegovina</option>
+<option value="Botswana">Botswana</option>
+<option value="Brazil">Brazil</option>
+<option value="Brunei">Brunei</option>
+<option value="Bulgaria">Bulgaria</option>
+<option value="Burkina Faso">Burkina Faso</option>
+<option value="Burma">Burma</option>
+<option value="Burundi">Burundi</option>
+<option value="Cabo Verde">Cabo Verde</option>
+<option value="Cambodia">Cambodia</option>
+<option value="Cameroon">Cameroon</option>
+<option value="Canada">Canada</option>
+<option value="Central African Republic">Central African Republic</option>
+<option value="Chad">Chad</option>
+<option value="Chile">Chile</option>
+<option value="China (mainland)">China (mainland)</option>
+<option value="Colombia">Colombia</option>
+<option value="Congo (Brazzaville)">Congo (Brazzaville)</option>
+<option value="Congo (Kinshasa)">Congo (Kinshasa)</option>
+<option value="Costa Rica">Costa Rica</option>
+<option value="Cote d&#39;Ivoire">Cote d'Ivoire</option>
+<option value="Croatia">Croatia</option>
+<option value="Cuba">Cuba</option>
+<option value="Cyprus">Cyprus</option>
+<option value="Czechia">Czechia</option>
+<option value="Denmark">Denmark</option>
+<option value="Djibouti">Djibouti</option>
+<option value="Dominica">Dominica</option>
+<option value="Dominican Republic">Dominican Republic</option>
+<option value="Ecuador">Ecuador</option>
+<option value="Egypt">Egypt</option>
+<option value="El Salvador">El Salvador</option>
+<option value="Equatorial Guinea">Equatorial Guinea</option>
+<option value="Eritrea">Eritrea</option>
+<option value="Estonia">Estonia</option>
+<option value="Eswatini">Eswatini</option>
+<option value="Ethiopia">Ethiopia</option>
+<option value="Fiji">Fiji</option>
+<option value="Finland">Finland</option>
+<option value="France">France</option>
+<option value="Gabon">Gabon</option>
+<option value="Gambia">Gambia</option>
+<option value="Georgia">Georgia</option>
+<option value="Germany">Germany</option>
+<option value="Ghana">Ghana</option>
+<option value="Greece">Greece</option>
+<option value="Grenada">Grenada</option>
+<option value="Guinea">Guinea</option>
+<option value="Guinea-Bissau">Guinea-Bissau</option>
+<option value="Guyana">Guyana</option>
+<option value="Haiti">Haiti</option>
+<option value="Honduras">Honduras</option>
+<option value="Hong Kong, China">Hong Kong, China</option>
+<option value="Hungary">Hungary</option>
+<option value="Iceland">Iceland</option>
+<option value="India">India</option>
+<option value="Indonesia" selected>Indonesia</option>
+<option value="Iran">Iran</option>
+<option value="Iraq">Iraq</option>
+<option value="Ireland">Ireland</option>
+<option value="Israel">Israel</option>
+<option value="Italy">Italy</option>
+<option value="Jamaica">Jamaica</option>
+<option value="Japan" selected>Japan</option>
+<option value="Jordan">Jordan</option>
+<option value="Kazakhstan">Kazakhstan</option>
+<option value="Kenya">Kenya</option>
+<option value="Korea, South" selected>Korea, South</option>
+<option value="Kuwait">Kuwait</option>
+<option value="Kyrgyzstan">Kyrgyzstan</option>
+<option value="Laos">Laos</option>
+<option value="Latvia">Latvia</option>
+<option value="Lebanon">Lebanon</option>
+<option value="Liberia">Liberia</option>
+<option value="Libya">Libya</option>
+<option value="Lithuania">Lithuania</option>
+<option value="Luxembourg">Luxembourg</option>
+<option value="Madagascar">Madagascar</option>
+<option value="Malawi">Malawi</option>
+<option value="Malaysia" selected>Malaysia</option>
+<option value="Maldives">Maldives</option>
+<option value="Mali">Mali</option>
+<option value="Malta">Malta</option>
+<option value="Mauritania">Mauritania</option>
+<option value="Mauritius">Mauritius</option>
+<option value="Mexico">Mexico</option>
+<option value="Moldova">Moldova</option>
+<option value="Monaco">Monaco</option>
+<option value="Mongolia">Mongolia</option>
+<option value="Montenegro">Montenegro</option>
+<option value="Morocco">Morocco</option>
+<option value="Mozambique">Mozambique</option>
+<option value="Namibia">Namibia</option>
+<option value="Nepal">Nepal</option>
+<option value="Netherlands">Netherlands</option>
+<option value="New South Wales, Australia">New South Wales, Australia</option>
+<option value="Nicaragua">Nicaragua</option>
+<option value="Niger">Niger</option>
+<option value="Nigeria">Nigeria</option>
+<option value="North Macedonia">North Macedonia</option>
+<option value="Northern Territory, Australia">Northern Territory, Australia</option>
+<option value="Norway">Norway</option>
+<option value="Oman">Oman</option>
+<option value="Pakistan">Pakistan</option>
+<option value="Panama">Panama</option>
+<option value="Papua New Guinea">Papua New Guinea</option>
+<option value="Paraguay">Paraguay</option>
+<option value="Peru">Peru</option>
+<option value="Philippines">Philippines</option>
+<option value="Poland">Poland</option>
+<option value="Portugal">Portugal</option>
+<option value="Qatar">Qatar</option>
+<option value="Queensland, Australia">Queensland, Australia</option>
+<option value="Romania">Romania</option>
+<option value="Russia">Russia</option>
+<option value="Rwanda">Rwanda</option>
+<option value="Saint Kitts and Nevis">Saint Kitts and Nevis</option>
+<option value="Saint Lucia">Saint Lucia</option>
+<option value="Saint Vincent and the Grenadines">Saint Vincent and the Grenadines</option>
+<option value="San Marino">San Marino</option>
+<option value="Sao Tome and Principe">Sao Tome and Principe</option>
+<option value="Saudi Arabia">Saudi Arabia</option>
+<option value="Senegal">Senegal</option>
+<option value="Serbia">Serbia</option>
+<option value="Seychelles">Seychelles</option>
+<option value="Sierra Leone">Sierra Leone</option>
+<option value="Singapore">Singapore</option>
+<option value="Slovakia">Slovakia</option>
+<option value="Slovenia">Slovenia</option>
+<option value="Somalia">Somalia</option>
+<option value="South Africa">South Africa</option>
+<option value="South Australia, Australia">South Australia, Australia</option>
+<option value="South Sudan">South Sudan</option>
+<option value="Spain">Spain</option>
+<option value="Sri Lanka">Sri Lanka</option>
+<option value="Sudan">Sudan</option>
+<option value="Suriname">Suriname</option>
+<option value="Sweden">Sweden</option>
+<option value="Switzerland">Switzerland</option>
+<option value="Syria">Syria</option>
+<option value="Taiwan*">Taiwan*</option>
+<option value="Tanzania">Tanzania</option>
+<option value="Tasmania, Australia">Tasmania, Australia</option>
+<option value="Thailand">Thailand</option>
+<option value="Timor-Leste">Timor-Leste</option>
+<option value="Togo">Togo</option>
+<option value="Trinidad and Tobago">Trinidad and Tobago</option>
+<option value="Tunisia">Tunisia</option>
+<option value="Turkey">Turkey</option>
+<option value="Uganda">Uganda</option>
+<option value="Ukraine">Ukraine</option>
+<option value="United Arab Emirates">United Arab Emirates</option>
+<option value="United Kingdom">United Kingdom</option>
+<option value="Uruguay">Uruguay</option>
+<option value="US">US</option>
+<option value="Uzbekistan">Uzbekistan</option>
+<option value="Venezuela">Venezuela</option>
+<option value="Victoria, Australia">Victoria, Australia</option>
+<option value="Vietnam">Vietnam</option>
+<option value="Western Australia, Australia">Western Australia, Australia</option>
+<option value="Yemen">Yemen</option>
+<option value="Zambia">Zambia</option>
+<option value="Zimbabwe">Zimbabwe</option></select>
+                          <script type="application/json" data-for="intsim_countries_level3">{}</script>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group shiny-input-container">
+                      <label class="control-label" for="intsim_percent_tvolume_level3">Traveler volume (% of 2019 levels, adjusted for lockdown levels):</label>
+                      <input id="intsim_percent_tvolume_level3" type="number" class="form-control" value="5" min="1" max="100" step="1"/>
+                    </div>
+                    <div data-display-if="input.simsettings_mode==&#39;Advanced&#39;" data-ns-prefix="">
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_effectiveness_level3">Effectiveness (%):</label>
+                        <input id="intsim_effectiveness_level3" type="number" class="form-control" value="99.9" min="0" max="100" step="1"/>
+                      </div>
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_extraspread_level3">Extra spread (%):</label>
+                        <input id="intsim_extraspread_level3" type="number" class="form-control" value="1.01" min="0" max="100" step="0.1"/>
+                      </div>
+                      <div id="intsim_level3_notes" class="shiny-text-output"></div>
+                    </div>
+                  </div>
+                  <div class="well">
+                    <div id="intsim_level4_header" class="shiny-html-output"></div>
+                    <div data-display-if="input.simsettings_mode==&#39;Simple&#39;" data-ns-prefix="">
+                      <div id="intsim_level4_description" class="shiny-html-output"></div>
+                    </div>
+                    <div data-display-if="input.simsettings_mode==&#39;Advanced&#39;" data-ns-prefix="">
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_countries_level4">Locations:</label>
+                        <div>
+                          <select id="intsim_countries_level4" multiple="multiple"><option value="(all other countries)" selected>(all other countries)</option></select>
+                          <script type="application/json" data-for="intsim_countries_level4">{}</script>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="form-group shiny-input-container">
+                      <label class="control-label" for="intsim_percent_tvolume_level4">Traveler volume (% of 2019 levels, adjusted for lockdown levels):</label>
+                      <input id="intsim_percent_tvolume_level4" type="number" class="form-control" value="0" min="1" max="100" step="1"/>
+                    </div>
+                    <div data-display-if="input.simsettings_mode==&#39;Advanced&#39;" data-ns-prefix="">
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_effectiveness_level4">Effectiveness (%):</label>
+                        <input id="intsim_effectiveness_level4" type="number" class="form-control" value="99.9" min="0" max="100" step="1"/>
+                      </div>
+                      <div class="form-group shiny-input-container">
+                        <label class="control-label" for="intsim_extraspread_level4">Extra spread (%):</label>
+                        <input id="intsim_extraspread_level4" type="number" class="form-control" value="1.79" min="0" max="100" step="0.1"/>
+                      </div>
+                      <div id="intsim_level4_notes" class="shiny-text-output"></div>
+                    </div>
+                  </div>
+                  <div id="intsim_notes" class="shiny-html-output"></div>
+                </form>
+              </div>
+              <div class="col-sm-8">
+                <h2>Total risk per month</h2>
+                <div id="intsim_totalrisk" class="shiny-html-output"></div>
+                <div id="intsim_AreaPlot" class="shiny-plot-output" style="width: 100% ; height: 400px"></div>
+                <div id="total_risk_graph" class="shiny-plot-output" style="width: 100% ; height: 400px"></div>
+                <div id="cumulative_risk_plot" class="shiny-plot-output" style="width: 100% ; height: 400px"></div>
+                <h2>Level 0 countries (no risk)</h2>
+                <div id="dt_countries_level0" style="width:100%; height:auto; " class="datatables html-widget html-widget-output"></div>
+                <h2>Level 1 countries (low risk)</h2>
+                <div id="dt_countries_level1" style="width:100%; height:auto; " class="datatables html-widget html-widget-output"></div>
+                <h2>Level 2 countries (medium risk)</h2>
+                <div id="dt_countries_level2" style="width:100%; height:auto; " class="datatables html-widget html-widget-output"></div>
+                <h2>Level 3 countries (high risk)</h2>
+                <div id="dt_countries_level3" style="width:100%; height:auto; " class="datatables html-widget html-widget-output"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-pane" data-value="Risk Matrix" id="tab-4113-6">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-sm-4">
+                <h2>COVID-19: Location Risk Matrix</h2>
+              </div>
+              <div class="col-sm-2">
+                <h4>View settings</h4>
+              </div>
+              <div class="col-sm-3">
+                <div id="countrylist_type" class="form-group shiny-input-radiogroup shiny-input-container">
+                  <label class="control-label" for="countrylist_type">List Type:</label>
+                  <div class="shiny-options-group">
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="countrylist_type" value="Classic" checked="checked"/>
+                        <span>Classic</span>
+                      </label>
+                    </div>
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="countrylist_type" value="Comprehensive high-level"/>
+                        <span>Comprehensive high-level</span>
+                      </label>
+                    </div>
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="countrylist_type" value="Prevalence detail"/>
+                        <span>Prevalence detail</span>
+                      </label>
+                    </div>
+                    <div class="radio">
+                      <label>
+                        <input type="radio" name="countrylist_type" value="Raw"/>
+                        <span>Raw</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-2">
+                <div class="form-group shiny-input-container">
+                  <label class="control-label" for="countrylist_travelerfilter">Show countries with at least this number of travellers per month:</label>
+                  <input id="countrylist_travelerfilter" type="number" class="form-control" value="2000" min="0" max="1e+05" step="500"/>
+                </div>
+              </div>
+              <div class="col-sm-1">
+                <a id="countrylist_downloadcsv" class="btn btn-default shiny-download-link " href="" target="_blank" download>
+                  <i class="fa fa-download"></i>
+                  Download
+                </a>
+              </div>
+            </div>
+            <hr/>
+            <div class="row">
+              <div class="col-sm-12">
+                <div style="font-size:80%">
+                  <div id="country_table" style="width:100%; height:auto; " class="datatables html-widget html-widget-output"></div>
+                </div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-sm-12">
+                <div id="country_table_notes" class="shiny-html-output"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-pane" data-value="Validation" id="tab-4113-7">
+          <div class="container-fluid">
+            <h2>Validation</h2>
+            <div class="col-sm-12">
+              <div id="validation_description" class="shiny-text-output"></div>
+              <div id="new_zealand_status_quo" class="shiny-plot-output" style="width: 100% ; height: 400px"></div>
+              <div id="cases_at_border_graph" class="shiny-plot-output" style="width: 100% ; height: 400px"></div>
+              <div id="validation_description_2" class="shiny-text-output"></div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-pane" data-value="Prevalence map" id="tab-4113-8">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-sm-3">
+                <h2>Prevalence map</h2>
+              </div>
+              <div class="col-sm-2">
+                <h4>View settings</h4>
+              </div>
+              <div class="col-sm-4">
+                <div class="form-group shiny-input-container">
+                  <label class="control-label" for="summary_map_DisplayFilter">Countries to display</label>
+                  <div>
+                    <select id="summary_map_DisplayFilter"><option value="Key Destinations and Travel Partners" selected>Key Destinations and Travel Partners</option>
+<option value="All">All</option></select>
+                    <script type="application/json" data-for="summary_map_DisplayFilter" data-nonempty="">{}</script>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <hr/>
+            <div class="row">
+              <div class="col-sm-12">
+                <div id="summary_map_prevalence_map" style="width:100%; height:400px; " class="leaflet html-widget html-widget-output"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tab-pane" data-value="Simulation settings" id="tab-4113-9">
+          <div class="container-fluid">
+            <h2>Simulation Settings</h2>
+            <div class="col-sm-8">
+              <div id="ifr_explanation" class="shiny-text-output"></div>
+              <div class="form-group shiny-input-container">
+                <label class="control-label" for="simsettings_ifr">Assumed Infection Fatality Rate (%):</label>
+                <input id="simsettings_ifr" type="number" class="form-control" value="0.6" min="0" max="5" step="0.1"/>
+              </div>
+              <div class="form-group shiny-input-container">
+                <label class="control-label" for="simsettings_traveler_relative_prevalence">Prevalence of COVID-19 in travellers relative to the population:</label>
+                <input id="simsettings_traveler_relative_prevalence" type="number" class="form-control" value="1.2" min="0" max="10" step="0.1"/>
+              </div>
+              <div class="form-group shiny-input-container">
+                <label class="control-label" for="simsettings_current_lockdown_passenger_volume">Current monthly incoming passenger volume:</label>
+                <input id="simsettings_current_lockdown_passenger_volume" type="number" class="form-control" value="9037" min="0" max="1e+05" step="1000"/>
+              </div>
+              <div id="simsettings_run_date" class="shiny-date-input form-group shiny-input-container">
+                <label class="control-label" for="simsettings_run_date">Run date:</label>
+                <input type="text" class="form-control" data-date-language="en" data-date-week-start="0" data-date-format="yyyy-mm-dd" data-date-start-view="month" data-max-date="2020-11-16" data-initial-date="2020-11-05" data-date-autoclose="true" data-date-dates-disabled="null" data-date-days-of-week-disabled="null"/>
+              </div>
+              <div class="form-group shiny-input-container">
+                <label class="control-label" for="simsettings_mode">Simulation mode</label>
+                <div>
+                  <select id="simsettings_mode"><option value="Simple" selected>Simple</option>
+<option value="Advanced">Advanced</option></select>
+                  <script type="application/json" data-for="simsettings_mode" data-nonempty="">{}</script>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="footer"><div style="margin-right: auto; margin-left: auto; width: 600px; text-align: center; margin-top:1em; margin-bottom:1em">
+  NZ Safe Border 2020.
+</div></div>
+  </div>
+</body>
+</html>

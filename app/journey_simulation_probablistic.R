@@ -171,7 +171,7 @@ run_sim <- function(
     }
     #then the next day, we're gonna let the travelers out.
     if(duration_to_flight==quarantine_release_day){
-      printv("releasing all travelers who haven't been tested positive.")
+      printv("releasing all travellers who haven't been tested positive.")
       printv(paste("There are",current_infectious_cases_sum,"cases being released."))
       
       #this is the probability that each case is detected and removed

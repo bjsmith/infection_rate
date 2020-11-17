@@ -36,6 +36,30 @@ div[data-value="Summary"] button{
   margin:auto;
 }
 
+div.author_list{
+  column-count: 2;
+  margin-top:2em;
+}
+
+div.author_profile{
+  font-weight: bold;
+  overflow: hidden;
+
+}
+
+div.author_profile div{
+    text-align: left;
+    vertical-align: middle;
+    margin-top: 1.5em;
+}
+
+div.author_profile img{
+  border-radius:50%;
+  width: 100px;
+  border: solid 2px white;
+  float:left;
+  margin-right: 50px;
+}
 /*
 .col-sm-8 {
   float:none;

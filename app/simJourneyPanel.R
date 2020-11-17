@@ -71,7 +71,7 @@ simJourneyPanel <- function(
                   multiple=TRUE)
       ),
       numericInput(paste0("intsim_percent_tvolume_level",level_id),
-                   "Traveler volume (% of 2019 levels, adjusted for lockdown levels):",
+                   "Traveller volume (% of 2019 levels, adjusted for lockdown levels):",
                    min=1,
                    max=100,step=1,
                    value = default_volume),

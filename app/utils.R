@@ -507,36 +507,57 @@ get_geomapped_covid_data <- function(
   
   #1.
   #load New Zealand arrivals data.
-  arrivals<-read_csv("data/2020june/ Total passenger movements by EVERY country of residence (Monthly) to june 2020.csv")
+  arrivals_raw<-read_csv("data/arrivals_most_recent_updated/total-passenger-movements-most-recent.csv",skip = 2)
+  #remove lines at the end of the file that don't contain data
+  arrivals <- arrivals_raw[apply(arrivals_raw,1,function(r){sum(is.na(r))})<0.5*nrow(arrivals_raw),] #keep the rows less than half NA
   colnames(arrivals)[1] <- "MonthLabel"
+  
+  #arrivals<-read_csv("data/2020june/ Total passenger movements by EVERY country of residence (Monthly) to june 2020.csv")
+  
   #pick out the month we are interested in
-  month_code <- paste0("2019M",str_pad(as.character(lubridate::month(run_date)),2,side="left",pad="0"))
+  month_code_2019 <- paste0("2019M",str_pad(as.character(lubridate::month(run_date)),2,side="left",pad="0"))
+  month_code_2020 <- paste0("2020M",str_pad(as.character(lubridate::month(run_date)),2,side="left",pad="0"))
   #month_code <- "2019M09"
   
   foreign_arrivals_this_month <- arrivals %>% 
-    filter(MonthLabel==month_code) %>% 
+    filter(MonthLabel==month_code_2019) %>% 
     .[,2:ncol(.)] %>%
     tidyr::gather("Country","LocationResidentMonthlyArrivalsRaw") %>%
     mutate(LocationResidentMonthlyArrivalsRaw = as.numeric(LocationResidentMonthlyArrivalsRaw))
   
   #2.
-  nz_resident_arrivals <- readr::read_csv("data/2020june/NZ-resident traveller arrivals by EVERY country of main destination and purpose (Monthly) to june 2020.csv")
+  nz_resident_arrivals_raw <- read_csv("data/arrivals_most_recent_updated/nz-resident-traveller-most-recent.csv",skip=1)
+  #remove lines that don't contain numeric counts
+  #convert cols to count data
+  nz_resident_arrivals_raw[,2:ncol(nz_resident_arrivals_raw)] <- suppressWarnings(apply(nz_resident_arrivals_raw[,2:ncol(nz_resident_arrivals_raw)],2,as.numeric))
+  #remove na rows
+  nz_resident_arrivals <- nz_resident_arrivals_raw[apply(nz_resident_arrivals_raw,1,function(r){sum(is.na(r))})<0.5*nrow(nz_resident_arrivals_raw),] #keep the rows less than half NA
+  #nz_resident_arrivals <- readr::read_csv("data/2020june/NZ-resident traveller arrivals by EVERY country of main destination and purpose (Monthly) to june 2020.csv")
   colnames(nz_resident_arrivals)[1] <- "MonthLabel"
   nz_res_arrivals_this_month <- nz_resident_arrivals %>% 
-    filter(MonthLabel==month_code) %>% 
+    filter(MonthLabel==month_code_2019) %>% 
     .[,2:ncol(.)] %>%
     tidyr::gather("NZRArrivalsMainDestination","NZResMonthlyArrivalsRaw")
   
   #3.
+  months_of_data <- intersect(arrivals$MonthLabel,nz_resident_arrivals$MonthLabel)
+  if ( (month_code_2020 %in% months_of_data)==FALSE){
+    #if we don't have this month's data
+    #use the most recent month
+    month_code_2020<-months_of_data[length(months_of_data)]
+  }
+  print_elapsed_time(paste0("Using arrival data from ", month_code_2020))
   foreign_arrivals_lockdown <- arrivals %>% 
-    filter(MonthLabel==MonthLabel[nrow(.)]) %>% #latest month
+    filter(MonthLabel==month_code_2020) %>% #latest month
     .[,2:ncol(.)] %>%
     tidyr::gather("Country","LocationResidentMonthlyArrivalsLockdownRaw") %>%
     mutate(LocationResidentMonthlyArrivalsLockdownRaw = as.numeric(LocationResidentMonthlyArrivalsLockdownRaw))
   
   #4.
+  #let's change this. rather than getting the latest month in the dataset, if this month is before the latest month, we'll actually use this month's data
+  #this will make this better for review purposes.
   nz_res_arrivals_lockdown <- nz_resident_arrivals %>% 
-    filter(MonthLabel==MonthLabel[nrow(.)]) %>%  #get the latest month
+    filter(MonthLabel==month_code_2020) %>%  #get the latest month
     .[,2:ncol(.)] %>%
     tidyr::gather("NZRArrivalsMainDestination","NZResMonthlyArrivalsLockdownRaw")
   
@@ -610,7 +631,8 @@ get_geomapped_covid_data <- function(
   #for these stats, we're going to use the very latest day's data, not the average over the time.
   jh_key_stats<-jh_dxc %>% ungroup %>%
     filter(Date==latest_date) %>%
-    select(CasesConfirmed,Recoveries,ActiveCases, CountryDivisionCodeMixed,Alpha3CountryOnly) %>%
+    select(CasesConfirmed,Recoveries,ActiveCases,ActiveCases1, CountryDivisionCodeMixed,Alpha3CountryOnly) %>%
+    rename("ActiveCasesRaw"="ActiveCases1")%>%
     group_by(CountryDivisionCodeMixed,Alpha3CountryOnly) %>%
     summarise_all(mean)
   deaths_with_lagged_cases <- deaths_with_lagged_cases %>% 
@@ -679,10 +701,20 @@ get_geomapped_covid_data <- function(
   
   print_elapsed_time("...finished.")
   
+  #rename specific items in the the location column
+  world_with_covid_data$Location <- rename_location_cols(world_with_covid_data$Location)
+  
 
   return(world_with_covid_data)
 }
 
+rename_location_cols <- function(x){
+  x[x=="Taiwan*"] <- "Taiwan"
+  x[x=="US"] <- "United States"
+  x[x=="Korea, South"] <- "South Korea"
+  #don't need to do Australia here. Australian states are fine as they are.
+  return(x)
+}
 get_new_case_prediction <- function(x){
   #use the last 3 weeks of data to predict
   new_case_training_data <- x[(length(x)-21+1):length(x)]
@@ -728,4 +760,19 @@ get_max_quantiles <- function(display_data,col_of_interest,max_quantiles=8){
   
 }
 
+# better display of numbers
+scale_signif <- function(x,figures=2){
+  if(x<1){
+    return(as.character(signif(x,figures)))
+  }else{
+    return(as.character(scales::comma(signif(x,figures))))
+  }
+}
 
+scale_dp <- function(x,dp=0){
+  if(x<1){
+    return(as.character(round(x,dp)))
+  }else{
+    return(as.character(scales::comma(round(x,dp))))
+  }
+}
