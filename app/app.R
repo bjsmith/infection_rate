@@ -177,11 +177,11 @@ server <- function(input, output, session) {
       trust_classification <- classify_country_trust(
         location_info$LifeExp,input$locprofile_Location
       )
-      country_classification = classify_country(
-        location_info$LifeExp,
-        location_info$ExpectedCasesAtBorder
-      )
-      
+      # country_classification = classify_country(
+      #   location_info$LifeExp,
+      #   location_info$ExpectedCasesAtBorder
+      # )
+      # 
       # Set up parameters to pass to Rmd document
       params <- list(
         location_profile = input$locprofile_Location,
@@ -311,8 +311,8 @@ server <- function(input, output, session) {
         select(
           Location,
           owid_population_density, #add
-          owid_new_tests_per_million, #add
-          owid_tests_per_case, #add
+          #owid_new_tests_per_million, #add
+          #owid_tests_per_case, #add
           ActiveCasesRaw,
           ActiveCases,
           NewDeaths, #add
@@ -329,8 +329,8 @@ server <- function(input, output, session) {
       colnames(display_tibble) <- c(#"ISO",
         "Location",
         "Population density",
-        "New tests / mil (last 7 days average)",
-        "New tests / Case (last 7 days average)",
+        #"New tests / mil (last 7 days average)",
+        #"New tests / Case (last 7 days average)",
         "Active cases (Imported and local)",
         "Active cases (excluding imported cases where possible)",
         "New deaths (last 7 days average)",
@@ -375,7 +375,7 @@ server <- function(input, output, session) {
         "Est. active infections",
         "Prevalence (infections / mil)",
         "Prevalence Rating",
-        "Predicted prevalence in 14 days (infections / mil)",
+        "Projected prevalence in 14 days (infections / mil)",
         "Outlook Rating",
         "Life expectancy",
         "Data Reliability"
@@ -463,13 +463,12 @@ server <- function(input, output, session) {
       write.csv(get_country_table(), file, row.names = FALSE)
     }
   )
-  
-  output$country_table_notes <- renderUI({HTML(paste0(
-    "Estimated arrivals per month are calculated assuming arrivals under existing quarantine regime, plus a ", 
-    "% of 2019 arrivals, corresponding to each intervention, as set on the \"Proposed system\" tab. In reality these will differ from treatment to treatment.<br/> <br/> ",
-    "<em>Cook Islands</em> and <em>Samoa</em> currently report COVID-free status, are rated zero risk. Due to their zero-risk status, it hasn't been necessary to include them in the dataset and they are not listed above.<br /><br />",
-    "."
-  ))})
+  output$country_table_notes <- renderUI({HTML(
+    paste0(
+      readr::read_file(paste0("components/risk_matrix/",tolower(input$countrylist_type),"_list.html")),
+      readr::read_file(paste0("components/risk_matrix/all.html"))
+    ))
+  })
   
   #######################################
   #intervention simulation page

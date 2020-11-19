@@ -1,0 +1,59 @@
+<ul>
+  <li>Location: Country, state, territory, or other subnational group. The list will show only those locations meeting the traveller threshold set at the top of the page. Data is sourced from Johns Hopkins University, state and national health authorities, and Statistics New Zealand; see Method & Approach for more details.</li>
+  <li>Population density: Location population density as reported by Our World In Data</li>
+  <li>Active cases (imported and local): Total reported cases minus fatalities and recoveries, as recorded by Johns Hopkins University.</li>
+  <li>Active cases (excluding imported cases where possible): 
+  As the previous column, with adjustments made for cases in managed isolation/quarantine. 
+  These should not be included in counts of active cases when trying to understand community prevalence. 
+  Adjustments were made only when active local case counts could be accessed from governmental sources in the relevant location.</li>
+  <li>
+    New deaths (last 7 days average): Daily average fatalities over the last 7 days. This is used to estimate the Infection Detection Rate (see Method and Approach).
+  </li>
+  <li>
+    Prevalence (invections / mil): Estimated true infections divided by the population size.
+  </li>
+  <li>
+    Prevalence rating: This is marked "unknown" when the location's health system reliability is not considered trustworthy. Otherwise, it can be Covid-free, indicating zero active cases, or other levels up to Level 4. Thresholds are determined on the "Proposed System" page.
+  </li>
+  <li>
+    Outlook rating: To provide an 'early warning', recent trends in daily confirmed cases are projected two weeks into the future using a simple linear model. 
+    Then the prevalence over the next two weeks is calculated based on this projection. 
+    In locations where we've adjusted active cases to exclude imported cases, this may display an inappropriately pessimistic rating.
+    The Outlook rating may be used to identify Level 1, 2, and 3 locations where the outbreak appears to be worsening and which may slip into a higher prevalence level in the next two weeks.
+  </li>
+  <li>Data reliability: This is a rating of the reliability of a country's health system reporting. 
+  The data is likely to be unreliable if significant numbers of Covid-19 fatalities are not officially recorded.
+  We use life expectancy as a proxy for health system reliability; if the life expectancy in a country is 70 or higher, the health system is considered robust and the data reliability is rated trustworthy.
+  Otherwise the data is related untrustworthy. Further refinement may be required.
+  </li>
+  <li>
+    2019 Monthly arrivals: This specifies the monthly arrivals in the corresponding month in 2019. This will correspond to the calendar month of the currently selected date as shown on the top right of the app.
+  </li>
+  <li>
+    Est. arrivals per month (based on 2019): 
+    Estimated arrivals per month, after any interventions have been assigned, assuming a fraction of 2019 travel. This is specified on the "Proposed System" tab.
+  </li>
+    <li>
+    Expected number of cases arriving per month: This displays the expected number of cases that <em>enter the passenger journey</em>. 
+    The label is slightly misleading because around half of these cases would be screened out with a pre-departure PCR test if that is applied.
+  </li>
+<!--  <li>
+    Assigned intervention: This is the change proposed for travellers from that location.
+    If no intervention is assigned then the proposal is to continue with the current system for that location, except, possibly, to introduce a pre-departure PCR test.
+    A change is only considered if data from the location is considered trustworthy,
+    and if the location has at least 2,000 travellers travelling to New Zealand in the relevant month for 2019.
+    If a location meets these criteria than an intervention is assigned based on the prevalence thresholds specified in the "Proposed System" tab.
+  </li>-->
+
+  <li>
+    Expected number of cases lasting through quarantine per month: 
+    This is the estimated number of cases entering the community even after applicable managed isolation and quarantine measures have been taken.
+    This is an average only, and the true number in any given month could be more or less.
+    It considers the prevalence in the location, 
+    the volume of travel from that location likely following the application of an intervention (which can be specified on the "Proposed System tab"),
+    and the effectiveness of the selected traveller journey (Open, 1-, 5-, or 14-day MIQ).
+    It is likely to be under-estimated in countries with an "untrustworthy" data reliability rating.
+  </li>
+  
+  
+</ul>
