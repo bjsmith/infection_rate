@@ -21,21 +21,21 @@ classify_country_prevalence <-function(lifeExp,prevalence_p_m){
   if(is.na(lifeExp) | is.na(prevalence_p_m)){return(NA)}
   if(lifeExp>=70){
     if(prevalence_p_m<=0){
-      return("COVID-free")
+      return("Covid-free")
     }else if(prevalence_p_m<10){
-      return("Low")
+      return("Level 1")
       #high trust, very low prevalence
     }else if(prevalence_p_m<100){
-      return("Moderate")
+      return("Level 2")
       #high trust, low to moderate prevalence
     }else if(prevalence_p_m<1000){
-      return("High")
+      return("Level 3")
       #high trust, high prevalence
     }else if(prevalence_p_m<10^4){
-      return("Very high")
+      return("Level 4")
       #high trust, very high prevalence
     }else if(prevalence_p_m<10^5){
-      return("Extreme")
+      return("Above Level 4")
       #high trust, very high prevalence
     }
   }else{

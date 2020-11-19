@@ -9,6 +9,10 @@ get_generated_button <- function(){
                                 class="btn btn-primary"))
 }
 
+get_intervention_level_name <-function(level_id){
+  simPanelDf_row <- simPanelDf %>% filter(level==level_id)
+  return(simPanelDf_row  %>% .$level_label)
+}
 get_intervention_name <-function(level_id){
   simPanelDf_row <- simPanelDf %>% filter(level==level_id)
   return(simPanelDf_row  %>% .$label)
@@ -29,7 +33,9 @@ get_simJourneyPanel_from_level_id <- function(level_id, choices,selected= c()){
 simJourneyPanelHeader <- function(level_id){
   return(
     renderUI({HTML(
-      paste0("<h5>",get_intervention_name(level_id),"</h5>")
+      paste0(
+        "<h4>",get_intervention_level_name(level_id),"</h4> ",
+        "<h5>",get_intervention_name(level_id),"</h5>")
     )})
     )
 }

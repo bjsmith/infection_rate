@@ -1,5 +1,8 @@
 source("simulation.R")
 
+#intervention_labels <- list("0"="Covid-free","1"="Level 1","2"="Level 2","3"="Level 3")
+
+
 get_intsim_tabPanel <- function(default_simulation_data,countries_to_choose_from,default_adjust_for_imported_cases){
   return(tabPanel(
     "Proposed System",
@@ -17,22 +20,21 @@ get_intsim_tabPanel <- function(default_simulation_data,countries_to_choose_from
                         label="Exclude imported cases isolated in MIQ at border where possible (applies on all tabs)",
                         value = default_adjust_for_imported_cases),
           get_simJourneyPanel_from_level_id(0,choices= countries_to_choose_from,selected = 
-                                              default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "COVID-free") %>% .$Location
+                                              default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Covid-free") %>% .$Location
           ),
           get_simJourneyPanel_from_level_id(1,choices= countries_to_choose_from,
-                                            selected = default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Low") %>% .$Location),
+                                            selected = default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Level 1") %>% .$Location),
           get_simJourneyPanel_from_level_id(2,choices= countries_to_choose_from,
-                                            selected = default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Moderate") %>% .$Location),
+                                            selected = default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Level 2") %>% .$Location),
           get_simJourneyPanel_from_level_id(3,choices= countries_to_choose_from,
-                                            selected=default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "High") %>% .$Location),
+                                            selected=default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "Level 3") %>% .$Location),
           get_simJourneyPanel_from_level_id(4,choices= c("(all other countries)"),
                                             selected= c("(all other countries)")),
           uiOutput("intsim_notes")
         ),
         mainPanel(
-          titlePanel("Total risk per month"),
+          #titlePanel("Total risk per month"),
           uiOutput("intsim_totalrisk"),
-          #plotOutput("cases_at_border_graph"),
           plotOutput("intsim_AreaPlotAll"),
           uiOutput("intsim_AreaPlotDescription"),
           plotOutput("intsim_AreaPlotSelected"),
@@ -46,7 +48,8 @@ get_intsim_tabPanel <- function(default_simulation_data,countries_to_choose_from
           uiOutput("intsim_description4"),
           actionButton("intsim_btn_go_to_risk_matrix",
                        "View Risk Matrix",class="btn btn-primary"),
-          titlePanel("Level 0 countries (no risk)"),
+          uiOutput("intsim_description5"),
+          titlePanel("Covid-free countries (no risk)"),
           DT::dataTableOutput("dt_countries_level0"),
           titlePanel("Level 1 countries (low risk)"),
           DT::dataTableOutput("dt_countries_level1"),
@@ -78,11 +81,13 @@ render_intsim_page <- function(input, output,session,
   output$intsim_level3_header <- simJourneyPanelHeader(3)
   output$intsim_level4_header <- simJourneyPanelHeader(4)
   
-  output$intsim_AreaPlotSelected <- renderPlot({
-    #intervention_risk <- intervention_risk
-    generate_areaPlot(get_intervention_risk(),y_limit_per_thousand = 1)
-  })
+
   
+  
+  output$intsim_AreaPlotAll <- renderPlot({
+    generate_areaPlot(get_intervention_risk(),
+                      title="COVID cases expected from each location by volume of travel from each location")
+  })
   
   output$intsim_AreaPlotDescription <-renderUI({
     level_1_max <- input$intsim_level1_max_prevalence
@@ -93,24 +98,27 @@ render_intsim_page <- function(input, output,session,
       the horizontal axis describes the cumulative number of travellers per month we would expect from each country in 2019, 
       based on Statistics New Zealand data 
       (as an approximation, travellers from Australian states are allocated proportionally according to states’ populations). 
-      These are ordered from left to right COVID-free locations (zero reported active local cases), 
-      low (less than ",as.character(level_1_max)," per 100k), 
-      medium (",as.character(level_1_max)," to ",as.character(level_2_max)," per 100k), 
-      high (",as.character(level_2_max)," to ",as.character(level_3_max)," per 100k), 
-      as well as very high and extreme locations (more than ",as.character(level_3_max)," per 100k). 
+      These are ordered from left to right Covid-free locations (zero reported active local cases), 
+      Level 1 (less than ",as.character(level_1_max)," per 100k), 
+      Level 2 (",as.character(level_1_max)," to ",as.character(level_2_max)," per 100k), 
+      Level 3 (",as.character(level_2_max)," to ",as.character(level_3_max)," per 100k), 
+      as well as Level 4 locations (more than ",as.character(level_3_max)," per 100k). 
       The vertical axis describes the cases per 1,000 travelers that we expect from each location. 
-      The area of each location’s rectangle therefore represents the volume of COVID-19 cases we would expect 
+      The area of each location’s rectangle therefore represents the volume of Covid-19 cases we would expect 
       entering New Zealand from each country if no border measures were applied and if travel volumes were at 2019 levels. 
       \n \n <br /> <br />
-      The graph below is the same data, but focused only on COVID-free to high prevalence locations 
+      Travel volumes used here are based on 2019 data.
+      \n \n <br /> <br />
+      The graph below is the same data, but focused only on Covid-free to high prevalence locations 
       (0 to ",as.character(level_3_max)," expected cases per 100k travellers)."
     )))
   })
-  
-  output$intsim_AreaPlotAll <- renderPlot({
-    generate_areaPlot(get_intervention_risk())
+
+  output$intsim_AreaPlotSelected <- renderPlot({
+    #intervention_risk <- intervention_risk
+    generate_areaPlot(get_intervention_risk(),y_limit_per_thousand = 1,
+                      title="COVID cases expected from each location by volume of travel from each location: excluding very high and extreme prevalence locations")
   })
-  
   
   output$intsim_description2 <-renderUI({
     intervention_risk <- get_intervention_risk()
@@ -139,16 +147,15 @@ render_intsim_page <- function(input, output,session,
     status_quo_risk <- get_status_quo_risk()
     intervention_risk <- get_intervention_risk()
     withMathJax(HTML(paste0(
-      "In the current system (line in COLOR), we expect around ",scale_signif(sum(status_quo_risk$MonthlyArrivalsWeighted,na.rm = TRUE)),
+      "In the current system (red line), we expect around ",scale_signif(sum(status_quo_risk$MonthlyArrivalsWeighted,na.rm = TRUE)),
       " travelers and about ",signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),2)," cases entering the community per month. 
-      In the proposed system, we expect ",
+      In the proposed system (blue line), we expect ",
       intervention_risk %>% filter(is.na(InterventionLevel)) %>% .$ExpectedNumberOfCasesInCommunity %>% sum(.,na.rm=TRUE) %>% signif(.,2)
-      ," new zealand citizen and exception travellers 
-      from very high and extreme prevalence locations. 
-      Their risk can be substantially mitigated by mandatory or encouraged pre-departure covid-19 testing. 
+      ," New Zealand and Eligible Exception Exceptions from Level 4 locations.
+      Their risk can be substantially mitigated by mandatory or encouraged pre-departure Covid-19 testing. 
       From Level 0 to level 3 countries we expect just ",
       intervention_risk %>% filter(!is.na(InterventionLevel)) %>% .$ExpectedNumberOfCasesInCommunity %>% sum(.,na.rm=TRUE) %>% signif(.,2),
-      " additional cases per month, due to the low prevalence of COVID-19 in those countries.."
+      " additional cases per month, due to the low prevalence of Covid-19 in those countries.."
     )))
   })
   
@@ -164,10 +171,38 @@ render_intsim_page <- function(input, output,session,
   output$intsim_description4 <-renderUI({
     withMathJax(HTML(paste0("
     The tables below list statistics about each country 
-      included in the COVID-free safe travel zone 
-      through to low-risk, moderate-risk, and high-risk locations. 
+      included in the Covid-free safe travel zone 
+      through to Level 1, Level 2, and Level 3 locations. 
       Click the 'View Risk Matrix' button 
                             to view more detailed information about each country.")))
+  })
+  
+  output$intsim_description5 <-renderUI({
+    withMathJax(HTML(paste0("
+    For each level, the locations currently categorized in each level are listed in the table. 
+    These can be customized using the level threshold adjustment controls in the settings on the left hand side of the screen.
+    The columns shown are:
+    <ul>
+    <li>The name of the location shown</li>
+    <li>Under the current system,
+      <ul>
+        <li>Expected passengers per month based on 2019 data</li>
+        <li>expected infections entering the passenger journey from each location</li>
+      </ul>
+      </li>
+      <li>Under the proposed system,
+      <ul>
+        <li>Expected passengers per month assuming the travel volumes specified  using the controls on the left side of this page</li>
+        <li>Expected infections entering the passenger journey from each location as a result</li>
+        <li>Expected infections still infectious when reaching the community</li>
+      </ul>
+      </li>
+    
+    </ul>
+    
+    
+    
+                            ")))
   })
   
 
@@ -251,7 +286,9 @@ render_total_risk_text <- function(
   textout<-paste0(
     "In the current system where only NZ residents are allowed can enter, we assume ",
     scale_dp(sum(status_quo_risk$MonthlyArrivalsWeighted,na.rm = TRUE)),
-    " travellers will arrive at the border per month. Consequently, we estimate ",
+    " travellers will arrive at the border per month 
+    (July 2020, NZ Customs; see <a href='https://www.customs.govt.nz/Covid-19/more-information/passenger-statistics/'>website</a> for updated figures).
+    Consequently, we estimate ",
     signif(sum(status_quo_risk$ExpectedCasesAtBorderUnderLockdown,na.rm = TRUE),2),
     " positive cases per month will arrive at the border, of which ",
     signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),5),
@@ -280,7 +317,7 @@ render_total_risk_text <- function(
   
   if(length(countries_excluded_due_to_data$Location)>0){
     textout<-paste0(textout,
-                    "<br /><br /> COVID-19 Data from the following countries is considered less reliable. 
+                    "<br /><br /> Covid-19 Data from the following countries is considered less reliable. 
   NZ resident returnees from these countries are already allowed, but we caution against relying on this data for anything further: " ,
                     paste0(countries_excluded_due_to_data$Location,collapse = ", "))
   }
@@ -288,7 +325,11 @@ render_total_risk_text <- function(
   
   
   textout<-paste0(textout, 
-                  "<br /> <br /><em>Cook Islands</em> and <em>Samoa</em> are not explicitly modeled. International sources do not track these locations and they are currently rated zero-risk, due to their COVID-free status and low or zero inbound travel. The situation should be continually monitored for any changes to their current zero-risk status.",
+                  "<br /> <br /><em><a href='https://www.health.gov.ck/covid19/'>Cook Islands</a></em> and 
+                  <em><a href='https://www.samoagovt.ws/category/novel-coronavirus-Covid-19/'>Samoa</a></em> are not explicitly modeled. 
+                  International sources do not track these locations and they are currently rated zero-risk, 
+                  due to their COVID-free status and low or zero inbound travel. 
+                  The situation should be continually monitored for any changes to their current zero-risk status (As of Nov 19, 2020, one case arriving from New Zealand was detected at the border in Samoa).",
                   " Their 100% August 2019 combined travel volumes were 21,952.")
   
   return(textout)
@@ -366,7 +407,8 @@ renderCasesAtBorderGraph <- function(status_quo_risk){
             axis.text = element_text(size=16)
       )+
       geom_label_repel(aes(y=LabelPosition),color="white",fontface="bold")+
-      coord_flip()
+      coord_flip()+
+      labs(caption="Sources: Johns Hopkins University, Statistics NZ, national and state health authorities; see Method & Approach for more detailed information")
     
     
   }))
@@ -482,7 +524,9 @@ get_total_risk_graph <- function(status_quo_risk,intervention_risk,countries_all
     #coord_cartesian(ylim=c(0,0.65))+
     #guides(fill=guide_legend(nrow=2,byrow=TRUE))+
     geom_label_repel(aes(y=LabelPosition),color="white",fontface="bold")+
-    coord_flip()
+    coord_flip()+labs(
+      title="Current System vs. Proposed System: Expected Cases per month",
+      caption = "Sources: Johns Hopkins University, Statistics NZ, national and state health authorities; see Method & Approach for more detailed information")
 }
 
 get_intsim_dt<-function(
@@ -620,22 +664,6 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
   intervention_risk <-data_tidy(intervention_risk)
   
   
-  # cumulative_intervention_graph <- intervention_risk %>% 
-  #   arrange(InterventionApplied,InferredActiveCaseTravelerRate) %>%
-  #   #combine by level
-  #   select(Location,ExpectedNumberOfCasesInCommunity,MonthlyArrivalsWeighted,
-  #          PrevalenceRating,InferredActiveCaseTravelerRate,
-  #          InterventionApplied
-  #   ) %>%
-  #   mutate(CumulativeExpectedCases=cumsum(ExpectedNumberOfCasesInCommunity),
-  #          CumulativeExpectedTravellers=cumsum(MonthlyArrivalsWeighted),
-  #          ExpectedTravellersXMark=if_else(InterventionApplied,CumulativeExpectedTravellers,as.numeric(NA)),
-  #          PointLabel=if_else(InterventionApplied,Location,as.character(NA)),
-  #          Scenario="Intervention"
-  #   ) %>%
-  #   select(-ExpectedNumberOfCasesInCommunity,-MonthlyArrivalsWeighted)
-  # 
-  #intervention_risk <- abbreviate_location_names(intervention_risk)
   cumulative_intervention_graph <- intervention_risk %>% 
     group_by(InterventionLabel) %>% 
     abbreviate_location_names %>%
@@ -643,6 +671,7 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
               MonthlyArrivalsWeighted = sum(MonthlyArrivalsWeighted),
               InterventionApplied = any(InterventionApplied),
               GroupMaxPrevalence = max(InferredActiveCaseTravelerRate),
+              PrevalenceRating = paste0(unique(PrevalenceRating),collapse=","),
               CountryList = paste0(Location,collapse="\n")
     )%>%
     arrange(InterventionApplied,GroupMaxPrevalence) %>% 
@@ -650,7 +679,7 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
            CumulativeExpectedTravellers=cumsum(MonthlyArrivalsWeighted),
            ExpectedTravellersXMark=if_else(InterventionApplied,CumulativeExpectedTravellers,as.numeric(NA)),
            PointLabel=if_else(InterventionApplied,
-                              InterventionLabel,
+                              PrevalenceRating,
                               #paste0(InterventionLabel, ":\n",CountryList),
                               as.character(NA)),
            Scenario="Intervention"
@@ -663,10 +692,11 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
     summarise(ExpectedNumberOfCasesInCommunityUnderLockdown = sum(ExpectedNumberOfCasesInCommunityUnderLockdown),
               StatusQuoMonthlyArrivals = sum(StatusQuoMonthlyArrivals),
               InterventionApplied = any(InterventionApplied),
-              GroupMaxPrevalence = max(InferredActiveCaseTravelerRate)
+              GroupMaxPrevalence = max(InferredActiveCaseTravelerRate),
+              PrevalenceRating = paste0(unique(PrevalenceRating),collapse=",")
     )%>%
     select(InterventionLabel,ExpectedNumberOfCasesInCommunityUnderLockdown,StatusQuoMonthlyArrivals,
-           GroupMaxPrevalence
+           GroupMaxPrevalence,PrevalenceRating
     ) %>%
     mutate(CumulativeExpectedCases=cumsum(ExpectedNumberOfCasesInCommunityUnderLockdown),
            CumulativeExpectedTravellers=cumsum(StatusQuoMonthlyArrivals),
@@ -678,15 +708,15 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
     ) %>%
     select(-ExpectedNumberOfCasesInCommunityUnderLockdown,-StatusQuoMonthlyArrivals)
   
-  point_of_origin_Intervention = data.frame(InterventionLabel="NA","InterventionApplied"=TRUE,GroupMaxPrevalence=0,CountryList="",CumulativeExpectedTravellers=0,CumulativeExpectedCases=0,ExpectedTravellersXMark=NA,PointLabel=NA,Scenario="Intervention")
+  point_of_origin_Intervention = data.frame(InterventionLabel="NA","InterventionApplied"=TRUE,GroupMaxPrevalence=0,PrevalenceRating=NA,CountryList="",CumulativeExpectedTravellers=0,CumulativeExpectedCases=0,ExpectedTravellersXMark=NA,PointLabel=NA,Scenario="Intervention")
   point_of_origin_StatusQuo <- point_of_origin_Intervention %>% mutate(InterventionApplied=FALSE,Scenario="StatusQuo")
   cumulative_graph <- rbind(point_of_origin_Intervention,cumulative_intervention_graph,point_of_origin_StatusQuo,status_quo_cumulative_graph)
   cumulative_graph[cumulative_graph$InterventionLabel=="None" & (cumulative_graph$Scenario=="Intervention"),"CountryList"] <- "NZ Returning\n and Eligible Exceptions\n from Level 4 Countries"
   cumulative_graph[cumulative_graph$InterventionLabel=="None" & (cumulative_graph$Scenario=="StatusQuo"),"CountryList"] <- ""
-  ## Graph
+  #position the level labels
   current_system_risk <- max(cumulative_graph$CumulativeExpectedCases)
   status_quo_risk_level <-max((cumulative_graph %>% filter(Scenario=="StatusQuo"))$CumulativeExpectedCases)
-  cumulative_graph <- cumulative_graph %>% group_by(Scenario) %>% mutate(LabelPosition = (rowid(Scenario)-1)/n()*max(CumulativeExpectedCases))
+  cumulative_graph <- cumulative_graph %>% group_by(Scenario) %>% mutate(LabelPosition = (rowid(Scenario))/(n()+1)*(max(cumulative_graph$CumulativeExpectedCases)))
   
   #find the crossover point where intervention risk becomes larger than status quo risk.
   last_intervention_under_limit_n = max(which(cumulative_intervention_graph$CumulativeExpectedCases<=status_quo_risk_level))
@@ -704,7 +734,7 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
     show_intercept <- TRUE
   }
    
-  
+  ## Graph
   
   ggout<- ggplot(cumulative_graph,
          aes(x=CumulativeExpectedTravellers,y=CumulativeExpectedCases,label=PointLabel,color=interaction(InterventionApplied,Scenario),group=Scenario))+
@@ -751,12 +781,12 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
           panel.grid.minor.x = element_blank(),
           axis.text = element_text(face="bold"),
           plot.margin = margin(12,12,12,12)
-    )
+    )+labs(caption = "Sources: Johns Hopkins University, Statistics NZ, national and state health authorities; see Method & Approach for more detailed information")
   #ggsave(ggout,filename = "../../../data/imgout.png")
   return(ggout)
 }
 
-generate_areaPlot <- function(covid_data,show_horizontal_lines=TRUE,y_limit_per_thousand=NA){
+generate_areaPlot <- function(covid_data,show_horizontal_lines=TRUE,y_limit_per_thousand=NA,title=""){
   print_elapsed_time("preparing areaPlot data...")
   #get initial dataset
   current_risk_per_thousand<-sum(covid_data$ExpectedCasesAtBorderUnderLockdown,na.rm=TRUE)/sum(covid_data$MonthlyArrivalsLockdownScaled2,na.rm=TRUE)*1000
@@ -770,7 +800,7 @@ generate_areaPlot <- function(covid_data,show_horizontal_lines=TRUE,y_limit_per_
     filter(Location %in% key_interest_countries) %>%
     arrange(InferredActiveCaseTravelerRate) %>%
     mutate(Arrivals=Total2019MonthlyArrivals)%>%
-    select(Location,Arrivals,InferredActiveCaseTravelerRate,PrevalenceRating) %>%
+    select(Location,Arrivals,InferredActiveCaseTravelerRate,PrevalenceRating,InterventionLevel) %>%
     mutate(CumulativeTravelExclusive=cumsum(Arrivals)-Arrivals,
            CumulativeTravelInclusive=cumsum(Arrivals)
     )
@@ -844,7 +874,7 @@ generate_areaPlot <- function(covid_data,show_horizontal_lines=TRUE,y_limit_per_
   
   level_rects <- all_rects %>% 
     filter(PrevalenceRating!="Unknown") %>%
-    group_by(PrevalenceRating) %>% 
+    group_by(PrevalenceRating, InterventionLevel) %>% 
     summarise(
       left = min(CumulativeTravelExclusive,na.rm = TRUE),
       right = max(CumulativeTravelInclusive,na.rm = TRUE),
@@ -853,6 +883,8 @@ generate_areaPlot <- function(covid_data,show_horizontal_lines=TRUE,y_limit_per_
       max_prevalence=max(InferredActiveCaseTravelerRate,na.rm = TRUE)
     ) %>% 
     arrange(max_prevalence)
+  
+  #level_rects$InterventionLevelLabel <- sapply(as.character(level_rects$InterventionLevel),function(x){intervention_labels[[x]]})
   
   print_elapsed_time("generating areaPlot...")
   #let's scale it to a maximum of 20 points
@@ -902,41 +934,9 @@ generate_areaPlot <- function(covid_data,show_horizontal_lines=TRUE,y_limit_per_
     )
     
   }
-  plot <- plot + labs(title="Risk prior to applying any interventions",caption = caption_text)
+  plot <- plot + labs(title=title,
+                      caption = paste0(caption_text,"\n","Sources: Johns Hopkins University, Statistics NZ, national and state health authorities; see Method & Approach for more detailed information"))
   
   return(plot)
-  #return the plot
-  # return(
-  #   ggplot(all_rects,aes(xmin=left, xmax=right, ymin=bottom,ymax=top))+
-  #     #draw the levels
-  #     geom_rect(data=level_rects,mapping=aes(xmin=left, xmax=right, ymin=bottom,ymax=top,fill=PrevalenceRating),
-  #               alpha=0.5,
-  #               fill=brewer.pal(n = nrow(level_rects), name = "Blues"))+
-  #     geom_text_repel(data=level_rects,mapping=aes(left, label=PrevalenceRating),segment.color = "transparent",
-  #                     y=max(all_rects$CasesPerThousand,na.rm=TRUE)*2/3,
-  #                     hjust=1,
-  #                     size=3,
-  #                     fontface="bold",
-  #                     color="black",
-  #                     fill=brewer.pal(n = nrow(level_rects), name = "Blues"))+
-  #     #draw the countries
-  #     geom_vline(aes(xintercept=CumulativeTravelInclusive),linetype="dotted",color="#aaaaaa")+
-  #     geom_rect(color="#9999ff",fill="#000055",alpha=0.8)+
-  #     geom_text(aes(label_xpos,y=label_ypos,label=RectLabel),
-  #               angle=50,size=3,hjust=1,vjust=1,lineheight = 0.7,fontface="bold")+
-  #     #draw the current average prevalence
-  #     geom_hline(yintercept = current_risk_per_thousand,color="#cc0000")+
-  #     annotate(geom="text",x=0,y=current_risk_per_thousand,vjust=0,hjust=0,color="#cc0000",label="Status quo aggregate traveller risk\n",size=3)+
-  #     #set the scales and style
-  #     geom_vline(xintercept=0,color="#aaaaaa")+
-  #     scale_x_continuous(name="Cumulative expected travellers per month", labels=scales::comma_format(),)+
-  #     scale_y_continuous(name="Cases per 1,000 travellers",breaks = y_scale_sequence,minor_breaks = NULL)+
-  #     coord_cartesian(ylim=c(-max(all_rects$CasesPerThousand,na.rm=TRUE)/4,max(all_rects$CasesPerThousand,na.rm=TRUE)))+
-  #     theme_minimal()+
-  #     theme(panel.grid.major.x = element_blank(),
-  #           panel.grid.minor.x = element_blank()
-  #           )+
-  #     labs(title="Risk prior to applying any interventions")
-  # )
-}
+  }
 

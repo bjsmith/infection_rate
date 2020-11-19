@@ -61,10 +61,13 @@ render_map_page <- function(output, filtered_mapped_world_with_covid_data,month_
     <li>border protection</li>
     </ol>
     
+    More detail can be found in a forthcoming academic paper (contact the authors at <a href='mailto:hello@striatum.co.nz'>hello@striatum.co.nz</a> to view an advance copy). 
+    The source code for this application, written based on R Shiny, is accessible to anyone and available for download under the Open Source MIT License via <a href='https://github.com/bjsmith/infection_rate'>Github</a>. 
+    
 
     The first data point we need is the active cases in each country (Figure 1).
-    These figures are based on data reported by a research team at Johns Hopkins University Center for Systems Science and Engineering. 
-    Johns Hopkins is a top American university of medicine.
+    These figures are based on data reported by <a href='https://systems.jhu.edu/research/public-health/ncov/'>Dong, Du, and Gardner (2020)</a> 
+    at Johns Hopkins University Center for Systems Science and Engineering.
     
     Active cases are confirmed cases minus confirmed fatalities and recoveries.
     
@@ -89,7 +92,9 @@ render_map_page <- function(output, filtered_mapped_world_with_covid_data,month_
   output$graph1header<-renderUI({withMathJax(HTML("
   
   
-    Where case numbers are low, we have endeavoured to supplement this with data gathered directly from national and state Ministries of Health 
+    Where case numbers are low, we have endeavoured to supplement this with 
+    <a href='https://docs.google.com/spreadsheets/d/1hkpfinHpxT1KcTI8umh55aaiFug12jKKSMZoae4ttlA/edit?usp=sharing'>
+    data gathered directly from national and state Ministries of Health</a>
     in order to exclude cases detected at each location's border and held in managed isolation/quarantine.
   <br /><br />  
   
@@ -98,8 +103,8 @@ render_map_page <- function(output, filtered_mapped_world_with_covid_data,month_
   
   We can compensate for this very approximate approach by erring on the conservative side.
     
-    Data is limited but around the world, experts estimated the true infection fatality rate (IFR) in Wuhan, China at 0.6%. 
-<a href='https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.12.2000256'>(Russell et al., 2020)</a>. This figure is also used by the CDC as a best guess of the true IFR.
+    Data is limited but around the world, experts estimated the true infection fatality rate (IFR) in Wuhan, China at 0.6% 
+<a href='https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.12.2000256'>(Russell et al., 2020)</a>.
 
 <br /><br />
 1. We can estimate the <em>case fatality rate</em> (CFR) the number of reported cases relative to the number of fatalities, by 
@@ -109,7 +114,7 @@ $$ \\text{CFR} = \\frac{f_{\\text{observed, this week}}}{c_{\\text{observed, thr
 
 2. Combined with the internationally reported estimate of the true IFR we can calculate the infection detection rate (IDR) with the formula
 
-$$ \\text{IDR} = \\frac{\\text{CFR}}{0.6%}$$
+$$ \\text{IDR} = \\frac{\\text{CFR}}{0.6\\%}$$
 
 The estimated IDR for each country is shown in Figure 2.
 
@@ -174,15 +179,14 @@ $$r = \\frac{i_\\text{estimated, today}}{p} $$
   
   output$graph4header<-renderUI({withMathJax(HTML("
     
-    5. Arrivals are taken from Statistics New Zealand Infoshare. For each country, 
-    they include residents of that country travelling to New Zealand and New Zealand citizens returning to New Zealand from that country (Figure 5). 
-    As such it is an estimate only.
+    5. Arrivals data are estimated based on historic arrivals data on <a href='http://infoshare.stats.govt.nz/infoshare/'>Statistics New Zealand Infoshare</a>. For each country, 
+    they include residents of that country travelling to New Zealand and New Zealand citizens returning to New Zealand from that country (Figure 5).
 
 <br /><br />
 
     
     
-    Figure 5: New Zealand arrivals by month (2019 figures)"))})
+    Figure 5: New Zealand arrivals by month (2019 figures, estimated)"))})
   output$graph4<-renderLeaflet({
     
     show_leaflet(data_to_show = filtered_mapped_world_with_covid_data %>% filter(!is.na(Total2019MonthlyArrivals)),

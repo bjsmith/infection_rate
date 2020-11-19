@@ -295,7 +295,7 @@ covid_data <-
   filter(!is.na(ExpectedNumberOfCasesInCommunity) & !is.na(MonthlyArrivalsWeighted)) %>%
     mutate(InterventionApplied =
              if_else(
-               (PrevalenceRating %in% c("COVID-free","Low","Moderate","High") &
+               (PrevalenceRating %in% c("COVID-free","Level 1","Level 2","Level 3") &
                  Location %in% key_interest_countries)
                ,TRUE,FALSE)
     )

@@ -69,7 +69,7 @@ source("key_interest_countries.R")
 source("components/method_and_approach.R")
 debugSource('components/intervention_simulation.R')
 source('components/journey_page.R')
-source('components/proposal.R')
+#source('components/proposal.R')
 source('components/summary_map.R')
 source('components/summary_page.R')
 
@@ -687,25 +687,25 @@ server <- function(input, output, session) {
       session=session,
       inputId="intsim_countries_level0",
       selected = 
-        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "COVID-free") %>% .$Location
+        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Covid-free") %>% .$Location
     )
     updateSelectInput(
       session=session,
       inputId="intsim_countries_level1",
       selected = 
-        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Low") %>% .$Location
+        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Level 1") %>% .$Location
     )
     updateSelectInput(
       session=session,
       inputId="intsim_countries_level2",
       selected = 
-        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Moderate") %>% .$Location
+        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Level 2") %>% .$Location
     )
     updateSelectInput(
       session=session,
       inputId="intsim_countries_level3",
       selected = 
-        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "High") %>% .$Location
+        intervention_risk_keycountries %>% filter(PrevalenceRating %in% "Level 3") %>% .$Location
     )
     
   })
@@ -808,26 +808,16 @@ ui <- fluidPage(
     tags$link(rel = "stylesheet", type = "text/css", href = "infection_rate.css")
   ),
   div(class="header", includeHTML("header.html")),
+  #add_busy_bar(color = "#337ab7", height = "12px"),
+  add_busy_spinner(spin = "fading-circle"),
   htmlOutput("effective_date"),
     navbarPage(
     title=app_display_title,
     id="mainNavbarPage",
-    selected="Proposed System",
+    selected="Summary",
     get_summary_page_tabPanel(),
     get_map_page_tabPanel(),
     get_journey_page_under_construction_tabPanel(),
-    tabPanel(
-      "Location Profiles",
-      fluidPage(
-        titlePanel("Location Profiles"),
-        textOutput("Location Profile Options"),
-        selectInput("locprofile_Location",
-                    "Select a location to profile:",
-                    choices = key_interest_countries,
-                    multiple=FALSE),
-        downloadButton("downloadable_report", "Generate report")
-      )
-    ),
     get_intsim_tabPanel(default_simulation_data,countries_to_choose_from,default_adjust_for_imported_cases),
     #get_Proposal_tabPanel(default_simulation_data,countries_to_choose_from),
     
@@ -835,11 +825,11 @@ ui <- fluidPage(
       "Risk Matrix",
       fluidPage(
         fluidRow(
-          column(4,
-                 titlePanel("COVID-19: Location Risk Matrix")),
-          column(2,
-                 h4("View settings")),
           column(3,
+                 titlePanel("COVID-19: Location Risk Matrix")),
+          # column(2,
+          #        h4("View settings")),
+          column(2,
                  radioButtons("countrylist_type", 
                               "List Type:", 
                               choices = c(
@@ -858,9 +848,19 @@ ui <- fluidPage(
                               step=500,
                               value=2000)
           ),
-          column(1,
+          column(2,
                  # Button
-                 downloadButton("countrylist_downloadcsv", "Download")
+                 downloadButton("countrylist_downloadcsv", "Download CSV")
+          ),
+          column(3,
+                 wellPanel(
+                   selectInput("locprofile_Location",
+                               "Select a location to profile:",
+                               choices = key_interest_countries,
+                               multiple=FALSE),
+                   downloadButton("downloadable_report", "Generate report")
+                   
+                 )
           )
         ),
         hr(),
