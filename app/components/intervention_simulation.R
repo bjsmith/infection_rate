@@ -1,10 +1,10 @@
 source("simulation.R")
 
-get_intsim_tabPanel <- function(default_simulation_data,countries_to_choose_from){
+get_intsim_tabPanel <- function(default_simulation_data,countries_to_choose_from,default_adjust_for_imported_cases){
   return(tabPanel(
-    "Intervention simulation",
+    "Proposed System",
     fluidPage(
-      titlePanel("Intervention simulation"),
+      titlePanel("Proposed System"),
       sidebarLayout(
         sidebarPanel(
           actionButton("intsim_20countries",
@@ -13,6 +13,9 @@ get_intsim_tabPanel <- function(default_simulation_data,countries_to_choose_from
           checkboxInput(inputId = "intsim_universalPCR",
                         label="Include universal pre-departure PCR for Level 4 travellers in intervention",
                         value = TRUE),
+          checkboxInput(inputId = "intsim_MIQ_adjust",
+                        label="Exclude imported cases isolated in MIQ at border where possible (applies on all tabs)",
+                        value = default_adjust_for_imported_cases),
           get_simJourneyPanel_from_level_id(0,choices= countries_to_choose_from,selected = 
                                               default_simulation_data %>% filter(Location %in% key_interest_countries & PrevalenceRating %in% "COVID-free") %>% .$Location
           ),
@@ -36,6 +39,9 @@ get_intsim_tabPanel <- function(default_simulation_data,countries_to_choose_from
           uiOutput("intsim_description2"),
           plotOutput("total_risk_graph"),
           uiOutput("intsim_description3"),
+          checkboxInput(inputId = "intsim_assume_100pc_tvolume",
+                        label="Assume travel reverts back to 100% of 2019 levels for all locations",
+                        value = FALSE),
           plotOutput("cumulative_risk_plot"),
           uiOutput("intsim_description4"),
           actionButton("intsim_btn_go_to_risk_matrix",
@@ -56,9 +62,9 @@ get_intsim_tabPanel <- function(default_simulation_data,countries_to_choose_from
 
 render_intsim_page <- function(input, output,session,
                                sim_world_with_covid_data_statusquo,
-                               status_quo_risk,
-                               intervention_risk,
-                               countries_allocated_to_levels0to3,
+                               get_status_quo_risk,
+                               get_intervention_risk,
+                               get_countries_allocated_to_levels0to3,
                                countries_level0_df,
                                countries_level1_df,
                                countries_level2_df,
@@ -74,7 +80,7 @@ render_intsim_page <- function(input, output,session,
   
   output$intsim_AreaPlotSelected <- renderPlot({
     #intervention_risk <- intervention_risk
-    generate_areaPlot(intervention_risk,y_limit_per_thousand = 1)
+    generate_areaPlot(get_intervention_risk(),y_limit_per_thousand = 1)
   })
   
   
@@ -102,13 +108,14 @@ render_intsim_page <- function(input, output,session,
   })
   
   output$intsim_AreaPlotAll <- renderPlot({
-    generate_areaPlot(intervention_risk)
+    generate_areaPlot(get_intervention_risk())
   })
   
   
   output$intsim_description2 <-renderUI({
+    intervention_risk <- get_intervention_risk()
     withMathJax(HTML(paste0(
-      "Under the current system, we expect ",signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),4)," cases per month. 
+      "Under the current system, we expect ",signif(sum(get_status_quo_risk()$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),4)," cases per month. 
       Under the proposed system, we expect ",signif(sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),4)," cases per month. 
       The vast majority of these (",
       intervention_risk %>% filter(is.na(InterventionLevel)) %>% .$ExpectedNumberOfCasesInCommunity %>% sum(.,na.rm=TRUE) %>% signif(.,4),
@@ -124,11 +131,13 @@ render_intsim_page <- function(input, output,session,
   
   output$total_risk_graph <-(
     renderPlot({
-      get_total_risk_graph(status_quo_risk,intervention_risk,countries_allocated_to_levels0to3)
+      get_total_risk_graph(get_status_quo_risk(),get_intervention_risk(),get_countries_allocated_to_levels0to3())
     })
   )
   
   output$intsim_description3 <-renderUI({
+    status_quo_risk <- get_status_quo_risk()
+    intervention_risk <- get_intervention_risk()
     withMathJax(HTML(paste0(
       "In the current system (line in COLOR), we expect around ",scale_signif(sum(status_quo_risk$MonthlyArrivalsWeighted,na.rm = TRUE)),
       " travelers and about ",signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),2)," cases entering the community per month. 
@@ -144,6 +153,10 @@ render_intsim_page <- function(input, output,session,
   })
   
   output$cumulative_risk_plot <-renderPlot({
+    status_quo_risk <- get_status_quo_risk()
+    input$intsim_100PCTravel
+    intervention_risk <- get_intervention_risk()
+    
     get_cumulative_risk_plot(status_quo_risk,intervention_risk)
   })
   
@@ -165,10 +178,10 @@ render_intsim_page <- function(input, output,session,
   } 
   )
   
-  output$dt_countries_level0<-DT::renderDataTable(countries_level0_df)
-  output$dt_countries_level1<-DT::renderDataTable(countries_level1_df)
-  output$dt_countries_level2<-DT::renderDataTable(countries_level2_df)
-  output$dt_countries_level3<-DT::renderDataTable(countries_level3_df)
+  output$dt_countries_level0<-DT::renderDataTable(countries_level0_df())
+  output$dt_countries_level1<-DT::renderDataTable(countries_level1_df())
+  output$dt_countries_level2<-DT::renderDataTable(countries_level2_df())
+  output$dt_countries_level3<-DT::renderDataTable(countries_level3_df())
   
   
   output$intsim_notes<-
@@ -182,16 +195,16 @@ render_intsim_page <- function(input, output,session,
   
   
   output$intsim_level0_description <- renderUI({
-    paste0(get_countries_allocated_to_leveln(input,0,sim_world_with_covid_data_statusquo),collapse = ", ")
+    paste0(get_countries_allocated_to_leveln(input,0,sim_world_with_covid_data_statusquo()),collapse = ", ")
   })
   output$intsim_level1_description <- renderUI({
-    paste0(get_countries_allocated_to_leveln(input,1,sim_world_with_covid_data_statusquo),collapse = ", ")
+    paste0(get_countries_allocated_to_leveln(input,1,sim_world_with_covid_data_statusquo()),collapse = ", ")
   })
   output$intsim_level2_description <- renderUI({
-    paste0(get_countries_allocated_to_leveln(input,2,sim_world_with_covid_data_statusquo),collapse = ", ")
+    paste0(get_countries_allocated_to_leveln(input,2,sim_world_with_covid_data_statusquo()),collapse = ", ")
   })
   output$intsim_level3_description <- renderUI({
-    paste0(get_countries_allocated_to_leveln(input,3,sim_world_with_covid_data_statusquo),collapse = ", ")
+    paste0(get_countries_allocated_to_leveln(input,3,sim_world_with_covid_data_statusquo()),collapse = ", ")
   })
   
 
@@ -572,6 +585,11 @@ abbreviate_location_names <- function(relevant_data){
     mutate(Location=str_replace(Location,"Queensland","QLD")) %>% 
     mutate(Location=str_replace(Location,"Tasmania","TAS")) %>% 
     mutate(Location=str_replace(Location,"New South Wales","NSW")) %>% 
+    mutate(Location=str_replace(Location,"United Kingdom","UK")) %>% 
+    mutate(Location=str_replace(Location,"United States","USA")) %>% 
+    mutate(Location=str_replace(Location,"China (mainland)","China")) %>% 
+    mutate(Location=str_replace(Location,"Hong Kong, China","HK, China")) %>% 
+    mutate(Location=str_replace(Location,"South Korea","S. Korea")) %>% 
     mutate(Location=str_replace(Location,"South Australia","SA"))
   
   return(relevant_data)
@@ -579,6 +597,13 @@ abbreviate_location_names <- function(relevant_data){
 }
 
 get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
+  #TO DO
+  #1. Status quo: remains in red.
+  #2. Rename status quo and intervention to current and proposed
+  #3. Try to do the proposed line all in one colour or slightly different colours.
+  #4. Group by levels not by country.
+  #5. Try to list country names under level headings
+  #6. Label levels at the END of their appropriate line.
   print_elapsed_time("preparing cumulative risk plot data...")
   ##compile data
   data_tidy <- function(covid_data){
@@ -595,29 +620,57 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
   intervention_risk <-data_tidy(intervention_risk)
   
   
+  # cumulative_intervention_graph <- intervention_risk %>% 
+  #   arrange(InterventionApplied,InferredActiveCaseTravelerRate) %>%
+  #   #combine by level
+  #   select(Location,ExpectedNumberOfCasesInCommunity,MonthlyArrivalsWeighted,
+  #          PrevalenceRating,InferredActiveCaseTravelerRate,
+  #          InterventionApplied
+  #   ) %>%
+  #   mutate(CumulativeExpectedCases=cumsum(ExpectedNumberOfCasesInCommunity),
+  #          CumulativeExpectedTravellers=cumsum(MonthlyArrivalsWeighted),
+  #          ExpectedTravellersXMark=if_else(InterventionApplied,CumulativeExpectedTravellers,as.numeric(NA)),
+  #          PointLabel=if_else(InterventionApplied,Location,as.character(NA)),
+  #          Scenario="Intervention"
+  #   ) %>%
+  #   select(-ExpectedNumberOfCasesInCommunity,-MonthlyArrivalsWeighted)
+  # 
+  #intervention_risk <- abbreviate_location_names(intervention_risk)
   cumulative_intervention_graph <- intervention_risk %>% 
-    arrange(InterventionApplied,InferredActiveCaseTravelerRate) %>%
-    select(Location,ExpectedNumberOfCasesInCommunity,MonthlyArrivalsWeighted,
-           PrevalenceRating,InferredActiveCaseTravelerRate,
-           InterventionApplied
-    ) %>%
+    group_by(InterventionLabel) %>% 
+    abbreviate_location_names %>%
+    summarise(ExpectedNumberOfCasesInCommunity = sum(ExpectedNumberOfCasesInCommunity),
+              MonthlyArrivalsWeighted = sum(MonthlyArrivalsWeighted),
+              InterventionApplied = any(InterventionApplied),
+              GroupMaxPrevalence = max(InferredActiveCaseTravelerRate),
+              CountryList = paste0(Location,collapse="\n")
+    )%>%
+    arrange(InterventionApplied,GroupMaxPrevalence) %>% 
     mutate(CumulativeExpectedCases=cumsum(ExpectedNumberOfCasesInCommunity),
            CumulativeExpectedTravellers=cumsum(MonthlyArrivalsWeighted),
            ExpectedTravellersXMark=if_else(InterventionApplied,CumulativeExpectedTravellers,as.numeric(NA)),
-           PointLabel=if_else(InterventionApplied,Location,as.character(NA)),
+           PointLabel=if_else(InterventionApplied,
+                              InterventionLabel,
+                              #paste0(InterventionLabel, ":\n",CountryList),
+                              as.character(NA)),
            Scenario="Intervention"
     ) %>%
     select(-ExpectedNumberOfCasesInCommunity,-MonthlyArrivalsWeighted)
   
-  
   #we might want to add the status quo....
   status_quo_cumulative_graph <- status_quo_risk %>%
-    arrange(InferredActiveCaseTravelerRate) %>%
-    select(Location,ExpectedNumberOfCasesInCommunityUnderLockdown,StatusQuoMonthlyArrivals,
-           PrevalenceRating,InferredActiveCaseTravelerRate
+    group_by(InterventionLabel) %>% 
+    summarise(ExpectedNumberOfCasesInCommunityUnderLockdown = sum(ExpectedNumberOfCasesInCommunityUnderLockdown),
+              StatusQuoMonthlyArrivals = sum(StatusQuoMonthlyArrivals),
+              InterventionApplied = any(InterventionApplied),
+              GroupMaxPrevalence = max(InferredActiveCaseTravelerRate)
+    )%>%
+    select(InterventionLabel,ExpectedNumberOfCasesInCommunityUnderLockdown,StatusQuoMonthlyArrivals,
+           GroupMaxPrevalence
     ) %>%
     mutate(CumulativeExpectedCases=cumsum(ExpectedNumberOfCasesInCommunityUnderLockdown),
            CumulativeExpectedTravellers=cumsum(StatusQuoMonthlyArrivals),
+           CountryList="(All)",
            ExpectedTravellersXMark = as.numeric(NA),
            PointLabel=as.character(NA),
            Scenario="StatusQuo",
@@ -625,31 +678,68 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
     ) %>%
     select(-ExpectedNumberOfCasesInCommunityUnderLockdown,-StatusQuoMonthlyArrivals)
   
-  cumulative_graph <- rbind(cumulative_intervention_graph,status_quo_cumulative_graph)
-  
-  
+  point_of_origin_Intervention = data.frame(InterventionLabel="NA","InterventionApplied"=TRUE,GroupMaxPrevalence=0,CountryList="",CumulativeExpectedTravellers=0,CumulativeExpectedCases=0,ExpectedTravellersXMark=NA,PointLabel=NA,Scenario="Intervention")
+  point_of_origin_StatusQuo <- point_of_origin_Intervention %>% mutate(InterventionApplied=FALSE,Scenario="StatusQuo")
+  cumulative_graph <- rbind(point_of_origin_Intervention,cumulative_intervention_graph,point_of_origin_StatusQuo,status_quo_cumulative_graph)
+  cumulative_graph[cumulative_graph$InterventionLabel=="None" & (cumulative_graph$Scenario=="Intervention"),"CountryList"] <- "NZ Returning\n and Eligible Exceptions\n from Level 4 Countries"
+  cumulative_graph[cumulative_graph$InterventionLabel=="None" & (cumulative_graph$Scenario=="StatusQuo"),"CountryList"] <- ""
   ## Graph
-  status_quo_risk <-max((cumulative_graph %>% filter(Scenario=="StatusQuo"))$CumulativeExpectedCases)
-  ggplot(cumulative_graph,
+  current_system_risk <- max(cumulative_graph$CumulativeExpectedCases)
+  status_quo_risk_level <-max((cumulative_graph %>% filter(Scenario=="StatusQuo"))$CumulativeExpectedCases)
+  cumulative_graph <- cumulative_graph %>% group_by(Scenario) %>% mutate(LabelPosition = (rowid(Scenario)-1)/n()*max(CumulativeExpectedCases))
+  
+  #find the crossover point where intervention risk becomes larger than status quo risk.
+  last_intervention_under_limit_n = max(which(cumulative_intervention_graph$CumulativeExpectedCases<=status_quo_risk_level))
+  if(last_intervention_under_limit_n==nrow(cumulative_intervention_graph)){
+    number_of_travellers_at_intercept <- max(cumulative_intervention_graph$CumulativeExpectedTravellers)
+    show_intercept <- FALSE
+  }else{
+    last_intervention_under_limit_cumrisk <- cumulative_intervention_graph[last_intervention_under_limit_n,"CumulativeExpectedCases"]
+    last_intervention_under_limit_cumtravellers <- cumulative_intervention_graph[last_intervention_under_limit_n,"CumulativeExpectedTravellers"]
+    diff_cases_between_last_intervention_and_next <- cumulative_intervention_graph[last_intervention_under_limit_n+1 ,"CumulativeExpectedCases"]- last_intervention_under_limit_cumrisk
+    diff_travellers_between_last_intervention_and_next <- cumulative_intervention_graph[last_intervention_under_limit_n+1 ,"CumulativeExpectedTravellers"]- last_intervention_under_limit_cumtravellers
+    prop_along_next_level <- (status_quo_risk_level - last_intervention_under_limit_cumrisk)/diff_cases_between_last_intervention_and_next
+    number_of_travellers_at_intercept <- floor(diff_travellers_between_last_intervention_and_next * prop_along_next_level + last_intervention_under_limit_cumtravellers)
+    
+    show_intercept <- TRUE
+  }
+   
+  
+  
+  ggout<- ggplot(cumulative_graph,
          aes(x=CumulativeExpectedTravellers,y=CumulativeExpectedCases,label=PointLabel,color=interaction(InterventionApplied,Scenario),group=Scenario))+
     geom_vline(aes(xintercept=ExpectedTravellersXMark),linetype="dotted",color="#aaaaaa")+
     geom_line()+geom_point()+
-    scale_color_manual(values=c("#009900","#000055","red"))+
-    scale_x_continuous(name="Cumulative expected travellers per month", labels=scales::comma_format())+
-    geom_hline(yintercept = status_quo_risk,color="#cc0000",linetype="dotted")+
-    annotate(geom="text", x=max(cumulative_graph$CumulativeExpectedTravellers),y=status_quo_risk,vjust=1,hjust=1,color="#cc0000",
-             label="Status quo aggregate traveller risk\n",size=3)+
+    scale_color_manual(values=c("#2222AA","#000055","red"))+
+    scale_x_continuous(name="Risk from cumulative expected travellers per month\n under the current and proposed system", labels=scales::comma_format())+
+    geom_hline(yintercept = status_quo_risk_level,color="#cc0000",linetype="dotted")
+  if(show_intercept){
+    ggout <- ggout + 
+      geom_segment(mapping=NULL,
+                   x = number_of_travellers_at_intercept[[1]], y = 0, xend = number_of_travellers_at_intercept[[1]], yend = status_quo_risk_level[[1]],
+                   color="#cc0000",linetype="dotted")+
+      annotate(geom="text",fontface="italic",
+               x=number_of_travellers_at_intercept[[1]],y=0, vjust=1,hjust=1,color="#000055",size=4,#nudge_y=unit(0.25, "lines"),
+               label=paste0("Proposed system could allow up to ",scales::comma(floor(number_of_travellers_at_intercept[[1]]))," travellers at no more risk than the current system."))
+      
+  }
+  ggout <- ggout + 
+    annotate(geom="text", x=max(cumulative_graph$CumulativeExpectedTravellers),y=status_quo_risk_level,vjust=1,hjust=1,color="#cc0000",
+             label=paste0("Current system total traveller risk:\n",
+                          as.character(round(current_system_risk,2)), " expected cases per month"),size=3)+
     annotate(geom="text", 
              x=max(cumulative_graph %>% filter(Scenario=="StatusQuo") %>% .$CumulativeExpectedTravellers,na.rm=TRUE),
-             y=max(cumulative_graph %>% filter(Scenario=="StatusQuo") %>% .$CumulativeExpectedCases,na.rm=TRUE)/2,
+             y=max(cumulative_graph %>% filter(Scenario=="StatusQuo") %>% .$CumulativeExpectedCases,na.rm=TRUE)*0.8,
              vjust=0,hjust=0,color="red",
-             label="Status quo\n cumulative cases\n",size=3)+
+             label="Current system \n cumulative cases\n",size=3)+
     annotate(geom="text",
-             x=max(cumulative_graph %>% filter(Scenario!="StatusQuo" & !InterventionApplied) %>% .$CumulativeExpectedTravellers,na.rm=TRUE)*4/5,
+             x=max(cumulative_graph %>% filter(Scenario!="StatusQuo" & !InterventionApplied) %>% .$CumulativeExpectedTravellers,na.rm=TRUE)*2/5,
              y=max(cumulative_graph %>% filter(Scenario!="StatusQuo" & !InterventionApplied) %>% .$CumulativeExpectedCases,na.rm=TRUE)/2,
-             vjust=0,hjust=1,color="#009900",
-             label="Countries excluded\nfrom intervention:\ncumulative cases\n",size=3)+
-    geom_label_repel(size=3)+
+             vjust=0,hjust=0,color="#000055",
+             label="NZ Returning\n and Eligible Exceptions\n from Level 4 Countries",size=3)+
+
+    geom_text_repel(aes(y=LabelPosition), size=4,hjust=0)+
+    geom_text(aes(x=CumulativeExpectedTravellers,y=0,label=paste0(CountryList,"\n")),size=3,hjust=1,vjust=0,fontface="bold")+
     guides(color="none")+
     scale_y_continuous(
       #scale_y_log10(
@@ -662,6 +752,8 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
           axis.text = element_text(face="bold"),
           plot.margin = margin(12,12,12,12)
     )
+  #ggsave(ggout,filename = "../../../data/imgout.png")
+  return(ggout)
 }
 
 generate_areaPlot <- function(covid_data,show_horizontal_lines=TRUE,y_limit_per_thousand=NA){

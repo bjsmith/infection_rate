@@ -64,3 +64,14 @@ div.author_profile img{
 .col-sm-8 {
   float:none;
 }*/
+
+
+#methapp_mainPanel{
+  margin: 0 auto;
+    width: 50%;
+    float: none;
+}
+
+#methapp_mainPanel div.leaflet{
+  margin-bottom: 1em;
+}

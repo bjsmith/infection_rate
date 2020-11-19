@@ -61,9 +61,28 @@ source("key_interest_countries.R")
 #lose geometry info and convert to datatable. note: not the same as data.table!
 
 ###########main dashboard.
-source("map_page.R")
+source("components/method_and_approach.R")
 source('components/intervention_simulation.R')
 source('components/journey_page.R')
 source('components/proposal.R')
 source('components/summary_map.R')
 source('components/summary_page.R')
+
+
+default_geo_world_basic_data <- 
+  simulate_treatment_for_countries(
+  get_geomapped_covid_data(life_exp_thresh,default_run_date),
+  treatment_effectiveness = 0.5/100,
+  extra_spread = default_assumed_spread,
+  assumed_ifr = 0.6/100,
+  current_lockdown_passenger_volume = 9037)%>% 
+  filter(LifeExp>=life_exp_thresh)
+
+
+  show_leaflet(data_to_show = default_geo_world_basic_data%>% filter(!is.na(ActiveCases)),
+               primary_col = "ActiveCases",
+               rounding_func = function(x){scales::comma(round(x,1))},
+               legend_title =  "Observed active cases",
+               quant_grades = 4,
+               pal_reverse = FALSE
+  )

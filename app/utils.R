@@ -53,7 +53,7 @@ show_leaflet <- function(data_to_show,primary_col,rounding_func,legend_title,
   }
   
   
-  chloro_labels <- paste0(data_to_show$name_long, ": ", as.character(rounding_func(data_to_show[[primary_col]])))
+  chloro_labels <- paste0(data_to_show$name_long, ": ", as.character(sapply(data_to_show[[primary_col]],rounding_func)))
   
   m <- leaflet(data_to_show) %>% 
     addProviderTiles(providers$OpenStreetMap) %>%
@@ -254,7 +254,7 @@ get_data_closure <- function() {
 get_data <- get_data_closure()
 
 
-get_daily_data <- function(separate_aussie_states_and_hk){
+get_daily_data <- function(separate_aussie_states_and_hk, adjust_for_imported_cases){
   print_elapsed_time("retrieving data list...")
   data_list <- get_data()
   print_elapsed_time("...retrieved.")
@@ -409,9 +409,16 @@ get_daily_data <- function(separate_aussie_states_and_hk){
     #do not use this if it's returning a negative value.
     #when countries or states change their reporting, there is sometimes a discontinuity in CasesConfirmed that leads to a negative value.
     mutate(ActiveCases2_Raw = rollapply(NewCasesImportAdjusted,21,sum,align='right',fill=NA)) %>% 
-    mutate(ActiveCases2 = ifelse(ActiveCases2_Raw<0,NA,ActiveCases2_Raw)) %>% 
-    mutate(ActiveCases = pmin(ActiveCases1,ActiveCases2,na.rm=TRUE)) %>%
-    ungroup
+    mutate(ActiveCases2 = ifelse(ActiveCases2_Raw<0,NA,ActiveCases2_Raw))
+  
+  if(adjust_for_imported_cases){
+    jh_dxc <- jh_dxc %>% mutate(ActiveCases = pmin(ActiveCases1,ActiveCases2,na.rm=TRUE)) %>% ungroup()
+  }else{
+    jh_dxc <- jh_dxc %>% mutate(ActiveCases = ActiveCases1) %>% ungroup()
+  }
+
+  
+  
   #some locations don't reliably report recoveries.
   #to put a ceiling on cases, I follow NSW procedure and only include a case as active if it's been reported in four weeks from the beginning of my case period
   
@@ -426,7 +433,7 @@ get_daily_data <- function(separate_aussie_states_and_hk){
 #this function should exclude all analysis including calculation of rates of disease
 #focus should be on importing and cleaning data.
 get_geomapped_covid_data <- function(
-  life_exp_thresh=50,run_date=NA,separate_aussie_states_and_hk=FALSE,include_geo_data=TRUE){
+  life_exp_thresh=50,run_date=NA,separate_aussie_states_and_hk=FALSE,include_geo_data=TRUE, adjust_for_imported_cases=TRUE){
   
   if(separate_aussie_states_and_hk & include_geo_data){
     stop("Cannot include geo data and separate australian states; don't have polygons for Australian states.")
@@ -435,7 +442,7 @@ get_geomapped_covid_data <- function(
   print_elapsed_time("getting data...")
   
   
-  jh_dxc <- get_daily_data(separate_aussie_states_and_hk)
+  jh_dxc <- get_daily_data(separate_aussie_states_and_hk, adjust_for_imported_cases)
   print_elapsed_time("got daily data, getting full data...")
   
   

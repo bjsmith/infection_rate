@@ -71,7 +71,7 @@ source("key_interest_countries.R")
 #lose geometry info and convert to datatable. note: not the same as data.table!
 
 ###########main dashboard.
-source("map_page.R")
+source("components/method_and_approach.R")
 source('components/intervention_simulation.R')
 source('components/journey_page.R')
 source('components/proposal.R')
@@ -122,5 +122,29 @@ generate_areaPlot(geo_world_with_covid_data[geo_world_with_covid_data$InfActiveC
 
 ```
 
+### Testing graphs.
+
+```{r}
+
+world_w_covid_data_statusquo <- simulate_treatment_for_countries(
+      nogeo_world_basic_data(),
+      treatment_effectiveness = input$intsim_effectiveness_level4/100,
+      extra_spread = input$intsim_extraspread_level4/100,
+      travel_volume_proportion=0,
+      assumed_ifr = input$simsettings_ifr/100,
+      traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
+      current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
+    print_elapsed_time("returning sim_world_with_covid_data_statusquo")
+
+status_quo_risk <- 
+      sim_world_with_covid_data_statusquo() %>%
+      mutate(
+        InterventionLevel=NA,
+        InterventionLabel="None")
+
+
+
+get_cumulative_risk_plot(status_quo_risk,intervention_risk)
+```
 
 

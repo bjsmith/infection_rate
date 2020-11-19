@@ -8,7 +8,7 @@ last_manual_correction_date <- max(as.Date(data_list$manual_corrections$`Date re
 #default_run_date<-as.Date("2020-08-22")
 default_run_date<-last_manual_correction_date#Sys.Date()
 default_month_name <- format(default_run_date,"%B")
-
+default_adjust_for_imported_cases <- TRUE
 print_elapsed_time("START")
 
 source("simulation.R")
@@ -36,7 +36,8 @@ print_elapsed_time("loaded dependencies")
 
 
 print_elapsed_time("LOADING DATA 2...")
-default_nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,default_run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
+default_nogeo_world_basic_data <- get_geomapped_covid_data(life_exp_thresh,default_run_date,separate_aussie_states_and_hk = TRUE,
+                                                           include_geo_data = FALSE, default_adjust_for_imported_cases)
 default_simulation_data <- simulate_treatment_for_countries(
   default_nogeo_world_basic_data,
   treatment_effectiveness = default_assumed_effectiveness,
@@ -65,8 +66,8 @@ source("key_interest_countries.R")
 #lose geometry info and convert to datatable. note: not the same as data.table!
 
 ###########main dashboard.
-source("map_page.R")
-source('components/intervention_simulation.R')
+source("components/method_and_approach.R")
+debugSource('components/intervention_simulation.R')
 source('components/journey_page.R')
 source('components/proposal.R')
 source('components/summary_map.R')
@@ -78,14 +79,15 @@ server <- function(input, output, session) {
   #####################
   #universal
   get_run_date <- reactive({
+    print_elapsed_time("getting run date...")
     input$simsettings_run_date
   })
   get_run_month <- reactive({
+    print_elapsed_time("getting run month...")
     format(input$simsettings_run_date,"%B")
   })
   
   #we tie these two date inputs together to function the same.
-  # observeEvent(input$summary_map_run_date,{updateDateInput(session,inputId = "simsettings_run_date",value=input$summary_map_run_date)})
   observeEvent(input$simsettings_run_date,{
     print("date changed...")
     output$effective_date <- renderUI({
@@ -95,17 +97,9 @@ server <- function(input, output, session) {
       }else{
         return(HTML(paste0(friendly_date, "<br /> (MIQ cases may not be accurately excluded for this date at this time)")))
       }
-      
-    })
-    
-    
-     #the following code will add the date onto the navbar itself.
-     # runjs(paste0(
-     #   'document.getElementsByClassName("navbar-brand")[0].innerText="',
-     #   app_display_title, ' (',input$simsettings_run_date,')',
-     #   '"'))
 
-     } 
+    })
+     }
   )
   
 
@@ -114,31 +108,18 @@ server <- function(input, output, session) {
   
   nogeo_world_basic_data <- reactive({
     print_elapsed_time("LOADING DATA VIA REACTIVE...")
-    return(get_geomapped_covid_data(life_exp_thresh,input$simsettings_run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE))
+    print_elapsed_time( input$intsim_MIQ_adjust)
+    return(get_geomapped_covid_data(life_exp_thresh,input$simsettings_run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE,
+                                    adjust_for_imported_cases = input$intsim_MIQ_adjust))
   })
   
-  # 
-  # 
-  # simulation_data <- reactive({
-  #   print_elapsed_time("SIMULATING DATA AGAIN 2...")
-  #   simulate_treatment_for_countries(
-  #   nogeo_world_basic_data(),
-  #   treatment_effectiveness = default_assumed_effectiveness,
-  #   extra_spread = 0,
-  #   assumed_ifr = default_assumed_ifr_percent/100,
-  #   traveler_relative_prevalence=default_traveler_relative_prevalence,
-  #   current_lockdown_passenger_volume = default_current_lockdown_passenger_volume)})
-  
-  
-  
-
   
   generate_world_with_covid_data <- reactive({
     get_intervention_risk()
   })
   
   geo_world_basic_data <- reactive({
-    get_geomapped_covid_data(life_exp_thresh,default_run_date)
+    get_geomapped_covid_data(life_exp_thresh,default_run_date,adjust_for_imported_cases = input$intsim_MIQ_adjust)
   })
   generate_mapped_world_with_covid_data <- reactive({
     simulate_treatment_for_countries(
@@ -165,7 +146,8 @@ server <- function(input, output, session) {
       
     }else if (input$simsettings_mode=="Simple"){
       hideTab(inputId = "mainNavbarPage", target = "Validation")
-      hideTab(inputId = "mainNavbarPage", target = "Risk Matrix")
+      showTab(inputId = "mainNavbarPage", target = "Risk Matrix")
+      #hideTab(inputId = "mainNavbarPage", target = "Risk Matrix")
       #hideTab(inputId = "mainNavbarPage", target = "Method and assumptions")
       showTab(inputId = "mainNavbarPage", target = "Prevalence map")
       
@@ -484,7 +466,7 @@ server <- function(input, output, session) {
   
   output$country_table_notes <- renderUI({HTML(paste0(
     "Estimated arrivals per month are calculated assuming arrivals under existing quarantine regime, plus a ", 
-    "% of 2019 arrivals, corresponding to each intervention, as set on the \"Intervention simulation\" tab. In reality these will differ from treatment to treatment.<br/> <br/> ",
+    "% of 2019 arrivals, corresponding to each intervention, as set on the \"Proposed system\" tab. In reality these will differ from treatment to treatment.<br/> <br/> ",
     "<em>Cook Islands</em> and <em>Samoa</em> currently report COVID-free status, are rated zero risk. Due to their zero-risk status, it hasn't been necessary to include them in the dataset and they are not listed above.<br /><br />",
     "."
   ))})
@@ -492,13 +474,14 @@ server <- function(input, output, session) {
   #######################################
   #intervention simulation page
   
-  
   sim_world_with_covid_data_level0 <- reactive({
+    if(input$intsim_assume_100pc_tvolume){tvolume <- 1}else{tvolume <- input$intsim_percent_tvolume_level0/100}
+    
     world_w_covid_data <- simulate_treatment_for_countries(
       nogeo_world_basic_data(),
       treatment_effectiveness = input$intsim_effectiveness_level0/100,
       extra_spread = input$intsim_extraspread_level0/100,
-      travel_volume_proportion = input$intsim_percent_tvolume_level0/100,
+      travel_volume_proportion = tvolume,
       assumed_ifr = input$simsettings_ifr/100,
       traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
       current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
@@ -506,11 +489,13 @@ server <- function(input, output, session) {
   })
   
   sim_world_with_covid_data_level1 <- reactive({
+    if(input$intsim_assume_100pc_tvolume){tvolume <- 1}else{tvolume <- input$intsim_percent_tvolume_level1/100}
+    
     world_w_covid_data <- simulate_treatment_for_countries(
       nogeo_world_basic_data(),
       treatment_effectiveness = input$intsim_effectiveness_level1/100,
       extra_spread = input$intsim_extraspread_level1/100,
-      travel_volume_proportion = input$intsim_percent_tvolume_level1/100,
+      travel_volume_proportion = tvolume,
       assumed_ifr = input$simsettings_ifr/100,
       traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
       current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
@@ -518,11 +503,12 @@ server <- function(input, output, session) {
   })
   
   sim_world_with_covid_data_level2 <- reactive({
+    if(input$intsim_assume_100pc_tvolume){tvolume <- 1}else{tvolume <- input$intsim_percent_tvolume_level2/100}
     world_w_covid_data <- simulate_treatment_for_countries(
       nogeo_world_basic_data(),
       treatment_effectiveness = input$intsim_effectiveness_level2/100,
       extra_spread = input$intsim_extraspread_level2/100,
-      travel_volume_proportion = input$intsim_percent_tvolume_level2/100,
+      travel_volume_proportion = tvolume,
       assumed_ifr = input$simsettings_ifr/100,
       traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
       current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
@@ -530,11 +516,13 @@ server <- function(input, output, session) {
   })
   
   sim_world_with_covid_data_level3 <- reactive({
+    if(input$intsim_assume_100pc_tvolume){tvolume <- 1}else{tvolume <- input$intsim_percent_tvolume_level3/100}
+    
     world_w_covid_data <- simulate_treatment_for_countries(
       nogeo_world_basic_data(),
       treatment_effectiveness = input$intsim_effectiveness_level3/100,
       extra_spread = input$intsim_extraspread_level3/100,
-      travel_volume_proportion = input$intsim_percent_tvolume_level3/100,
+      travel_volume_proportion = tvolume,
       assumed_ifr = input$simsettings_ifr/100,
       traveler_relative_prevalence=input$simsettings_traveler_relative_prevalence,
       current_lockdown_passenger_volume = input$simsettings_current_lockdown_passenger_volume)
@@ -731,13 +719,13 @@ server <- function(input, output, session) {
   
   
   render_intsim_page(input, output,session,
-                     sim_world_with_covid_data_statusquo = sim_world_with_covid_data_statusquo(),
-                     status_quo_risk = get_status_quo_risk(),intervention_risk = get_intervention_risk(),
-                     countries_level0_df = countries_level0_df(),
-                     countries_level1_df = countries_level1_df(),
-                     countries_level2_df = countries_level2_df(),
-                     countries_level3_df = countries_level3_df(),
-                     countries_allocated_to_levels0to3 = get_countries_allocated_to_levels0to3()
+                     sim_world_with_covid_data_statusquo = sim_world_with_covid_data_statusquo,
+                     get_status_quo_risk = get_status_quo_risk,get_intervention_risk = get_intervention_risk,
+                     countries_level0_df = countries_level0_df,
+                     countries_level1_df = countries_level1_df,
+                     countries_level2_df = countries_level2_df,
+                     countries_level3_df = countries_level3_df,
+                     get_countries_allocated_to_levels0to3 = get_countries_allocated_to_levels0to3
                      
                      )#can't include everything :/ but we will try to put what we can in here.
   
@@ -746,7 +734,7 @@ server <- function(input, output, session) {
   ### Validation table.
   output$cases_at_border_graph <- renderCasesAtBorderGraph(get_status_quo_risk())
   get_daily_nz_data <- reactive({
-    daily_nz_data <- get_daily_data(TRUE) %>% filter(Location=="New Zealand")
+    daily_nz_data <- get_daily_data(TRUE,input$intsim_MIQ_adjust) %>% filter(Location=="New Zealand")
     return(daily_nz_data)
   })
   
@@ -824,7 +812,7 @@ ui <- fluidPage(
     navbarPage(
     title=app_display_title,
     id="mainNavbarPage",
-    selected="Summary",
+    selected="Proposed System",
     get_summary_page_tabPanel(),
     get_map_page_tabPanel(),
     get_journey_page_under_construction_tabPanel(),
@@ -840,7 +828,7 @@ ui <- fluidPage(
         downloadButton("downloadable_report", "Generate report")
       )
     ),
-    get_intsim_tabPanel(default_simulation_data,countries_to_choose_from),
+    get_intsim_tabPanel(default_simulation_data,countries_to_choose_from,default_adjust_for_imported_cases),
     #get_Proposal_tabPanel(default_simulation_data,countries_to_choose_from),
     
     tabPanel(
@@ -933,6 +921,7 @@ ui <- fluidPage(
           dateInput("simsettings_run_date",
                        "Run date:",
                        value = default_run_date,max = Sys.Date()),
+
           selectInput(inputId = "simsettings_mode",
                       label="Simulation mode",
                       choices = c("Simple","Advanced"),
