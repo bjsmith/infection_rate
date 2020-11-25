@@ -1,11 +1,25 @@
 <ul>
   <li>Location: Country, state, territory, or other subnational group. The list will show only those locations meeting the traveller threshold set at the top of the page. Data is sourced from Johns Hopkins University, state and national health authorities, and Statistics New Zealand; see Method & Approach for more details.</li>
   <li>Population density: Location population density as reported by Our World In Data</li>
-  <li>Active cases (imported and local): Total reported cases minus fatalities and recoveries, as recorded by Johns Hopkins University.</li>
+<!--  <li>Active cases (imported and local): Total reported cases minus fatalities and recoveries, as recorded by Johns Hopkins University.</li>
   <li>Active cases (excluding imported cases where possible): 
   As the previous column, with adjustments made for cases in managed isolation/quarantine. 
   These should not be included in counts of active cases when trying to understand community prevalence. 
-  Adjustments were made only when active local case counts could be accessed from governmental sources in the relevant location.</li>
+  Adjustments were made only when active local case counts could be accessed from governmental sources in the relevant location.</li>-->
+    <li>Active cases: Currently active Covid-19 cases.
+  We gather daily new cases from Johns Hopkins University. For selected low-prevalence locations, these are replaced by the currently active cases
+  as recorded on local ministries of health. This is because the Johns Hopkins data does not distinguish between local and imported cases.
+  Distinguishing between them is important for understanding community prevalence.
+  The "Proposed System" tab provides an option for disabling this adjustment and using Johns Hopkins data only.
+  <br />
+  Then:<br />
+  (1) We calculate total reported cases minus fatalities and recoveries.<br />
+  (2) We calculate total reported cases over the last three weeks.
+  <br />
+  We use the <em>lower</em> of these. Usually, (1) is lower, and it is more accurate. In some cases, (e.g., New South Wales), recoveries are not recorded properly.
+  To maintain an accurate count, we use the second definition where that is lower.
+  </li>
+
   <li>
     New deaths (last 7 days average): Daily average fatalities over the last 7 days. This is used to estimate the Infection Detection Rate (see Method and Approach).
   </li>

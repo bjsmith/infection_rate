@@ -361,18 +361,18 @@ get_daily_data <- function(separate_aussie_states_and_hk, adjust_for_imported_ca
   jh_dxc <- jh_dxc %>% 
     mutate(NewCasesImportAdjusted = 
              case_when(
-               is.na(`Active local cases on date override`) ~ NewCases,
+               is.na(`Active local cases on date override`) | (adjust_for_imported_cases==FALSE) ~ NewCases,
                Date < ManualCorrectDate ~ 0,
                Date == ManualCorrectDate ~ `Active local cases on date override`,
                Date > ManualCorrectDate ~ NewCases,
              ),
            NewDeathsImportAdjusted = 
              case_when(
-               is.na(`Recent local fatalities on date override`) ~ NewDeaths,
+               is.na(`Recent local fatalities on date override`) | (adjust_for_imported_cases==FALSE) ~ NewDeaths,
                Date < ManualCorrectDate ~ 0,
                Date == ManualCorrectDate ~ `Recent local fatalities on date override`,
                Date > ManualCorrectDate ~ NewDeaths)
-           )
+    )
   #This is used for calculating "Active Cases"
   #in practice this is mainly useful where acountry has had few or no local cases
   #and we can show that the country is therefore covid-free
@@ -401,7 +401,9 @@ get_daily_data <- function(separate_aussie_states_and_hk, adjust_for_imported_ca
   
   print_elapsed_time("calculating active cases...")
   ########### calculate active cases.
-  
+  #ActiveCases1 is the number of reported cases minus deaths minus recoveries
+  #ActiveCases2 is the number of cases reported in the last 3 weeks
+  #             neither take MIQ into account.
   
   jh_dxc <- jh_dxc %>%
     group_by(CountryDivisionCodeMixed) %>%
@@ -410,13 +412,14 @@ get_daily_data <- function(separate_aussie_states_and_hk, adjust_for_imported_ca
     #do not use this if it's returning a negative value.
     #when countries or states change their reporting, there is sometimes a discontinuity in CasesConfirmed that leads to a negative value.
     mutate(ActiveCases2_Raw = rollapply(NewCasesImportAdjusted,21,sum,align='right',fill=NA)) %>% 
-    mutate(ActiveCases2 = ifelse(ActiveCases2_Raw<0,NA,ActiveCases2_Raw))
+    mutate(ActiveCases2 = ifelse(ActiveCases2_Raw<0,NA,ActiveCases2_Raw))%>% 
+    mutate(ActiveCases = pmin(ActiveCases1,ActiveCases2,na.rm=TRUE)) %>% ungroup()
   
-  if(adjust_for_imported_cases){
-    jh_dxc <- jh_dxc %>% mutate(ActiveCases = pmin(ActiveCases1,ActiveCases2,na.rm=TRUE)) %>% ungroup()
-  }else{
-    jh_dxc <- jh_dxc %>% mutate(ActiveCases = ActiveCases1) %>% ungroup()
-  }
+  # if(adjust_for_imported_cases){
+  #   jh_dxc <- jh_dxc 
+  # }else{
+  #   jh_dxc <- jh_dxc %>% mutate(ActiveCases = ActiveCases1) %>% ungroup()
+  # }
 
   
   

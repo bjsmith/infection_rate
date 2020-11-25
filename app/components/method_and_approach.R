@@ -99,15 +99,13 @@ render_map_page <- function(output, filtered_mapped_world_with_covid_data,month_
   <br /><br />  
   
   We don't want to assume that each country is detecting all of their infections, 
-  so we need to work out their likely detection rate and adjust for that.
-  
-  We can compensate for this very approximate approach by erring on the conservative side.
+  so we need to work out their likely detection rate and adjust for that. We only ever adjust infections upwards; never downwards.
     
     Data is limited but around the world, experts estimated the true infection fatality rate (IFR) in Wuhan, China at 0.6% 
 <a href='https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.12.2000256'>(Russell et al., 2020)</a>.
 
 <br /><br />
-1. We can estimate the <em>case fatality rate</em> (CFR) the number of reported cases relative to the number of fatalities, by 
+1. We can estimate the <em>case fatality rate</em> (CFR), the number of reported cases relative to the number of fatalities, by 
 comparing the number of reported cases \\(f\\) three weeks' prior with the number of fatalities this week:
 <br /><br />
 $$ \\text{CFR} = \\frac{f_{\\text{observed, this week}}}{c_{\\text{observed, three weeks ago}}} $$
@@ -130,7 +128,7 @@ Because we are not confident about fatality estimates in countries with poor hea
                  primary_col = "InferredDetectionRate",
                  rounding_func = function(x){signif(x,2)},
                  quant_grades = 4,
-                 legend_title = "Infection detection rate <br /> (estimated number of true infections for every reported case)",
+                 legend_title = "Infection detection rate",
                  pal_reverse = FALSE)
     
   })
@@ -141,6 +139,8 @@ Because we are not confident about fatality estimates in countries with poor hea
 <br /><br />
 $$ i_{\\text{estimated, today}} = c_{ \\text{observed, today}} \\times \\text{IDR} $$
 
+If adjusting by the IDR would reduce the number of estimated infections below the confirmed active cases in any particular country, 
+then we skip this step for that country.
 <br /><br />
 
     
@@ -226,7 +226,7 @@ $$P(c>0) = 1-(\\frac{p-i_\\textrm{estimated, today}}{p})^a$$
                  primary_col = col_of_interest,
                  rounding_func = function(x){scales::percent(x,accuracy = 0.01)},
                  legend_title =  "Probability",
-                 quant_grades = get_max_quantiles(display_data,col_of_interest,max_quantiles=8),
+                 quant_grades = get_max_quantiles(display_data,col_of_interest,max_quantiles=6),
                  pal_reverse = FALSE
     )
   })
@@ -250,12 +250,22 @@ This is simply the estimated infection rate multiplied by the number of arrivals
     col_of_interest <-"ExpectedCasesAtBorder"
     
     
+    binpal <- colorBin("YlOrRd",
+                       display_data$ExpectedCasesAtBorder,
+                       domain=c(0,max(display_data$ExpectedCasesAtBorder,na.rm = TRUE)),
+                       na.color=NA,
+                       bins=c(0,0.01,0.1,1,
+                              10^c(1:ceiling(log10(
+                                max(display_data$ExpectedCasesAtBorder,na.rm = TRUE)))
+                              )), pretty = FALSE)
+    
+    
+    
     show_leaflet(data_to_show = display_data,
                  primary_col = col_of_interest,
                  rounding_func = function(x){scale_signif(x,3)},
                  legend_title =  "Expected monthly\n cases arriving",
-                 quant_grades = get_max_quantiles(display_data,col_of_interest,max_quantiles=8),
-                 pal_reverse = FALSE
+                 custom_palette = binpal
     )
   })
 
@@ -264,34 +274,39 @@ This is simply the estimated infection rate multiplied by the number of arrivals
     As can be seen, rates vary widely from very, very low rates in East Asia through to very high rates in the United States and Europe.
 <br /><br />
 
-8. If we can assume that a certain rate of quarantined arrivals will get out into the community before they are confirmed negative,
-we can calculate the probability that at least arrival, if quarantined, will get out into the community. 
+8. By assessing the reliability of the MIQ (Managed Isolation and Quarantine) system based on observed success so far, we can estimate the probability that a case, 
+once arriving in New Zealand, will exit to the community, or spread to a MIQ worker, or otherwise lead to a case in the community.
+
+We assessed this risk using based on 
+<a href='https://www.tepunahamatatini.ac.nz/2020/07/16/effect-of-new-zealand-border-controls-on-covid-19-reincursion-risk/'>prior research</a> 
+as well supplemental estimates of MIQ success rate.
 <br /><br />
-Roughly speaking, based on past experience, around 1 in 50 cases arriving in quarantine results in one case in the community. 
-More precise estimates are provided on the \"Proposed system\" tab.
+Roughly speaking, based on past experience, around 1 in 50 cases arriving in 14-day MIQ results in one case in the community.
+More precise estimates are display on the \"Proposed system\" tab.
 <br /><br />
 
-We can then calculate the expected number of arrivals from each location who goes through quarantine and testing, 
-the expected number of such people. Some months, this figure will be exceeded, and some months it will be lower than anticipated, 
-but overall this is expected to represent the exposure risk.
+We can then calculate the expected (average) number of arrivals from each location who exits MIQ still infectious.
 
 <br /><br />
     
     
     
-    Figure 8: Expected number of cases to arrive and be quarantined but still reach the community, based on arrival figures from this country in ",
+    Figure 8: Expected number of cases to arrive and reach the community after MIQ, based on arrival figures in ",
     month_name,
-    "2019.")))})
+    " 2019.")))})
   output$graph8<-renderLeaflet({
     
     display_data <- filtered_mapped_world_with_covid_data %>% filter(!is.na(ExpectedNumberOfCasesInCommunity))
     col_of_interest <- "ExpectedNumberOfCasesInCommunity"
     
-    binpal <- colorBin("YlOrRd", 
-                       display_data$ExpectedNumberOfCasesInCommunity, 
+    binpal <- colorBin("YlOrRd",
+                       display_data$ExpectedNumberOfCasesInCommunity,
                        domain=c(0,max(display_data$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)),
-                       bins=c(0.001,0.01,0.1,1,10,min(100,max(display_data$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)), pretty = FALSE)
-    )
+                       na.color=NA,
+                       bins=c(0,0.01,0.1,1,
+                              10^c(1:ceiling(log10(
+                                max(display_data$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)))
+                              )), pretty = FALSE)
     
     show_leaflet(data_to_show = display_data,
                  primary_col = col_of_interest,
@@ -305,9 +320,6 @@ but overall this is expected to represent the exposure risk.
   output$paragraph_09 <- renderUI({withMathJax(HTML(paste0(
     "
 
-An alternative method would make an adjustment based on the estimated current rate of growth. Although it's problematic, we assume that the rate of growth in confirmed cases
-reflects the rate of growth in actual infections. This method is not used here.
-
 <br /><br />
 
 In countries where health systems are underdeveloped, it is unlikely that COVID-19 deaths will be accurately recorded. 
@@ -317,13 +329,4 @@ the visualization only displays countries with a life expectancy of "
     ,as.character(life_exp_thresh),
     " or higher.")))})
   
-  output$ifr_explanation <- renderText({
-    paste0(
-      "Where there are recent COVID fatalities, this is compared to confirmed cases two weeks prior. ",
-      "If the number of cases look too low, then a 'hit rate' is calculated by comparing those cases two weeks prior to fatalities now.",
-      "Then, inferred active cases now is caclculted by dividing the confirmed active cases by the hit rate.",
-      "To do this we need to assume an infection fatality rate (IFR)."
-      
-    )
-  })
 }

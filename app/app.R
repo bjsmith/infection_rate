@@ -67,11 +67,13 @@ source("key_interest_countries.R")
 
 ###########main dashboard.
 source("components/method_and_approach.R")
-debugSource('components/intervention_simulation.R')
+source('components/intervention_simulation.R')
 source('components/journey_page.R')
 #source('components/proposal.R')
 source('components/summary_map.R')
 source('components/summary_page.R')
+source('components/summary_page.R')
+source('components/simsettings.R')
 
 print_elapsed_time("Creating server component...")
 # Define server logic required to draw a histogram
@@ -187,9 +189,14 @@ server <- function(input, output, session) {
         location_profile = input$locprofile_Location,
         location_info = location_info,
         nz_info = generate_world_with_covid_data()  %>% filter(Location=="New Zealand"),
-        country_classification = country_classification,
+        #country_classification = NA, #obsolete
         trust_rating = trust_classification,
-        assumed_ifr = input$simsettings_ifr/100
+        assumed_ifr = input$simsettings_ifr/100,
+        level_thresholds = list(
+          level_1_max = input$intsim_level1_max_prevalence,
+          level_2_max = input$intsim_level2_max_prevalence,
+          level_3_max = input$intsim_level3_max_prevalence
+        )
       )
     }
     
@@ -277,7 +284,7 @@ server <- function(input, output, session) {
         wwcd1 %>%
         select(#LocationCode, 
           Location, #Population, #total_cases,
-          ActiveCasesRaw,
+          #ActiveCasesRaw,
           ActiveCases,#InferredActiveCases,
           InfActiveCasesPerMillion,
           PrevalenceRating,
@@ -292,8 +299,8 @@ server <- function(input, output, session) {
       colnames(display_tibble) <- c(#"ISO",
         "Location",
         #"Population",
-        "Active cases (Imported and local)",
-        "Active cases (excluding imported cases where possible)",
+        #"Active cases (Method 1)",
+        "Active cases",
         "Prevalence (infections / mil)",
         "Prevalence Rating",
         "Outlook Rating",
@@ -313,7 +320,7 @@ server <- function(input, output, session) {
           owid_population_density, #add
           #owid_new_tests_per_million, #add
           #owid_tests_per_case, #add
-          ActiveCasesRaw,
+          #ActiveCasesRaw,
           ActiveCases,
           NewDeaths, #add
           InfActiveCasesPerMillion,
@@ -331,8 +338,8 @@ server <- function(input, output, session) {
         "Population density",
         #"New tests / mil (last 7 days average)",
         #"New tests / Case (last 7 days average)",
-        "Active cases (Imported and local)",
-        "Active cases (excluding imported cases where possible)",
+        #"Active cases (Method 1)",
+        "Active cases",
         "New deaths (last 7 days average)",
         "Prevalence (infections / mil)",
         "Prevalence Rating",
@@ -353,7 +360,7 @@ server <- function(input, output, session) {
           LaggedNewCases,
           NewDeaths,
           InferredDetectionRate,
-          ActiveCasesRaw,
+          #ActiveCasesRaw,
           ActiveCases,
           InferredActiveCases,
           InfActiveCasesPerMillion,
@@ -370,8 +377,8 @@ server <- function(input, output, session) {
         "Cases confirmed 14-21 days ago (daily average)",
         "Deaths last 7 days (daily average)",
         "Inferred detection rate",
-        "Active cases (Imported and local)",
-        "Active cases (excluding imported cases where possible)",
+        #"Active cases (Method 1)",
+        "Active cases",
         "Est. active infections",
         "Prevalence (infections / mil)",
         "Prevalence Rating",
@@ -793,7 +800,12 @@ server <- function(input, output, session) {
   ######################################################################
   #journey page
   
-  #render_journey_page(input,output)
+  render_journey_page(input,output)
+  
+  ######################################################################
+  #SUMMARY map page
+  render_simsettings(input = input,output = output,session=session)
+  
 }
 
 
@@ -816,7 +828,8 @@ ui <- fluidPage(
     selected="Summary",
     get_summary_page_tabPanel(),
     get_map_page_tabPanel(),
-    get_journey_page_under_construction_tabPanel(),
+    #get_journey_page_under_construction_tabPanel(),
+    get_journey_page_tabPanel(),
     get_intsim_tabPanel(default_simulation_data,countries_to_choose_from,default_adjust_for_imported_cases),
     #get_Proposal_tabPanel(default_simulation_data,countries_to_choose_from),
     
@@ -850,16 +863,6 @@ ui <- fluidPage(
           column(2,
                  # Button
                  downloadButton("countrylist_downloadcsv", "Download CSV")
-          ),
-          column(3,
-                 wellPanel(
-                   selectInput("locprofile_Location",
-                               "Select a location to profile:",
-                               choices = key_interest_countries,
-                               multiple=FALSE),
-                   downloadButton("downloadable_report", "Generate report")
-                   
-                 )
           )
         ),
         hr(),
@@ -889,45 +892,16 @@ ui <- fluidPage(
       )
     ),
     get_summary_map_tabPanel(default_run_date = default_run_date),
+    get_simsettings_tabPanel(list(
+      "default_assumed_ifr_percent"=default_assumed_ifr_percent,
+      "default_traveler_relative_prevalence"=default_traveler_relative_prevalence,
+      "default_current_lockdown_passenger_volume" = default_current_lockdown_passenger_volume,
+      "default_run_date" = default_run_date
+    )),
     tabPanel(
-      "Simulation settings",
-      fluidPage(
-        useShinyjs(),#have to put this somewhere; I've arbitrarily put it in the simSettings page.
-        titlePanel("Simulation Settings"),
-        mainPanel(
-          # numericInput("intsim_quarantine_failure_odds",
-          #              "If someone who arrives in NZ with COVID19 and is quarantined,\nand they exit quarantine, the odds they are still contagious are 1 in ",
-          #              min=5,
-          #              max=10000,step=10,
-          #              value = default_quarantine_failure_odds),
-          textOutput("ifr_explanation"),
-          numericInput("simsettings_ifr",
-                       "Assumed Infection Fatality Rate (%):",
-                       min=0,
-                       max=5,step=0.1,
-                       value = default_assumed_ifr_percent),
-          numericInput("simsettings_traveler_relative_prevalence",
-                       "Prevalence of COVID-19 in travellers relative to the population:",
-                       min=0,
-                       max=10,step=0.1,
-                       value = default_traveler_relative_prevalence),
-          
-          numericInput("simsettings_current_lockdown_passenger_volume",
-                       "Current monthly incoming passenger volume:",
-                       min=0,
-                       max=10^5,step=1000,
-                       value = default_current_lockdown_passenger_volume),
-          dateInput("simsettings_run_date",
-                       "Run date:",
-                       value = default_run_date,max = Sys.Date()),
-
-          selectInput(inputId = "simsettings_mode",
-                      label="Simulation mode",
-                      choices = c("Simple","Advanced"),
-                      selected = "Simple"
-          )
-        )
-      )
+      "Contact Us",
+      titlePanel("Contact Us"),
+      div(class="contactus", includeHTML("components/contactus.html"))
     )
     
   ),

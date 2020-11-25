@@ -8,8 +8,8 @@ params:
   trust_rating: NA
   location_info: NA
   nz_info: NA
-  country_classification: NA
   assumed_ifr: NA
+  level_thresholds: NA
 ---
 
 
@@ -72,20 +72,20 @@ scale_signif <- function(x,figures=2){
 
 `r locname` currently has `r scale_signif(params$location_info$ActiveCases)` official active confirmed cases. 
 
-Three weeks ago, `r locname` had `r scale_signif(params$location_info$LaggedNewCases*7,2)` new cases over a seven day period (some of these may be imported cases in managed isolation/quarantine). Over the last week, there have been `r signif(params$location_info$NewDeaths*7)` new deaths. This is a case fatality rate of `r signif(params$location_info$NewDeaths/params$location_info$LaggedNewCases*100,2)`%. Based on international research ([Russell et al., 2020](https://www.eurosurveillance.org/docserver/fulltext/eurosurveillance/25/12/eurosurv-25-12-3.pdf)) we assume the actual infection-fatality rate, including undetected infections, is actually `r params$assumed_ifr*100`%, so we estimate that `r locname` is officially detecting `r signif(100/params$location_info$InferredDetectionRate,2)`% of their cases. That means the true number of active infections is likely around `r signif(params$location_info$InferredDetectionRate,2)` times the number of confirmed cases. Considering this detection rate, and the current number of active confirmed cases (around `r scale_signif(params$location_info$ActiveCases,2)`), we estimate the true number of infections currently in `r locname` is closer to `r scale_signif(params$location_info$InferredActiveCases)`.
+Three weeks ago, `r locname` had `r scale_signif(params$location_info$LaggedNewCases*7,2)` new cases over a seven day period (some of these may be imported cases in managed isolation/quarantine). Over the last week, there have been `r signif(params$location_info$NewDeaths*7)` new deaths. This is a case fatality rate of `r signif(params$location_info$NewDeaths/params$location_info$LaggedNewCases*100,2)`%. Based on international research ([Russell et al., 2020](https://www.eurosurveillance.org/docserver/fulltext/eurosurveillance/25/12/eurosurv-25-12-3.pdf)) we assume the actual infection-fatality rate, including undetected infections, is actually `r params$assumed_ifr*100`%, so we estimate that `r locname` is officially detecting `r signif(100/params$location_info$InferredDetectionRate,2)`% of their cases. That means the true number of active infections could be up to `r signif(params$location_info$InferredDetectionRate,2)` times the number of confirmed cases. Considering this detection rate, and the current number of active confirmed cases (around `r scale_signif(params$location_info$ActiveCases,2)`), we estimate the true number of infections currently in `r locname` is closer to `r scale_signif(params$location_info$InferredActiveCases)`.
 
 Prevalence of COVID-19 in `r locname` is therefore estimated at `r scale_signif(params$location_info$InfActiveCasesPerMillion,3)` active infections per million, in a population of `r scale_signif(params$location_info$Population/10^6,2)` million. Compare this to the current New Zealand case rate of `r signif(params$nz_info$InfActiveCasesPerMillion,2) ` active infections per million. In low prevalence locations, these two may not be strictly comparable because MIQ cases have not been removed from the New Zealand data.
 <!--This is the "inferred" infection rate. It accounts for the likely number of undetected cases by starting with the detected case rate, and adjusting upward depending on the number of fatalities in the relevant country.-->
 
 ### Quality of health data reporting
 
-Health data reporting in `r locname` has a trust rating of **`r params$trust_rating`**. This is because its health system is considered `r health_system_description ` due to `r locname`'s `r lifeExpDescription` life expectancy of `r round(lifeExp,0)`.
+Health data reporting in `r locname` has a trust rating of **`r params$trust_rating`**. This is because its health system is considered `r health_system_description ` due to `r locname`'s `r lifeExpDescription` life expectancy of `r round(lifeExp,0)`. A life expectancy of less than 70 indicates a lower quality of healthcare, and could indicate problems with health data recording, including reporting of fatality rates. For this reason, we do not advise relying on Covid-19 reporting in countries with a life expectancy under 70 without careful verification.
 
 Our estimates are robust to under-reported cases of COVID-19; however, our estimate does assume that the number of _deaths_ reported due to COVID-19 in `r locname` is not under-reported (whereas an over-estimate of deaths could lead to an over-estimate of the risk). For this reason it is important that we can trust health data reporting in `r locname`.
 
 ## Travel to New Zealand
 
-This month last year, New Zealand received `r scale_signif(params$location_info$LocationResidentMonthlyArrivalsWeighted) ` arrivals who were _resident_ in `r locname`. This includes citizens of that country residing there, and citizens of New Zealand and other countries who reside in `r locname`. Over the same time there were also `r scale_signif(params$location_info$NZResMonthlyArrivalsScaled1) ` New Zealand residents returning to New Zealand whose main destination while away was `r locname`. By adding these figures together we can roughly estimate the number of people who arrive in New Zealand per month after being in `r locname` in the previous 14 days at `r scale_signif(params$location_info$MonthlyArrivalsWeighted) `.
+This month last year, New Zealand received `r scale_signif(params$location_info$LocationResidentMonthlyArrivalsScaled1) ` arrivals who were _resident_ in `r locname`. This includes citizens of that country residing there, and citizens of New Zealand and other countries who reside in `r locname`. Over the same time there were also `r scale_signif(params$location_info$NZResMonthlyArrivalsScaled1) ` New Zealand residents returning to New Zealand whose main destination while away was `r locname`. By adding these figures together we can roughly estimate the number of people who arrive in New Zealand per month after being in `r locname` in the previous 14 days at `r scale_signif(params$location_info$MonthlyArrivalsWeighted) `.
 
 New Zealand citizens and residents are always permitted to return home to New Zealand from `r locname`. Very few return while there is a mandatory quarantine in place, but we expect that greater numbers will return from there if quarantine restrictions were to be loosened.
 
@@ -136,9 +136,16 @@ These figures do NOT take into account the reduction in travel likely to result 
 
 ## Overall rating: `r params$location_info$PrevalenceRating`
 
-Our risk categories are "COVID-free", "Level 1", "Level 2", "Level 3", and "Level 4". For Level 4 countries, we propose continuing existing restrictions and adding a pre-departure PCR test. For all others, from COVID-free to Level 3 locations, some level of non-residents could be allowed in without excessive risk.
 
-The overall rating for `r locname` is `r params$location_info$PrevalenceRating`.
+<!--
+
+level_1_max <- input$intsim_level1_max_prevalence
+    level_2_max <- input$intsim_level2_max_prevalence
+    level_3_max <- input$intsim_level3_max_prevalence
+-->
+Our risk categories are "COVID-free" (0 active infections), "Level 1" (0 to `r params$level_thresholds$level_1_max` per 100k), "Level 2" (`r params$level_thresholds$level_1_max` to `r params$level_thresholds$level_2_max` per 100k), "Level 3" (`r params$level_thresholds$level_2_max` to `r params$level_thresholds$level_3_max` per 100k), and "Level 4" (more than `r params$level_thresholds$level_3_max` per 100k). For Level 4 countries, we propose continuing existing restrictions and adding a pre-departure PCR test. For all others, from COVID-free to Level 3 locations, some level of non-residents could be allowed in without excessive risk.
+
+Due to the current active case prevalence in `r locname` of `r scale_signif(params$location_info$InfActiveCasesPerMillion/10,3)` per 100k, the overall rating for `r locname` is `r params$location_info$PrevalenceRating`.
 
 
 

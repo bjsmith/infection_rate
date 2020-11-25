@@ -36,8 +36,14 @@ get_intsim_tabPanel <- function(default_simulation_data,countries_to_choose_from
           #titlePanel("Total risk per month"),
           uiOutput("intsim_totalrisk"),
           plotOutput("intsim_AreaPlotAll"),
+          checkboxInput(inputId = "intsim_AreaPlotAll_includeAll",
+                        label="Include countries where fatality data reliability is questioned.",
+                        value = FALSE),
           uiOutput("intsim_AreaPlotDescription"),
           plotOutput("intsim_AreaPlotSelected"),
+          checkboxInput(inputId = "intsim_AreaPlotSelected_includeAll",
+                        label="Include countries where fatality data reliability is questioned.",
+                        value = FALSE),
           uiOutput("intsim_description2"),
           plotOutput("total_risk_graph"),
           uiOutput("intsim_description3"),
@@ -86,7 +92,9 @@ render_intsim_page <- function(input, output,session,
   
   output$intsim_AreaPlotAll <- renderPlot({
     generate_areaPlot(get_intervention_risk(),
-                      title="COVID cases expected from each location by volume of travel from each location")
+                      title="COVID cases expected from each location by volume of travel from each location",
+                      include_unreliable_locations = input$intsim_AreaPlotAll_includeAll
+                      )
   })
   
   output$intsim_AreaPlotDescription <-renderUI({
@@ -117,7 +125,10 @@ render_intsim_page <- function(input, output,session,
   output$intsim_AreaPlotSelected <- renderPlot({
     #intervention_risk <- intervention_risk
     generate_areaPlot(get_intervention_risk(),y_limit_per_thousand = 1,
-                      title="COVID cases expected from each location by volume of travel from each location: excluding very high and extreme prevalence locations")
+                      title="COVID cases expected from each location by volume of travel from each location: excluding very high and extreme prevalence locations",
+                      include_unreliable_locations = input$intsim_AreaPlotSelected_includeAll
+                      
+                      )
   })
   
   output$intsim_description2 <-renderUI({
@@ -786,10 +797,14 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
   return(ggout)
 }
 
-generate_areaPlot <- function(covid_data,show_horizontal_lines=TRUE,y_limit_per_thousand=NA,title=""){
+generate_areaPlot <- function(covid_data,show_horizontal_lines=TRUE,y_limit_per_thousand=NA,title="",include_unreliable_locations=TRUE){
   print_elapsed_time("preparing areaPlot data...")
+  caption_text = ""
   #get initial dataset
   current_risk_per_thousand<-sum(covid_data$ExpectedCasesAtBorderUnderLockdown,na.rm=TRUE)/sum(covid_data$MonthlyArrivalsLockdownScaled2,na.rm=TRUE)*1000
+  
+  
+
   
   #we draw an area plot that needs coordinates
   #ordered by InferredActiveCaseTravelerRate from lowest to highest
@@ -798,15 +813,26 @@ generate_areaPlot <- function(covid_data,show_horizontal_lines=TRUE,y_limit_per_
   #and we need a cumulative graph
   all_relevant_data <- covid_data %>% 
     filter(Location %in% key_interest_countries) %>%
-    arrange(InferredActiveCaseTravelerRate) %>%
-    mutate(Arrivals=Total2019MonthlyArrivals)%>%
+    arrange(InferredActiveCaseTravelerRate) %>% 
+    mutate(Arrivals=Total2019MonthlyArrivals)
+  
+  if(include_unreliable_locations==FALSE){
+    unreliable_countries <- all_relevant_data %>% filter((DataReliabilityRating!="trustworthy") & !is.na(Location)) 
+    all_relevant_data <- all_relevant_data %>% filter(DataReliabilityRating=="trustworthy")
+    if(nrow(unreliable_countries)>0){
+      caption_text <- paste0("The following locations have been excluded due to low data reliablity: ",paste(unreliable_countries$Location,collapse=", "), "\n")
+    }
+    
+  }
+  all_relevant_data <- all_relevant_data %>%
     select(Location,Arrivals,InferredActiveCaseTravelerRate,PrevalenceRating,InterventionLevel) %>%
     mutate(CumulativeTravelExclusive=cumsum(Arrivals)-Arrivals,
            CumulativeTravelInclusive=cumsum(Arrivals)
     )
   
   
-  caption_text = ""
+  
+  
   if(!is.na(y_limit_per_thousand)){
     relevant_data <- all_relevant_data %>% 
       filter(InferredActiveCaseTravelerRate<(y_limit_per_thousand/1000))
@@ -815,7 +841,7 @@ generate_areaPlot <- function(covid_data,show_horizontal_lines=TRUE,y_limit_per_
     
     if(nrow(excluded_locations)>0){
       excluded_list <- paste0(excluded_locations$Location,collapse = ", ")
-      caption_text <- paste0("The following locations have been excluded because prevalence is too high to display: ", excluded_list)
+      caption_text <- paste0(caption_text, "The following locations have been excluded because prevalence is too high to display: ", excluded_list)
     }
   }else{
     relevant_data <- all_relevant_data

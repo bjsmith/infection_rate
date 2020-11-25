@@ -68,10 +68,26 @@ div.author_profile img{
 
 #methapp_mainPanel{
   margin: 0 auto;
-    width: 50%;
+    width: 70%;
     float: none;
 }
 
 #methapp_mainPanel div.leaflet{
   margin-bottom: 1em;
+}
+
+div.col-sm-8 div.shiny-input-container{
+  width:auto;
+}
+
+div.contactus table{
+  font-size: inherit;
+}
+
+div.contactus td{
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  padding-left:1em;
+  padding-right:1em;
+  
 }

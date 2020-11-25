@@ -23,9 +23,20 @@ get_summary_map_tabPanel <- function(default_run_date){
                    "Countries to display",choices = c("Key Destinations and Travel Partners","All"),
                    selected = "Key Destinations and Travel Partners"
                    )
+          ),
+          column(3,
+                 wellPanel(
+                   selectInput("locprofile_Location",
+                               "Select a location to profile:",
+                               choices = key_interest_countries,
+                               multiple=FALSE),
+                   downloadButton("downloadable_report", "Generate report")
+                   
+                 )
           )
         ),
         hr(),
+        uiOutput("summary_map_header"),
         fluidRow(
           column(12,
                  leafletOutput("summary_map_prevalence_map"),
@@ -45,6 +56,10 @@ render_summary_map <- function(input,output,session,filtered_mapped_world_with_c
   
   #write code to synchronize the date picker on this page with the date picker on the settings page.
     
+  output$summary_map_header <- renderUI({HTML(
+    "<h4>Prevalence per 100,000 incoming travellers</h4>"
+  )
+  })
   output$summary_map_prevalence_map<-renderLeaflet({
     #filter based on the run filter
     data_to_show <- filtered_mapped_world_with_covid_data
@@ -54,13 +69,23 @@ render_summary_map <- function(input,output,session,filtered_mapped_world_with_c
       data_to_show <- data_to_show %>% filter(DataReliabilityRating=="trustworthy" & Total2019MonthlyArrivals>=2000)
     }
     
+    data_to_show$TravellerRatePer100k <- data_to_show$InfActiveCasesPerMillion/10
+    
+    binpal <- colorBin("YlOrRd",
+                       data_to_show$TravellerRatePer100k,
+                       domain=c(0,max(data_to_show$TravellerRatePer100k,na.rm = TRUE)),
+                       na.color=NA,
+                       bins=c(0,0.001,0.01,0.1,1,
+                              10^c(1:ceiling(log10(
+                                max(data_to_show$TravellerRatePer100k,na.rm = TRUE)))
+                                )), pretty = FALSE)
+    
     
     show_leaflet(data_to_show = data_to_show,
-                 primary_col = "InferredActiveCaseTravelerRate",
-                 rounding_func = function(x){scales::comma(signif(x,2))},
-                 legend_title =  "Prevalence per million people",
-                 quant_grades = 4,
-                 pal_reverse = FALSE
+                 primary_col = "TravellerRatePer100k",
+                 rounding_func = function(x){scale_signif(x,2)},
+                 legend_title =  "Prevalence per 100,000",
+                 custom_palette = binpal
     )
   })
   
