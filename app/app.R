@@ -109,6 +109,17 @@ server <- function(input, output, session) {
   #   #html("navbar-brand",as.character(input$simsettings_run_date))
   } 
   )
+  observeEvent(input$simsettings_clear_cache,{
+    if (input$simsettings_cache_reset_password=="sea10remotefloor7121"){
+      for (cfn in list.files(path="data/",pattern="_cache.csv$")){
+        print(cfn)
+        file.remove(paste0("data/",cfn))
+        
+      }
+      get_data(force_reset=TRUE)
+      session$reload()
+    }
+  })
   
 
   
@@ -929,8 +940,13 @@ ui <- navbarPage(
         selectInput(inputId = "simsettings_mode",
                     label="Simulation mode",
                     choices = c("Simple","Advanced"),
-                    selected = "Simple"
-        )
+                    selected = "Simple"),
+        passwordInput(inputId="simsettings_cache_reset_password",
+                  label="To clear cache, enter the correct password first:"),
+        actionButton(inputId="simsettings_clear_cache",
+                     "Clear Cache"
+                     )
+        
       )
     )
   )
