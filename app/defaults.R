@@ -4,9 +4,9 @@ default_quarantine_failure_odds<-21 # 3 in 65
 default_assumed_effectiveness <- 0.7
 default_assumed_spread <- 0.02
 default_general_travel_rate <- 0.2
-default_current_lockdown_passenger_volume <- 9037
+default_current_lockdown_passenger_volume <- 11271 # august
 #https://www.customs.govt.nz/covid-19/more-information/passenger-statistics/
-default_traveler_relative_prevalence <- 1.2
+default_traveler_relative_prevalence <- 0.69
 #derived to bring our predicted "status quo" predicted cases/month numbers to match what we are actually observing at the border.
 
 
