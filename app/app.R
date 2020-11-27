@@ -11,6 +11,9 @@ default_month_name <- format(default_run_date,"%B")
 default_adjust_for_imported_cases <- TRUE
 print_elapsed_time("START")
 
+
+admin_password <- read_file("git_exclude/pw.txt")
+
 source("simulation.R")
 source("country_classification_rules.R")
 source("simJourneyPanel.R")
@@ -105,7 +108,7 @@ server <- function(input, output, session) {
   )
   
   observeEvent(input$simsettings_clear_cache,{
-    if (input$simsettings_cache_reset_password=="sea10remotefloor7121"){
+    if (input$simsettings_cache_reset_password==admin_password){
       for (cfn in list.files(path="data/",pattern="_cache.csv$")){
         print(cfn)
         file.remove(paste0("data/",cfn))
