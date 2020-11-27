@@ -104,6 +104,18 @@ server <- function(input, output, session) {
      }
   )
   
+  observeEvent(input$simsettings_clear_cache,{
+    if (input$simsettings_cache_reset_password=="sea10remotefloor7121"){
+      for (cfn in list.files(path="data/",pattern="_cache.csv$")){
+        print(cfn)
+        file.remove(paste0("data/",cfn))
+        
+      }
+      get_data(force_reset=TRUE)
+      session$reload()
+    }
+  })
+  
 
   
 

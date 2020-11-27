@@ -159,8 +159,8 @@ get_data_closure <- function() {
   #initialize
   data_list <- NULL
   
-  f <- function() {
-    if(is.null(data_list)){
+  f <- function(force_reset=FALSE) {
+    if(is.null(data_list) || (force_reset==TRUE)){
       
       # a function we use repeatedly for different datasets to either retrieve from a local cache (fast, but potentially out of date) or download from an online source
       get_cache_or_live_data<-function(live_data_function,cache_filepath,cache_expiry_in_minutes=60){

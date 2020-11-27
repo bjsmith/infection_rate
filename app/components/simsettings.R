@@ -64,6 +64,17 @@ get_simsettings_tabPanel <- function(defaults){
                      )
               ),
               column(8,uiOutput("simsettings_mode_description"))
+            ),hr(),
+            fixedRow(
+              column(4,
+                     passwordInput(inputId="simsettings_cache_reset_password",
+                                   label="To clear cache, enter the correct password first:"),
+                     actionButton(inputId="simsettings_clear_cache",
+                                  "Clear Cache"
+                     )
+                     ),
+              column(8,
+                     uiOutput("simsettings_reset_description"))
             )
             )
           )
@@ -130,6 +141,12 @@ render_simsettings <- function(input,output,session){
     Specifically, countries can be individually selected for different passenger journeys.
     It also includes a 'validation' tab for comparing the model's prediction of cases arriving in NZ 
     against the actual number of cases in New Zealand.
+    "
+  )})
+  
+  output$simsettings_reset_description <- renderUI({HTML(
+    "
+    To reset the app cache, enter the admin password and click the reset button. This will also reset your session.
     "
   )})
 

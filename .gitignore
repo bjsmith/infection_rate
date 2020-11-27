@@ -28,3 +28,6 @@ READI-SCRUB/
 READI-SCRUB/*
 
 .httr-oauth*
+
+
+app/git_exclude
