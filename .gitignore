@@ -4,13 +4,16 @@
 .Rproj.user
 .Rproj.user/*
 
-data/*
+app/git_exclude/
+
 app/data/owid_cache.csv
 data/timer.log
 /app/data/timer.log
 */timer.log
 owid_cache.csv
+jh_cache.csv
 .DS_Store
+timer.log
 rsconnect/
 
 */.DS_Store
