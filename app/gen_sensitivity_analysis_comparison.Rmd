@@ -1,0 +1,352 @@
+---
+title: "Sensitivity analysis comparison"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+# require("knitr")
+# knitr::opts_chunk$set(echo = TRUE)
+# knitr::opts_knit$set(root.dir = "app/")
+# getwd()
+# setwd("app/")
+```
+
+This notebook is for manually generating a sensitivity analysis.
+
+```{r}
+
+library(DT)
+source("../app/utils.R")
+source("../app/simulation.R")
+source("../app/country_classification_rules.R")
+library(ggrepel)
+
+run_date<-as.Date("2020-08-22")#Sys.Date()
+source("../app/defaults.R")
+
+month_name <- format(run_date,"%B")
+
+
+
+setwd("../app")
+
+```
+
+
+```{r}
+nogeo_world_basic_data <- 
+  get_geomapped_covid_data(life_exp_thresh,run_date,separate_aussie_states_and_hk = TRUE,include_geo_data = FALSE)
+```
+
+
+```{r}
+
+geo_world_with_covid_data <- simulate_treatment_for_countries(nogeo_world_basic_data,
+                                                    treatment_effectiveness = default_assumed_effectiveness,
+                                                    extra_spread = 0,
+                                                     assumed_ifr = default_assumed_ifr_percent/100,
+                                                     
+                                                     traveler_relative_prevalence=default_traveler_relative_prevalence,
+                                                     current_lockdown_passenger_volume = default_current_lockdown_passenger_volume
+                                                     )
+```
+
+
+
+```{r}
+simPanelDf <- read_csv("data/sim_panels.csv")
+```
+
+
+```{r}
+
+input_list <- list(
+  "simsettings_ifr" = default_assumed_ifr_percent,
+  "simsettings_traveler_relative_prevalence" = default_traveler_relative_prevalence,
+  "simsettings_current_lockdown_passenger_volume" = default_current_lockdown_passenger_volume
+  
+)
+
+```
+ 
+
+```{r}
+
+```
+
+
+
+
+
+ 
+```{r}
+treatment_result <- apply(simPanelDf,1,function(sim_row,input_list,nogeo_world_basic_data_ds){
+  
+  level <- as.character(sim_row[["level"]])
+
+  treatment <- simulate_treatment_for_countries(
+      nogeo_world_basic_data_ds,
+      treatment_effectiveness = as.numeric(sim_row[["default_effectiveness"]]),
+      extra_spread = as.numeric(sim_row[["default_extra_spread"]]),
+      travel_volume_proportion =  as.numeric(sim_row[["default_volume"]])/100,
+      assumed_ifr = input_list$simsettings_ifr/100,
+      traveler_relative_prevalence=input_list$simsettings_traveler_relative_prevalence,
+      current_lockdown_passenger_volume = input_list$simsettings_current_lockdown_passenger_volume)
+  
+},input_list,nogeo_world_basic_data)
+
+#input_list_flat <- unlist(input_list,recursive = FALSE)
+
+```
+
+
+now try to get the levels corresponding to each of these.
+```{r}
+source("components/intervention_simulation.R")
+```
+
+```{r}
+level_input  <- apply(simPanelDf,1,function(sim_row){
+  list_portion <- list("a"= as.numeric(sim_row[["default_max_prevalence_p_m"]])/10)
+  names(list_portion) <- c(paste0("intsim_level",sim_row[["level"]],"_max_prevalence"))
+  return(list_portion) 
+}) %>% unlist(recursive = FALSE)
+
+level_input$simsettings_mode <- "Simple"
+```
+
+
+
+
+```{r}
+
+source("key_interest_countries.R")
+source("simJourneyPanel.R")
+
+world_data_by_level <- list()
+for (level in 0:3){
+  id<-level+1
+  
+  relevant_countries<-get_countries_allocated_to_leveln(level_input,level,treatment_result[[id]])
+  
+  world_data_by_level[[id]] <- treatment_result[[id]] %>% 
+    filter(Location %in% relevant_countries) %>%
+    mutate(InterventionLevel=0) %>% 
+    rowwise() %>% mutate(InterventionLabel=get_intervention_name(InterventionLevel))
+}
+intervention_rows <- do.call(rbind,world_data_by_level)
+countries_in_intervention <- unique(intervention_rows$Location)
+status_quo_world <- treatment_result[[5]] %>%
+      mutate(
+        InterventionLevel=NA,
+        InterventionLabel="None")
+status_quo_rows <- status_quo_world %>% 
+      filter((Location %in% countries_in_intervention)==FALSE)
+
+intervention_risk <- rbind(status_quo_rows,intervention_rows)
+```
+
+
+
+
+```{r}
+intervention_rows %>% select(Location,InfActiveCasesPerMillion,Total2019MonthlyArrivals,
+                             MonthlyArrivalsLockdownScaled2,MonthlyArrivalsScaled2,
+                             MonthlyArrivalsWeighted,
+                             ExpectedCasesAtBorder,ExpectedNumberOfCasesInCommunity,MonthlyArrivalsWeighted) %>%
+  arrange(-ExpectedCasesAtBorder) %>% View
+```
+
+
+
+```{r}
+print(sum(status_quo_world$ExpectedNumberOfCasesInCommunity,na.rm=TRUE))
+print(sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE))
+print(sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)-sum(status_quo_world$ExpectedNumberOfCasesInCommunity,na.rm=TRUE))
+```
+
+
+
+
+NEXT TO DO:
+
+(1) TIDY UP
+
+(2) ITERATE THROUGH THE SIM_PANELS GETTING THE 
+
+
+```{r}
+level_input  <- apply(simPanelDf,1,function(sim_row){
+  list_portion <- list("a"= as.numeric(sim_row[["default_max_prevalence_p_m"]])/10)
+  names(list_portion) <- c(paste0("intsim_level",sim_row[["level"]],"_max_prevalence"))
+  return(list_portion) 
+}) %>% unlist(recursive = FALSE)
+
+level_input$simsettings_mode <- "Simple"
+```
+
+
+
+```{r}
+
+sim_panel_results <- list()
+for (sim_panel_fname in list.files(path="data",pattern="sim_panels.*.csv")){
+  print(sim_panel_fname)
+  #load the sim panel
+  simPanelDf <- read_csv(paste0("data/",sim_panel_fname))
+  
+
+  #do the simulations
+  treatment_result <- apply(simPanelDf,1,function(sim_row,input_list,nogeo_world_basic_data_ds){
+  treatment <- simulate_treatment_for_countries(
+        nogeo_world_basic_data_ds,
+        treatment_effectiveness = as.numeric(sim_row[["default_effectiveness"]]),
+        extra_spread = as.numeric(sim_row[["default_extra_spread"]]),
+        travel_volume_proportion =  as.numeric(sim_row[["default_volume"]])/100,
+        assumed_ifr = input_list$simsettings_ifr/100,
+        traveler_relative_prevalence=input_list$simsettings_traveler_relative_prevalence,
+        current_lockdown_passenger_volume = input_list$simsettings_current_lockdown_passenger_volume)
+    
+  },input_list,nogeo_world_basic_data)
+  
+  #we will assume the level thresholds are the same for everything and create them out of the default simpanel
+  
+  #get the status quo and intervention risk.
+  
+  world_data_by_level <- list()
+  for (level in 0:3){
+    id<-level+1
+    
+    relevant_countries<-get_countries_allocated_to_leveln(level_input,level,treatment_result[[id]])
+    
+    world_data_by_level[[id]] <- treatment_result[[id]] %>% 
+      filter(Location %in% relevant_countries) %>%
+      mutate(InterventionLevel=0) %>% 
+      rowwise() %>% mutate(InterventionLabel=get_intervention_name(InterventionLevel))
+  }
+  intervention_rows <- do.call(rbind,world_data_by_level)
+  countries_in_intervention <- unique(intervention_rows$Location)
+  status_quo_world <- treatment_result[[5]] %>%
+        mutate(
+          InterventionLevel=NA,
+          InterventionLabel="None")
+  status_quo_rows <- status_quo_world %>% 
+        filter((Location %in% countries_in_intervention)==FALSE)
+  
+  intervention_risk <- rbind(status_quo_rows,intervention_rows)
+  
+  #print this
+  
+
+  status_quo_sum <-sum(status_quo_world$ExpectedNumberOfCasesInCommunity,na.rm=TRUE)
+  intervention_sum<-sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)
+
+  sim_panel_results_row <- data.frame(
+    "panel"=gsub(".csv","",gsub("sim_panels_","",sim_panel_fname)),
+    "status_quo" = status_quo_sum,
+    "intervention" = intervention_sum,
+    "difference" = intervention_sum-status_quo_sum
+    
+    )
+  sim_panel_results<-c(sim_panel_results,list(sim_panel_results_row))
+  
+}
+
+sim_panel_results_df <- do.call(rbind,sim_panel_results)
+```
+
+
+Now do a simulation for "traveller prevalence" doubled from 100% to 200%:
+
+```{r}
+
+
+
+get_model <- function(sim_panel_fname, input_list){
+    simPanelDf <- read_csv(paste0("data/",sim_panel_fname))
+  
+
+  #do the simulations
+  treatment_result <- apply(simPanelDf,1,function(sim_row,input_list,nogeo_world_basic_data_ds){
+  treatment <- simulate_treatment_for_countries(
+        nogeo_world_basic_data_ds,
+        treatment_effectiveness = as.numeric(sim_row[["default_effectiveness"]]),
+        extra_spread = as.numeric(sim_row[["default_extra_spread"]]),
+        travel_volume_proportion =  as.numeric(sim_row[["default_volume"]])/100,
+        assumed_ifr = input_list$simsettings_ifr/100,
+        traveler_relative_prevalence=input_list$simsettings_traveler_relative_prevalence,
+        current_lockdown_passenger_volume = input_list$simsettings_current_lockdown_passenger_volume)
+    
+  },input_list,nogeo_world_basic_data)
+  
+  #we will assume the level thresholds are the same for everything and create them out of the default simpanel
+  
+  #get the status quo and intervention risk.
+  
+  world_data_by_level <- list()
+  for (level in 0:3){
+    id<-level+1
+    
+    relevant_countries<-get_countries_allocated_to_leveln(level_input,level,treatment_result[[id]])
+    
+    world_data_by_level[[id]] <- treatment_result[[id]] %>% 
+      filter(Location %in% relevant_countries) %>%
+      mutate(InterventionLevel=0) %>% 
+      rowwise() %>% mutate(InterventionLabel=get_intervention_name(InterventionLevel))
+  }
+  intervention_rows <- do.call(rbind,world_data_by_level)
+  countries_in_intervention <- unique(intervention_rows$Location)
+  status_quo_world <- treatment_result[[5]] %>%
+        mutate(
+          InterventionLevel=NA,
+          InterventionLabel="None")
+  status_quo_rows <- status_quo_world %>% 
+        filter((Location %in% countries_in_intervention)==FALSE)
+  
+  intervention_risk <- rbind(status_quo_rows,intervention_rows)
+  
+  #print this
+  
+
+  status_quo_sum <-sum(status_quo_world$ExpectedNumberOfCasesInCommunity,na.rm=TRUE)
+  intervention_sum<-sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)
+
+  return(list(
+    "status_quo_world"=status_quo_world,
+    "intervention_world"= intervention_risk
+              ))
+  
+}
+
+
+```
+
+
+
+```{r}
+input_list$simsettings_traveler_relative_prevalence <- 2.0
+
+sim_panel_fname <- "sim_panels.csv"
+
+model_result <- get_model(sim_panel_fname, input_list)
+
+print(c(sum(model_result$status_quo_world$ExpectedNumberOfCasesInCommunity,na.rm=TRUE),
+        sum(model_result$intervention_world$ExpectedNumberOfCasesInCommunity,na.rm=TRUE)))
+
+```
+
+
+
+
+```{r}
+input_list$simsettings_traveler_relative_prevalence <- 2.0
+
+sim_panel_fname <- "sim_panels.csv"
+
+model_result <- get_model(sim_panel_fname, input_list)
+
+print(c(sum(model_result$status_quo_world$ExpectedNumberOfCasesInCommunity,na.rm=TRUE),
+        sum(model_result$intervention_world$ExpectedNumberOfCasesInCommunity,na.rm=TRUE)))
+
+```
+
