@@ -4,18 +4,12 @@
 .Rproj.user
 .Rproj.user/*
 
-data/*
-app/data/owid_cache.csv
-data/timer.log
-app/data/*
-/app/data/*
-/app/data/timer.log
-app/data/jh_cache.csv
-app/data/manual_corrections_cache.csv
+app/git_exclude/
+
 app/data/timer.log
-*/timer.log
-owid_cache.csv
+
 .DS_Store
+
 rsconnect/
 
 */.DS_Store
@@ -28,6 +22,3 @@ READI-SCRUB/
 READI-SCRUB/*
 
 .httr-oauth*
-
-
-app/git_exclude

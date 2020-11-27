@@ -129,7 +129,7 @@ if(params$trust_rating=="trustworthy"){
 
 ```
 
-These figures do NOT take into account the reduction in travel likely to result from the implementation of border control measures such as quarantine.
+These figures do _not_ take into account the reduction in travel likely to result from the implementation of border control measures such as quarantine.
 
 `r risk_statement`
 
