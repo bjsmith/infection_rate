@@ -449,13 +449,6 @@ server <- function(input, output, session) {
                              "Population"
                            ))
     
-    #if we're using the raw table, then round ALL numeric columns
-    # if(input$countrylist_type=="Raw"){
-    #   display_tibble <- 
-    #     display_tibble %>%
-    #     mutate(across(is.numeric, formatRound, 1, mark=","))
-    # }
-    
     if(length(cols_1_dp)>0){
       display_dt <- 
         display_dt %>% 
