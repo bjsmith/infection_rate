@@ -1,36 +1,44 @@
+method_example_Panel <- function(mainPanel,examplePanel){
+  return(sidebarLayout(
+    sidebarPanel = examplePanel,
+    mainPanel=mainPanel,position = "right"
+  ))
+}
+
 get_map_page_tabPanel <- function(){
   
   tabPanel(
     "Method and Approach",
     
-    fixedPage(title="Method and Approach",
+    fluidPage(title="Method and Approach",
               id="methapp_fixedPage",
       # Application title
       titlePanel("Method and Approach"),
-      
       # Show a plot of the generated distribution
-      mainPanel(id="methapp_mainPanel",
-        uiOutput("graph0header"),
-        leafletOutput("graph0"),
-        uiOutput("graph1header"),
-        leafletOutput("graph1"),
-        uiOutput("graph2header"),
-        leafletOutput("graph2"),
-        uiOutput("graph3header"),
-        leafletOutput("graph3"),
-        uiOutput("graph4header"),
-        leafletOutput("graph4"),
-        uiOutput("graph5header"),
-        leafletOutput("graph5"),
-        uiOutput("graph6header"),
-        leafletOutput("graph6"),
-        # textOutput("graph7header"),
-        # leafletOutput("graph7"),
-        uiOutput("graph8header"),
-        leafletOutput("graph8"),
-        
-        uiOutput("paragraph_09")
-      )
+      method_example_Panel(
+      examplePanel=sidebarPanel(includeMarkdown('example1.Rmd')),
+      mainPanel = mainPanel(
+      uiOutput("graph0header"),
+      leafletOutput("graph0"))
+      ),
+      uiOutput("graph1header"),
+      leafletOutput("graph1"),
+      uiOutput("graph2header"),
+      leafletOutput("graph2"),
+      uiOutput("graph3header"),
+      leafletOutput("graph3"),
+      uiOutput("graph4header"),
+      leafletOutput("graph4"),
+      uiOutput("graph5header"),
+      leafletOutput("graph5"),
+      uiOutput("graph6header"),
+      leafletOutput("graph6"),
+      # textOutput("graph7header"),
+      # leafletOutput("graph7"),
+      uiOutput("graph8header"),
+      leafletOutput("graph8"),
+      
+      uiOutput("paragraph_09")
     ))
 }
 
