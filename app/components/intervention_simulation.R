@@ -780,7 +780,10 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
              label="NZ Returning\n and Eligible Exceptions\n from Level 4 Countries",size=3)+
 
     geom_text_repel(aes(y=LabelPosition), size=4,hjust=0)+
-    geom_text(aes(x=CumulativeExpectedTravellers,y=0,label=paste0(CountryList,"\n")),size=3,hjust=1,vjust=0,fontface="bold")+
+    geom_text_repel(aes(x=CumulativeExpectedTravellers,y=0,label=paste0(CountryList,"\n")),
+                    size=3,hjust=1,vjust=0,fontface="bold"
+                    ,direction="y",box.padding=0.1
+                    )+
     guides(color="none")+
     scale_y_continuous(
       #scale_y_log10(

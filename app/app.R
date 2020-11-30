@@ -5,8 +5,9 @@ source("utils.R")
 #this will take a while if the data has not been cached, but it has to be done at some point
 data_list <- get_data()
 last_manual_correction_date <- max(as.Date(data_list$manual_corrections$`Date recorded`),na.rm=TRUE)
+last_jh_date <-suppressWarnings(as.Date(max(parse_datetime(colnames(data_list$jh_data),format="%m/%d/%y"),na.rm=TRUE)))
 #default_run_date<-as.Date("2020-08-22")
-default_run_date<-last_manual_correction_date#Sys.Date()
+default_run_date<-min(last_manual_correction_date,last_jh_date)
 default_month_name <- format(default_run_date,"%B")
 default_adjust_for_imported_cases <- TRUE
 print_elapsed_time("START")
@@ -430,7 +431,7 @@ server <- function(input, output, session) {
       'Prevalence (infections / mil)',
       "New tests / mil (last 7 days average)",
       "New tests / Case (last 7 days average)",
-      "Predicted prevalence in 14 days (infections / mil)"))
+      "Projected prevalence in 14 days (infections / mil)"))
     #and some by 2dp
     cols_2_dp <- intersect(colnames(display_tibble),
                            c('Expected number of cases arriving per month',
@@ -808,7 +809,8 @@ server <- function(input, output, session) {
   ######################################################################
   #journey page
   
-  render_journey_page(input,output)
+  #render_journey_page(input,output)
+  render_journey_image_page(output)
   
   ######################################################################
   #SUMMARY map page
@@ -837,7 +839,8 @@ ui <- fluidPage(
     get_summary_page_tabPanel(),
     get_map_page_tabPanel(),
     #get_journey_page_under_construction_tabPanel(),
-    get_journey_page_tabPanel(),
+    get_journey_page_image_tabPanel(),
+    #get_journey_page_tabPanel(),
     get_intsim_tabPanel(default_simulation_data,countries_to_choose_from,default_adjust_for_imported_cases),
     #get_Proposal_tabPanel(default_simulation_data,countries_to_choose_from),
     
@@ -905,7 +908,8 @@ ui <- fluidPage(
       "default_traveler_relative_prevalence"=default_traveler_relative_prevalence,
       "default_current_lockdown_passenger_volume" = default_current_lockdown_passenger_volume,
       "default_run_date" = default_run_date
-    )),
+    ),last_jh_date= last_jh_date
+    ),
     tabPanel(
       "Contact Us",
       titlePanel("Contact Us"),

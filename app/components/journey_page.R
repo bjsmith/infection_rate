@@ -1,4 +1,11 @@
 journey_data_collection <- list()
+get_journey_page_image_tabPanel <- function(){
+  return(
+    tabPanel("Journey design",
+             uiOutput("journey_design_static")
+    )
+  )
+}
 
 get_journey_page_under_construction_tabPanel <- function(){
   return(
@@ -6,6 +13,13 @@ get_journey_page_under_construction_tabPanel <- function(){
              titlePanel("Under construction")
              )
   )
+}
+
+render_journey_image_page <- function(output){
+  output$journey_design_static = renderUI({
+    withMathJax(HTML(
+      "<div style='text-align: center'><img src='traveller_journey_graphic.jpg' /></div>"
+    ))})
 }
 get_journey_page_tabPanel <- function(){
   return(

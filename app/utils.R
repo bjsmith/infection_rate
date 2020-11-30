@@ -346,9 +346,17 @@ get_daily_data <- function(separate_aussie_states_and_hk, adjust_for_imported_ca
   print_elapsed_time("merging manual corrections...")
   
   manual_corrections<-data_list[["manual_corrections"]]
+  
+  
+  
   mc_merge <- manual_corrections%>%
     select(Code,`Date recorded`,`Active local cases on date override`,`Recent local fatalities on date override`)
   mc_merge <- mc_merge %>% rename("ManualCorrectDate" = "Date recorded")
+  
+  
+  #remove any data held for dates past the last date we have
+  maxdate_jh_dxc <- max(jh_dxc$Date)
+  mc_merge <- mc_merge %>% filter(ManualCorrectDate<=maxdate_jh_dxc) #ignore any data entered that applies for future dates. It will be very misleading.
   
   jh_dxc <- jh_dxc%>% 
     left_join(mc_merge,by = c(

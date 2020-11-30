@@ -4,6 +4,8 @@
 .Rproj.user
 .Rproj.user/*
 
+app/*.nb.html
+
 app/git_exclude/
 
 app/data/timer.log

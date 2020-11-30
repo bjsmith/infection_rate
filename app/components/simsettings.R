@@ -1,7 +1,7 @@
 library(shiny)
 #summary_map.R
 #https://stackoverflow.com/questions/64001136/setting-up-two-rshiny-input-values-for-the-same-value-across-different-tab-panel/64001953#64001953
-get_simsettings_tabPanel <- function(defaults){
+get_simsettings_tabPanel <- function(defaults, last_jh_date){
   return(
 ######### BEGIN TABPANEL
     tabPanel(
@@ -50,7 +50,7 @@ get_simsettings_tabPanel <- function(defaults){
               column(4,
                      dateInput("simsettings_run_date",
                                "Run date:",
-                               value = defaults[["default_run_date"]],max = Sys.Date())
+                               value = defaults[["default_run_date"]],max = last_jh_date)
                      
               ),
               column(8,uiOutput("simsettings_run_date_description"))
