@@ -11,6 +11,8 @@ app/git_exclude/
 app/data/timer.log
 app/data/*.log
 app/data/*_cache.csv
+app/data/*_cache.Rds
+app/data/log/*.log
 .DS_Store
 
 rsconnect/

@@ -26,11 +26,11 @@ library(rnaturalearth)
 library(rnaturalearthdata)
 library(RColorBrewer)
 
-
 #timer functionality
+session.id <- as.character(floor(runif(1)*1e18))
 start_time <- Sys.time()
 last_time <- start_time
-timer_filepath <- "data/timer.log"
+timer_filepath <- paste0("data/log/timer", session.id, ".log")
 if (file.exists(timer_filepath)){
   file.remove(timer_filepath)
 }
@@ -163,13 +163,15 @@ get_data_closure <- function() {
     if(is.null(data_list) || (force_reset==TRUE)){
       
       # a function we use repeatedly for different datasets to either retrieve from a local cache (fast, but potentially out of date) or download from an online source
-      get_cache_or_live_data<-function(live_data_function,cache_filepath,cache_expiry_in_minutes=60){
+      get_cache_or_live_data<-function(live_data_function,cache_filename,cache_expiry_in_minutes=60){
+        cache_filepath <-paste0("data/cache/",cache_filename)
         if(file.exists(cache_filepath)){
           if(as.double(difftime(Sys.time(),file.info(cache_filepath)$mtime,units="mins"))<cache_expiry_in_minutes){
             #the cache exists and it's less than 60 minutes old
             #use it
             
-            returned_data <- read_csv(cache_filepath)
+            #returned_data <- read_csv(cache_filepath)
+            returned_data <- read_rds(cache_filepath)
             print_elapsed_time("...used cache to get data.")
             return(returned_data)
           }else{
@@ -180,7 +182,8 @@ get_data_closure <- function() {
           returned_data <- live_data_function()
         }
         print_elapsed_time("retrieved data from live datasource, caching...")
-        write_csv(returned_data,path = cache_filepath)
+        #write_csv(returned_data,path = cache_filepath)
+        write_rds(returned_data,path = cache_filepath)
         print_elapsed_time("...cached.")
         return(returned_data)
       }
@@ -206,7 +209,7 @@ get_data_closure <- function() {
       print_elapsed_time("Getting JH data...")
       
       
-      dl_local[["jh_data"]] <- get_cache_or_live_data(retrieve_jh_data,"data/jh_cache.csv",cache_expiry_in_minutes = 120)
+      dl_local[["jh_data"]] <- get_cache_or_live_data(retrieve_jh_data,"jh_cache.Rds",cache_expiry_in_minutes = 120)
       
       
       print("Fetching local pop data...")
@@ -221,7 +224,7 @@ get_data_closure <- function() {
       # Or, if you don't use multiple Google identities, you can be more vague:
       #gs4_auth_configure(api_key = "AIzaSyAnEAdoH-yLBO1rvhmAD-kkKR9TMYqI0Rs")
       #gs4_auth_configure(app = google_app)
-      google_sheets_cache_filepath <- "data/manual_corrections_cache.csv"
+      google_sheets_cache_filepath <- "manual_corrections_cache.Rds"
       get_manual_corrections_from_gsheet <- function(save_path){
         print('connecting to google sheet to get manual corrections')
         options(gargle_oauth_email = "newzealandborderriskapp@gmail.com")
@@ -235,7 +238,7 @@ get_data_closure <- function() {
       dl_local[["manual_corrections"]] <- get_cache_or_live_data(get_manual_corrections_from_gsheet,google_sheets_cache_filepath,cache_expiry_in_minutes = 60)
       
       print_elapsed_time("fetching ourworldindata data...")
-      owid_cache_filepath <- "data/owid_cache.csv"
+      owid_cache_filepath <- "owid_cache.Rds"
       retrieve_owid_dataset<- function(){
         owid_fullset<-readr::read_csv("https://github.com/owid/covid-19-data/raw/master/public/data/owid-covid-data.csv")
         return(owid_fullset)
