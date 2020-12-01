@@ -6,9 +6,10 @@
 
 app/git_exclude/
 
-app/data/owid_cache.csv
-data/timer.log
-/app/data/timer.log
+/app/data/*_cache.Rds
+app/data/*_cache.csv
+app/data/timer*.log
+app/data/log/timer*.log
 */timer.log
 owid_cache.csv
 jh_cache.csv
