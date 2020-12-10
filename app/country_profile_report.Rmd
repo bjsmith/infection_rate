@@ -5,6 +5,7 @@ output:
 #  html_document: default
 params:
   location_profile: NA
+  data_date: NA
   trust_rating: NA
   location_info: NA
   nz_info: NA
@@ -51,7 +52,7 @@ if(params$location_info$LifeExp>=70){
 
 # `r locname`
 
-This is a location profile for `r locname`.
+This is a location profile for `r locname` as of `r as.character(params$data_date,format="%d %B %Y")`.
 
 ## Internal risk
 
@@ -63,6 +64,14 @@ scale_signif <- function(x,figures=2){
     return(as.character(scales::comma(signif(x,figures))))
   }
 }
+
+scale_dp <- function(x,dp=0){
+    if(x<1){
+    return(as.character(round(x,dp)))
+  }else{
+    return(as.character(scales::comma(round(x,dp))))
+  }
+}
 ```
 
 
@@ -70,11 +79,11 @@ scale_signif <- function(x,figures=2){
 
 
 
-`r locname` currently has `r scale_signif(params$location_info$ActiveCases)` official active confirmed cases. 
+`r locname` currently has `r scale_dp(params$location_info$ActiveCases)` official active confirmed cases. 
 
-Three weeks ago, `r locname` had `r scale_signif(params$location_info$LaggedNewCases*7,2)` new cases over a seven day period (some of these may be imported cases in managed isolation/quarantine). Over the last week, there have been `r signif(params$location_info$NewDeaths*7)` new deaths. This is a case fatality rate of `r signif(params$location_info$NewDeaths/params$location_info$LaggedNewCases*100,2)`%. Based on international research ([Russell et al., 2020](https://www.eurosurveillance.org/docserver/fulltext/eurosurveillance/25/12/eurosurv-25-12-3.pdf)) we assume the actual infection-fatality rate, including undetected infections, is actually `r params$assumed_ifr*100`%, so we estimate that `r locname` is officially detecting `r signif(100/params$location_info$InferredDetectionRate,2)`% of their cases. That means the true number of active infections could be up to `r signif(params$location_info$InferredDetectionRate,2)` times the number of confirmed cases. Considering this detection rate, and the current number of active confirmed cases (around `r scale_signif(params$location_info$ActiveCases,2)`), we estimate the true number of infections currently in `r locname` is closer to `r scale_signif(params$location_info$InferredActiveCases)`.
+Three weeks ago, `r locname` had `r scale_dp(params$location_info$LaggedNewCases*7,2)` new cases over a seven day period (some of these may be imported cases in managed isolation/quarantine, MIQ). Over the last week, there have been `r signif(params$location_info$NewDeaths*7)` new deaths. This is a case fatality rate of `r signif(params$location_info$NewDeaths/params$location_info$LaggedNewCases*100,2)`%. Based on international research ([Russell et al., 2020](https://www.eurosurveillance.org/docserver/fulltext/eurosurveillance/25/12/eurosurv-25-12-3.pdf)) we assume the actual infection-fatality rate, including undetected infections, is actually `r params$assumed_ifr*100`%, so we estimate that `r locname` is officially detecting `r signif(100/params$location_info$InferredDetectionRate,2)`% of their cases. That means the true number of active infections could be up to `r signif(params$location_info$InferredDetectionRate,2)` times the number of confirmed cases. Considering this detection rate, and the current number of active confirmed cases (around `r scale_dp(params$location_info$ActiveCases,2)`), we estimate the true number of infections currently in `r locname` is closer to `r scale_dp(params$location_info$InferredActiveCases)`.
 
-Prevalence of COVID-19 in `r locname` is therefore estimated at `r scale_signif(params$location_info$InfActiveCasesPerMillion,3)` active infections per million, in a population of `r scale_signif(params$location_info$Population/10^6,2)` million. Compare this to the current New Zealand case rate of `r signif(params$nz_info$InfActiveCasesPerMillion,2) ` active infections per million. In low prevalence locations, these two may not be strictly comparable because MIQ cases have not been removed from the New Zealand data.
+Prevalence of COVID-19 in `r locname` is therefore estimated at `r scale_signif(params$location_info$InfActiveCasesPerMillion,3)` active infections per million, in a population of `r scale_signif(params$location_info$Population/10^6,3)` million. Compare this to the current New Zealand case rate of `r signif(params$nz_info$InfActiveCasesPerMillion,3) ` active infections per million. In low prevalence locations, these two may not be strictly comparable because MIQ cases have not been removed from the New Zealand data.
 <!--This is the "inferred" infection rate. It accounts for the likely number of undetected cases by starting with the detected case rate, and adjusting upward depending on the number of fatalities in the relevant country.-->
 
 ### Quality of health data reporting
@@ -85,9 +94,15 @@ Our estimates are robust to under-reported cases of COVID-19; however, our estim
 
 ## Travel to New Zealand
 
-This month last year, New Zealand received `r scale_signif(params$location_info$LocationResidentMonthlyArrivalsScaled1) ` arrivals who were _resident_ in `r locname`. This includes citizens of that country residing there, and citizens of New Zealand and other countries who reside in `r locname`. Over the same time there were also `r scale_signif(params$location_info$NZResMonthlyArrivalsScaled1) ` New Zealand residents returning to New Zealand whose main destination while away was `r locname`. By adding these figures together we can roughly estimate the number of people who arrive in New Zealand per month after being in `r locname` in the previous 14 days at `r scale_signif(params$location_info$MonthlyArrivalsWeighted) `.
+This month last year, New Zealand received `r scale_dp(params$location_info$LocationResidentMonthlyArrivalsScaled1) ` arrivals who were _resident_ in `r locname`. This includes citizens of that country residing there, and citizens of New Zealand and other countries who reside in `r locname`. Over the same time there were also `r scale_dp(params$location_info$NZResMonthlyArrivalsScaled1) ` New Zealand residents returning to New Zealand whose main destination while away was `r locname`. By adding these figures together we can roughly estimate the number of people who arrived in New Zealand per month in 2019 after being in `r locname` in the previous 14 days at `r scale_dp(params$location_info$Total2019MonthlyArrivals) `. This is an approximation of the travel volume we are most interested in: the number of people coming to New Zealand who were present in `r locname` in the last 14 days.
 
 New Zealand citizens and residents are always permitted to return home to New Zealand from `r locname`. Very few return while there is a mandatory quarantine in place, but we expect that greater numbers will return from there if quarantine restrictions were to be loosened.
+
+Based on the intervention applied, we have estimated that in the Proposed Intervention, `r scale_dp(params$location_info$MonthlyArrivalsWeighted)` travellers could arrive in New Zealand each month from `r locname`. This compares to an estimated `r scale_dp(params$location_info$StatusQuoMonthlyArrivals)` now.
+
+
+
+
 
 ## Expected risk
 
@@ -102,20 +117,40 @@ if(params$trust_rating=="trustworthy"){
   risk_statement <- paste0(
       "Due to these considerations we expect, if the border were completely open to ",
       locname,
-      ", the expected number of cases arriving from ",
+      ", the expected number of cases entering the traveller journey from ",
       locname,
       " would be ",
-      as.character(signif(params$location_info$ExpectedCasesAtBorderAt2019Levels,2)),
-      " every month. <br />\n",
-#      "If the border were open, with all travelers from ",locname, " screened before entry, the expected case numbers exposed to the community would be reduced to ",
-#      as.character(signif(params$location_info$ExpectedNumberOfCasesEscapingOneScreen,2)),". ",
-#      "If two independent tests were run before releasing travelers, this could be reduced to ",
-#      as.character(signif(params$location_info$ExpectedNumberOfCasesEscapingTwoScreens,2)),
+      scale_signif(params$location_info$ExpectedCasesAtBorderAt2019Levels,3),
+      " every month")
+  
+  if(params$location_info$ExpectedCasesAtBorderAt2019Levels<0.5){
+      risk_statement <- paste0(
+      risk_statement, " (one every ", round(1/params$location_info$ExpectedCasesAtBorderAt2019Levels), " months)"
+      )
+    }
+      
+  risk_statement <- paste0(risk_statement,
+      ". <br />\n")
+  if (params$location_info$InterventionLabel!="None"){
+    risk_statement <- paste0(
+      risk_statement,
       "If travelers from ",locname, " go through an intervention, ",params$location_info$InterventionLabel,
       #".\n<br /><br /> A 14 day quarantine provides even lower risk. Considering New Zealand's quarantine system as it has existed over the last few months, a quarantine system could ensure that only around ",
         ", then only around ",
-      as.character(signif(params$location_info$ExpectedNumberOfCasesInCommunity,2)),
-      " cases would be exposed to the community. Actual cases under quarantine would be lower still due to the suppression of travel in response to a quarantine system.")
+      scale_signif(params$location_info$ExpectedNumberOfCasesInCommunity,3),
+      " cases would exit MIQ into the community")
+    if(params$location_info$ExpectedNumberOfCasesInCommunity<0.5){
+      risk_statement <- paste0(
+      risk_statement, " (one every ", round(1/params$location_info$ExpectedNumberOfCasesInCommunity), " months)"
+      )
+    }
+    
+    risk_statement <- paste0(
+      risk_statement,
+    ". Actual cases under quarantine would be lower still due to the suppression of travel in response to a quarantine system.")
+  }
+
+            
 }else
 {
   risk_statement <- (
@@ -134,6 +169,8 @@ These figures do _not_ take into account the reduction in travel likely to resul
 `r risk_statement`
 
 
+
+
 ## Overall rating: `r params$location_info$PrevalenceRating`
 
 
@@ -146,6 +183,5 @@ level_1_max <- input$intsim_level1_max_prevalence
 Our risk categories are "COVID-free" (0 active infections), "Level 1" (0 to `r params$level_thresholds$level_1_max` per 100k), "Level 2" (`r params$level_thresholds$level_1_max` to `r params$level_thresholds$level_2_max` per 100k), "Level 3" (`r params$level_thresholds$level_2_max` to `r params$level_thresholds$level_3_max` per 100k), and "Level 4" (more than `r params$level_thresholds$level_3_max` per 100k). For Level 4 countries, we propose continuing existing restrictions and adding a pre-departure PCR test. For all others, from COVID-free to Level 3 locations, some level of non-residents could be allowed in without excessive risk.
 
 Due to the current active case prevalence in `r locname` of `r scale_signif(params$location_info$InfActiveCasesPerMillion/10,3)` per 100k, the overall rating for `r locname` is `r params$location_info$PrevalenceRating`.
-
 
 

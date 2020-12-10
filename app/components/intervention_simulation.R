@@ -47,10 +47,10 @@ get_intsim_tabPanel <- function(default_simulation_data,countries_to_choose_from
           uiOutput("intsim_description2"),
           plotOutput("total_risk_graph"),
           uiOutput("intsim_description3"),
+          plotOutput("cumulative_risk_plot"),
           checkboxInput(inputId = "intsim_assume_100pc_tvolume",
                         label="Assume travel reverts back to 100% of 2019 levels for all locations",
                         value = FALSE),
-          plotOutput("cumulative_risk_plot"),
           uiOutput("intsim_description4"),
           actionButton("intsim_btn_go_to_risk_matrix",
                        "View Risk Matrix",class="btn btn-primary"),
@@ -92,7 +92,7 @@ render_intsim_page <- function(input, output,session,
   
   output$intsim_AreaPlotAll <- renderPlot({
     generate_areaPlot(get_intervention_risk(),
-                      title="COVID cases expected from each location by volume of travel from each location",
+                      title="COVID cases expected to enter the traveller journey from each location by volume of travel from each location",
                       include_unreliable_locations = input$intsim_AreaPlotAll_includeAll
                       )
   })
@@ -134,14 +134,14 @@ render_intsim_page <- function(input, output,session,
   output$intsim_description2 <-renderUI({
     intervention_risk <- get_intervention_risk()
     withMathJax(HTML(paste0(
-      "Under the current system, we expect ",signif(sum(get_status_quo_risk()$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),4)," cases per month. 
-      Under the proposed system, we expect ",signif(sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),4)," cases per month. 
+      "Under the current system, we expect ",signif(sum(get_status_quo_risk()$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),4)," cases per month exiting MIQ. 
+      Under the proposed system, we expect ",signif(sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),4)," cases per month exiting MIQ. 
       The vast majority of these (",
       intervention_risk %>% filter(is.na(InterventionLevel)) %>% .$ExpectedNumberOfCasesInCommunity %>% sum(.,na.rm=TRUE) %>% signif(.,4),
       ") are from New Zealanders and eligible exceptions in locations with prevalences above the “high prevalence” level, 
       i.e., very high or extreme prevalence countries. 
       Only ",intervention_risk %>% filter(!is.na(InterventionLevel)) %>% .$ExpectedNumberOfCasesInCommunity %>% sum(.,na.rm=TRUE) %>% signif(.,4),"
-      are from countries were relaxed travel restrictions are proposed.
+      are from countries where relaxed travel restrictions are proposed.
       \n \n <br /> <br />
       The graph below shows the expected number of cumulative travelers 
       by level in both the current and proposed systems."
@@ -159,10 +159,10 @@ render_intsim_page <- function(input, output,session,
     intervention_risk <- get_intervention_risk()
     withMathJax(HTML(paste0(
       "In the current system (red line), we expect around ",scale_signif(sum(status_quo_risk$MonthlyArrivalsWeighted,na.rm = TRUE)),
-      " travelers and about ",signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),2)," cases entering the community per month. 
+      " travelers and about ",signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),2)," cases exiting MIQ into the community per month. 
       In the proposed system (blue line), we expect ",
       intervention_risk %>% filter(is.na(InterventionLevel)) %>% .$ExpectedNumberOfCasesInCommunity %>% sum(.,na.rm=TRUE) %>% signif(.,2)
-      ," New Zealand and Eligible Exception Exceptions from Level 4 locations.
+      ,"cases exiting MIQ from New Zealand and Eligible Exception Exceptions from Level 4 locations.
       Their risk can be substantially mitigated by mandatory or encouraged pre-departure Covid-19 testing. 
       From Level 0 to level 3 countries we expect just ",
       intervention_risk %>% filter(!is.na(InterventionLevel)) %>% .$ExpectedNumberOfCasesInCommunity %>% sum(.,na.rm=TRUE) %>% signif(.,2),
@@ -198,14 +198,14 @@ render_intsim_page <- function(input, output,session,
     <li>Under the current system,
       <ul>
         <li>Expected passengers per month based on 2019 data</li>
-        <li>expected infections entering the passenger journey from each location</li>
+        <li>expected cases entering the passenger journey from each location</li>
       </ul>
       </li>
       <li>Under the proposed system,
       <ul>
         <li>Expected passengers per month assuming the travel volumes specified  using the controls on the left side of this page</li>
-        <li>Expected infections entering the passenger journey from each location as a result</li>
-        <li>Expected infections still infectious when reaching the community</li>
+        <li>Expected cases entering the passenger journey from each location as a result</li>
+        <li>Expected cases exiting MIQ</li>
       </ul>
       </li>
     
@@ -301,14 +301,14 @@ render_total_risk_text <- function(
     (July 2020, NZ Customs; see <a href='https://www.customs.govt.nz/Covid-19/more-information/passenger-statistics/'>website</a> for updated figures).
     Consequently, we estimate ",
     signif(sum(status_quo_risk$ExpectedCasesAtBorderUnderLockdown,na.rm = TRUE),2),
-    " positive cases per month will arrive at the border, of which ",
+    " positive cases per month will enter the traveller journey, of which ",
     signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),5),
-    " will be exposed to the community.",
+    " will exit MIQ into the community",
     "This represents ",
     scale_dp(sum(status_quo_risk$ExpectedCasesAtBorder,na.rm=TRUE)/sum(status_quo_risk$StatusQuoMonthlyArrivals,na.rm = TRUE)*10^5,2),
     " cases per 100k travellers at the border, of which ",
     signif(sum(status_quo_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)/sum(status_quo_risk$StatusQuoMonthlyArrivals,na.rm = TRUE)*10^5,2),
-    " will be exposed to the community.",
+    " will exit MIQ.",
     "<br /> <br />",
     "In the specified intervention, we estimate ",
     scale_dp(sum(intervention_risk$MonthlyArrivalsWeighted,na.rm=TRUE)),
@@ -316,14 +316,17 @@ render_total_risk_text <- function(
     scale_dp(sum(intervention_risk$ExpectedCasesAtBorder,na.rm = TRUE)),
     " cases per month will arrive at the border, of which ",
     signif(sum(intervention_risk$ExpectedNumberOfCasesInCommunity,na.rm = TRUE),5),
-    " will be exposed to the community.",
-    " The intervention ",intervention_change_description, " the expected amount of community exposure by ",
+    " will exit MIQ.",
+    " The intervention ",intervention_change_description, " the expected amount of cases exiting MIQ by ",
     scales::percent(abs(increased_risk),accuracy = 0.01),
     ".<br /> <br />",
     #"The status quo risk of exposing the community to 1 or more cases over a 1-month period is ",
     #scales::percent(total_risk_prop,accuracy = 0.01),
     #".\n\n"
-    "Community exposure could be anything from one very brief encounter (e.g., stopping for directions) to an infected individual entering the community undetected."
+    "A case exiting MIQ includes any event where a traveller causes a case exiting MIQ into the community. 
+    This could include events like a very brief interaction covid-positive person with members of the public (e.g., stopping for directions),
+    an infected arrival entering the community undetected, or infecting an airline worker, MIQ worker, another traveller in MIQ, 
+    or other non-quarantined individual."
   )
   
   if(length(countries_excluded_due_to_data$Location)>0){
@@ -409,7 +412,8 @@ renderCasesAtBorderGraph <- function(status_quo_risk){
       scale_x_discrete(name="")+
       scale_y_continuous(name="Expected cases per month at border",
                          #breaks=0:plot_max,
-                         limits = c(0,plot_max)#,
+                         limits = c(0,plot_max),
+                         n.breaks=10
                          #limits=c(0,20),
                          #position="right"
       )+
@@ -419,7 +423,7 @@ renderCasesAtBorderGraph <- function(status_quo_risk){
       )+
       geom_label_repel(aes(y=LabelPosition),color="white",fontface="bold")+
       coord_flip()+
-      labs(caption="Sources: Johns Hopkins University, Statistics NZ, national and state health authorities; see Method & Approach for more detailed information")
+      labs(caption="Sources: Johns Hopkins University, Statistics NZ, national and state health authorities; see Method & Approach for more detailed information. \n ")
     
     
   }))
@@ -537,7 +541,7 @@ get_total_risk_graph <- function(status_quo_risk,intervention_risk,countries_all
     geom_label_repel(aes(y=LabelPosition),color="white",fontface="bold")+
     coord_flip()+labs(
       title="Current System vs. Proposed System: Expected Cases per month",
-      caption = "Sources: Johns Hopkins University, Statistics NZ, national and state health authorities; see Method & Approach for more detailed information")
+      caption = "Sources: Johns Hopkins University, Statistics NZ, national and state health authorities; see Method & Approach for more detailed information \n 'Current system' travel volumes based on current travel volumes. 'Proposed system' travel volumes based on those simulated and specified on the left hand tab.")
 }
 
 get_intsim_dt<-function(
@@ -752,7 +756,7 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
     geom_vline(aes(xintercept=ExpectedTravellersXMark),linetype="dotted",color="#aaaaaa")+
     geom_line()+geom_point()+
     scale_color_manual(values=c("#2222AA","#000055","red"))+
-    scale_x_continuous(name="Risk from cumulative expected travellers per month\n under the current and proposed system", labels=scales::comma_format())+
+    scale_x_continuous(name="Cumulative expected travellers per month\n under the current and proposed system", labels=scales::comma_format())+
     geom_hline(yintercept = status_quo_risk_level,color="#cc0000",linetype="dotted")
   if(show_intercept){
     ggout <- ggout + 
@@ -767,7 +771,7 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
   ggout <- ggout + 
     annotate(geom="text", x=max(cumulative_graph$CumulativeExpectedTravellers),y=status_quo_risk_level,vjust=1,hjust=1,color="#cc0000",
              label=paste0("Current system total traveller risk:\n",
-                          as.character(round(current_system_risk,2)), " expected cases per month"),size=3)+
+                          as.character(round(current_system_risk,2)), " expected cases exiting MIQ per month"),size=3)+
     annotate(geom="text", 
              x=max(cumulative_graph %>% filter(Scenario=="StatusQuo") %>% .$CumulativeExpectedTravellers,na.rm=TRUE),
              y=max(cumulative_graph %>% filter(Scenario=="StatusQuo") %>% .$CumulativeExpectedCases,na.rm=TRUE)*0.8,
@@ -787,7 +791,7 @@ get_cumulative_risk_plot <- function(status_quo_risk,intervention_risk){
     guides(color="none")+
     scale_y_continuous(
       #scale_y_log10(
-      name="Cumulative expected cases per month",
+      name="Cumulative expected cases exiting MIQ per month",
       labels=function(x){as.character(x)},
       minor_breaks = NULL)+
     theme_minimal()+
@@ -850,6 +854,7 @@ generate_areaPlot <- function(covid_data,show_horizontal_lines=TRUE,y_limit_per_
     relevant_data <- all_relevant_data
   }
   
+  caption_text <- paste0(caption_text, "\n Travel volumes based on 100% of 2019 data.")
   
   relevant_data<-abbreviate_location_names(relevant_data)
   
@@ -964,7 +969,7 @@ generate_areaPlot <- function(covid_data,show_horizontal_lines=TRUE,y_limit_per_
     
   }
   plot <- plot + labs(title=title,
-                      caption = paste0(caption_text,"\n","Sources: Johns Hopkins University, Statistics NZ, national and state health authorities; see Method & Approach for more detailed information"))
+                      caption = paste0(caption_text,"\n","Sources: Johns Hopkins University, Statistics NZ, national and state health authorities; see Method & Approach for more detailed information."))
   
   return(plot)
   }

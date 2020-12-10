@@ -9,7 +9,7 @@
     <li>Active cases: Currently active Covid-19 cases.
   We gather daily new cases from Johns Hopkins University. For selected low-prevalence locations, these are replaced by the currently active cases
   as recorded on local ministries of health. This is because the Johns Hopkins data does not distinguish between local and imported cases.
-  Distinguishing between them is important for understanding community prevalence.
+  Distinguishing between them is important for location community prevalence.
   The "Proposed System" tab provides an option for disabling this adjustment and using Johns Hopkins data only.
   <br />
   Then:<br />
@@ -24,16 +24,17 @@
     New deaths (last 7 days average): Daily average fatalities over the last 7 days. This is used to estimate the Infection Detection Rate (see Method and Approach).
   </li>
   <li>
-    Prevalence (invections / mil): Estimated true infections divided by the population size.
+    Prevalence (invections / mil): Estimated true infections divided by the population size. (If the applicable option is selected on the Proposed intervention tab, this column reflects the prevalence of covid-19 in the community, with cases from external sources outside the country/location and held in that locations's own managed isolation/quarantine manually excluded from the data used to calculate the prevalence rating)
   </li>
   <li>
-    Prevalence rating: This is marked "unknown" when the location's health system reliability is not considered trustworthy. Otherwise, it can be Covid-free, indicating zero active cases, or other levels up to Level 4. Thresholds are determined on the "Proposed System" page.
+    Prevalence rating: This is marked "unknown" when the location's health system reliability is not considered trustworthy. Otherwise, it can be Covid-free, indicating zero active cases, or other levels up to Level 4. Thresholds are determined on the "Proposed System" page. (If the applicable option is selected on the Proposed intervention tab, this column reflects the prevalence of covid-19 in the community, with cases from external sources outside the country/location and held in that locations's own managed isolation/quarantine manually excluded from the data used to calculate the prevalence rating)
   </li>
   <li>
     Outlook rating: To provide an 'early warning', recent trends in daily confirmed cases are projected two weeks into the future using a simple linear model. 
     Then the prevalence over the next two weeks is calculated based on this projection. 
     In locations where we've adjusted active cases to exclude imported cases, this may display an inappropriately pessimistic rating.
     The Outlook rating may be used to identify Level 1, 2, and 3 locations where the outbreak appears to be worsening and which may slip into a higher prevalence level in the next two weeks.
+    (This data is based on prevalence information drawn from all active cases, without distinguishing between active and local cases. Thus, for any locations where most or all cases are in MIQ, the outlook is likely to estimate a higher incoming prevalence level than is really applicable)
   </li>
   <li>Data reliability: This is a rating of the reliability of a country's health system reporting. 
   The data is likely to be unreliable if significant numbers of Covid-19 fatalities are not officially recorded.
@@ -45,11 +46,10 @@
   </li>
   <li>
     Est. arrivals per month (based on 2019): 
-    Estimated arrivals per month, after any interventions have been assigned, assuming a fraction of 2019 travel. This is specified on the "Proposed System" tab.
+    Estimated arrivals per month, after any interventions have been assigned, assuming a fraction of 2019 travel. This can be adjusted by varying the proportion of expected travellers from each risk level on the "Proposed System" tab.
   </li>
     <li>
-    Expected number of cases arriving per month: This displays the expected number of cases that <em>enter the passenger journey</em>. 
-    The label is slightly misleading because around half of these cases would be screened out with a pre-departure PCR test if that is applied.
+    Expected number of cases entering the traveller journey: This displays the expected number of cases that <em>enter the traveller journey</em>. This means cases that (1) arrive at new Zealand's border, or (2) if a pre-departure PCR test is held, the number of cases screened out by that test plus the remaining cases that arrive in New Zealand.
   </li>
 <!--  <li>
     Assigned intervention: This is the change proposed for travellers from that location.
@@ -60,8 +60,8 @@
   </li>-->
 
   <li>
-    Expected number of cases lasting through quarantine per month: 
-    This is the estimated number of cases entering the community even after applicable managed isolation and quarantine measures have been taken.
+    Expected cases exiting MIQ per month: 
+    This is the estimated number of cases exiting MIQ into the community even after applicable MIQ measures have been taken.
     This is an average only, and the true number in any given month could be more or less.
     It considers the prevalence in the location, 
     the volume of travel from that location likely following the application of an intervention (which can be specified on the "Proposed System tab"),

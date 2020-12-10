@@ -90,19 +90,19 @@ render_simsettings <- function(input,output,session){
     paste0(
       "Where there are recent COVID fatalities, this is compared to confirmed cases two weeks prior. ",
       "If the number of cases look too low, then a 'hit rate' is calculated by comparing those cases two weeks prior to fatalities now.",
-      "Then, inferred active cases now is caclculted by dividing the confirmed active cases by the hit rate.",
+      "Then, inferred active cases now is calculated by dividing the confirmed active cases by the hit rate.",
       "To do this we need to assume an infection fatality rate (IFR)."
       
     )
   })
   
   output$simsettings_traveler_relative_prevalence_description <- renderUI({HTML(
-    "Travellers are assumed to have somewhat higher prevalences of Covid than the general population. 
+    "Travellers may be assumed to have different prevalences of Covid than the general population. For instance:
+    (a) Travellers may be more mobile people with a higher number of contacts and consequently a higher prevalence. 
+    On the other hand (b) travellers might 'self-screen' by voluntarily opting not to fly if they get sick, 
+    and thus the prevalence of remaining travellers could also be lower than the general population.
     
-    This might be due to the rate of movement in general they have relative to the general population.
-    
-    The current default was set based on an observation of the different levels of predicted and actual Covid-19 prevalence
-    in incoming travellers across July to August 2020. However this figure can be adjusted as necessary.
+    This setting is set to 1 by default, but can be adjusted to test the result under varying assumptions.
     "
   )})
   

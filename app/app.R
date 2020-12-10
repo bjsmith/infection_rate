@@ -25,8 +25,8 @@ verbose<-FALSE
 print_elapsed_time("loaded dependencies")
 #Ben J:
 #Assume 0.5% transmission risk without mask (it’s a conservative worst case rate)
-#If mask use reduces risk by 90% as per Arthur’s email then in-flight transmission risk reduced to 0.05%
 #Therefore one case expected to be acquired ‘in-flight’ for every 125 infectious cases carried
+#If mask use reduces risk by 90% as per Arthur’s email then in-flight transmission risk reduced to 0.05%
 #default_aircraft_infection_rate <- 0.005 #without mask
 #default_aircraft_mask_effectiveness_percent <- 90
 
@@ -110,9 +110,10 @@ server <- function(input, output, session) {
   
   observeEvent(input$simsettings_clear_cache,{
     if (input$simsettings_cache_reset_password==admin_password){
-      for (cfn in list.files(path="data/",pattern="_cache.csv$")){
+      for (cfn in list.files(path="data/cache/"#,pattern="_cache.csv$"
+                             )){
         print(cfn)
-        file.remove(paste0("data/",cfn))
+        file.remove(paste0("data/cache/",cfn))
         
       }
       get_data(force_reset=TRUE)
@@ -208,6 +209,7 @@ server <- function(input, output, session) {
         #country_classification = NA, #obsolete
         trust_rating = trust_classification,
         assumed_ifr = input$simsettings_ifr/100,
+        data_date = get_run_date(),
         level_thresholds = list(
           level_1_max = input$intsim_level1_max_prevalence,
           level_2_max = input$intsim_level2_max_prevalence,
@@ -321,10 +323,10 @@ server <- function(input, output, session) {
         "Prevalence Rating",
         "Outlook Rating",
         "2019 Monthly arrivals",
-        "Expected number of cases arriving per month",
+        "Expected cases entering the traveller journey per month",
         "Assigned intervention",
-        "Est. arrivals per month (based on 2019)", 
-        "Expected number of cases lasting through quarantine per month"
+        "Expected arrivals per month (based on 2019)", 
+        "Expected cases exiting MIQ per month"
       )
     }else if(input$countrylist_type=="Comprehensive high-level"){
       #comprehensive
@@ -362,9 +364,9 @@ server <- function(input, output, session) {
         "Outlook Rating",
         "Data Reliability",
         "2019 Monthly arrivals",
-        "Est. arrivals per month (based on 2019)", 
-        "Expected number of cases arriving per month",
-        "Expected number of cases lasting through quarantine per month"
+        "Expected arrivals per month (based on 2019)", 
+        "Expected cases entering the traveller journey per month",
+        "Expected cases exiting MIQ per month"
       )
     }else if(input$countrylist_type=="Prevalence detail"){
       #prevalence detail
@@ -434,9 +436,8 @@ server <- function(input, output, session) {
       "Projected prevalence in 14 days (infections / mil)"))
     #and some by 2dp
     cols_2_dp <- intersect(colnames(display_tibble),
-                           c('Expected number of cases arriving per month',
-                             'Expected number of cases escaping screening per month',
-                             'Expected number of cases lasting through quarantine per month',
+                           c("Expected cases entering the traveller journey per month",
+                             "Expected cases exiting MIQ per month",
                              "Inferred detection rate",
                              "Population density"
                            ))
@@ -448,7 +449,7 @@ server <- function(input, output, session) {
                              "Cases confirmed 14-21 days ago (daily average)",
                              "Deaths last 7 days (daily average)",
                              "Est. active infections",
-                             'Est. arrivals per month (based on 2019)',
+                             "Expected arrivals per month (based on 2019)", 
                              "Life expectancy",
                              "Population"
                            ))
@@ -747,10 +748,16 @@ server <- function(input, output, session) {
   
   ######################################################################
   ### Validation table.
+  output$validation_graph_header_2 <- renderUI({
+    HTML(paste0("<h4>Modelled cases at the border per month under the Current System at prevalence levels for ",get_run_date(),"</h4>"))
+  })
   output$cases_at_border_graph <- renderCasesAtBorderGraph(get_status_quo_risk())
   get_daily_nz_data <- reactive({
     daily_nz_data <- get_daily_data(TRUE,input$intsim_MIQ_adjust) %>% filter(Location=="New Zealand")
     return(daily_nz_data)
+  })
+  output$validation_graph_header_1 <- renderUI({
+    HTML("<h4>New Zealand: Observed monthly arrivals by day</h4>")
   })
   
   output$new_zealand_status_quo <- renderPlot({
@@ -765,7 +772,7 @@ server <- function(input, output, session) {
       ggplot(graph_data %>% filter(Date>"2020-06-15"),aes(x=Date,y=Value))+
         geom_line()+
         facet_wrap(~Metric, scales = "free_y",nrow = 2)+
-        labs(title="New Zealand recent activity",subtitle = "Active Cases; New cases over the last 30 days (rolling total)"))
+        labs(title="New Zealand: Activity reported to Johns Hopkins source",subtitle = "TOP: Active Cases; BOTTOM: Rolling total of new cases over the last 30 days"))
   })
   
   
@@ -775,28 +782,31 @@ server <- function(input, output, session) {
     "
     Here, we compare values to try to check and see whether values from different sources align.
     
-    The first thing to check: does the predicted number of cases under \"status quo\" line up with the observed number of cases coming in to the country?
-    
     "
   })
   
-  output$validation_description_2 <- renderText({
+  
+  output$validation_description_2 <- renderUI({
+    
     daily_nz_data <- get_daily_nz_data()
     total_new_cases <- sum(daily_nz_data %>% filter(Date>"2020-06-01") %>% .$NewCases)
-    paste0("
-    What does that imply for our predicted cases getting into the community?
-    Working from the New Zealand rolling new cases graph, we see about 30-40 new cases per month over June to July.
+    HTML(paste0("
     
-    The total number of new cases since June 1 in New Zealand is ",as.character(total_new_cases),".
+    To understand one approach to validating the results of the model, 
+    we could compare the following two values: 
+    (1) the rolling total of active new cases over the past 30 days in New Zealand (first graph, second part); and 
+    (2) the total number of cases in the modelled result in the bottom graph.
+    <br /> <br />
+    We could also compare the number of cases predicted from each country with those reported by the Ministry of Health over the last 30 days. 
+    Excluding countries rated 'untrustworthy', does the proportions of cases predicted from each country (shown in the bottom graph) approximately match the proportions of cases 
+    observed from each country (in Ministry of Health reporting)?
     
-    With 3 border breaches that should work out to an error rate of 3 in ",as.character(total_new_cases),".
-    
-    ")
+           "))
   })
   
   ########################################################################
   #summary page
-  render_summary_page(input, output, session)
+  render_summary_page(input, output, session,get_filtered_mapped_world_with_covid_data())
   
   ######################################################################
   #map page
@@ -895,9 +905,11 @@ ui <- fluidPage(
         titlePanel("Validation"),
         mainPanel(
           textOutput("validation_description"),
+          uiOutput("validation_graph_header_1"),
           plotOutput("new_zealand_status_quo"),
+          uiOutput("validation_graph_header_2"),
           plotOutput("cases_at_border_graph"),
-          textOutput("validation_description_2"),
+          uiOutput("validation_description_2"),
           width = 12
         )
       )

@@ -1,3 +1,9 @@
+method_example_Panel <- function(mainPanel,examplePanel){
+  return(sidebarLayout(
+    sidebarPanel = examplePanel,
+    mainPanel=mainPanel,position = "right"
+  ))
+}
 
 get_map_page_tabPanel <- function(){
   
@@ -9,8 +15,12 @@ get_map_page_tabPanel <- function(){
       # Application title
       titlePanel("Method and Approach"),
       # Show a plot of the generated distribution
+      method_example_Panel(
+      examplePanel=sidebarPanel(includeMarkdown('example1.Rmd')),
+      mainPanel = mainPanel(
       uiOutput("graph0header"),
-      leafletOutput("graph0"),
+      leafletOutput("graph0"))
+      ),
       uiOutput("graph1header"),
       leafletOutput("graph1"),
       uiOutput("graph2header"),
@@ -25,10 +35,10 @@ get_map_page_tabPanel <- function(){
       leafletOutput("graph6"),
       # textOutput("graph7header"),
       # leafletOutput("graph7"),
-      #uiOutput("graph8header"),
-      #leafletOutput("graph8"),
+      uiOutput("graph8header"),
+      leafletOutput("graph8"),
       
-      uiOutput("paragraph_08")
+      uiOutput("paragraph_09")
     ))
 }
 
@@ -94,20 +104,13 @@ render_map_page <- function(output, filtered_mapped_world_with_covid_data,month_
     <a href='https://docs.google.com/spreadsheets/d/1hkpfinHpxT1KcTI8umh55aaiFug12jKKSMZoae4ttlA/edit?usp=sharing'>
     data gathered directly from national and state Ministries of Health</a>
     in order to exclude cases detected at each location's border and held in managed isolation/quarantine.
-    Note that the distinction between community cases and cases held in managed isolation/quarantine is currently reflected in this model
-    by way of a manual adjustment to the prevalence data that appears in the Intervention simulation tab and the risk matrix. 
-    The the Figures shown in the “Method and approach” section on this page, the detection rate calculations, and the 'outlook' ratings 
-    do not include this manual adjustment. 
-    These show all reported active cases within a country (regardless of whether those cases are currently held in that country's MIQ).
   <br /><br />  
   
   We don't want to assume that each country is detecting all of their infections, 
   so we need to work out their likely detection rate and adjust for that. We only ever adjust infections upwards; never downwards.
     
     Data is limited but around the world, experts estimated the true infection fatality rate (IFR) in Wuhan, China at 0.6% 
-<a href='https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.12.2000256'>(Russell et al., 2020)</a>. 
-This will vary slightly due to different age structures in each country and other factors, 
-but it is unlikely to lead to large prevalence underestimates in moderate to high prevalence countries.
+<a href='https://www.eurosurveillance.org/content/10.2807/1560-7917.ES.2020.25.12.2000256'>(Russell et al., 2020)</a>.
 
 <br /><br />
 1. We can estimate the <em>case fatality rate</em> (CFR), the number of reported cases relative to the number of fatalities, by 
@@ -140,12 +143,12 @@ Because we are not confident about fatality estimates in countries with poor hea
   output$graph2header<-renderUI({withMathJax(HTML("
     
 <br /><br />
-3. We can <i>then</i> estimate the true number of infections in a location now by multiplying the number of confirmed cases by the IDR:
+3. We can <i>then</i> estimate the true number of infections in a community now by multiplying the number of confirmed cases by the IDR:
 <br /><br />
 $$ i_{\\text{estimated, today}} = c_{ \\text{observed, today}} \\times \\text{IDR} $$
 
-If adjusting by the IDR would reduce the number of estimated infections below the confirmed active cases in any particular location, 
-then we skip this step for that location.
+If adjusting by the IDR would reduce the number of estimated infections below the confirmed active cases in any particular country, 
+then we skip this step for that country.
 <br /><br />
 
     
@@ -239,14 +242,15 @@ $$P(c>0) = 1-(\\frac{p-i_\\textrm{estimated, today}}{p})^a$$
     withMathJax(HTML(paste0(
     "
     
-7. Finally we can calculate the <em>expected number</em> of cases from each country (Figure 7). 
-This is simply the estimated infection rate multiplied by the number of arrivals.
+7. Finally we can calculate the <em>expected number</em> of cases from each country (Figure 7) that enter the traveller journey. 
+This is simply the estimated infection rate multiplied by the number of arrivals. Under the current system it is the number of cases arriving at the border and entering MIQ; 
+however, we propose other systems here where some of these cases could be screened out pre-flight (see Journey design).
 
 <br /><br />
     
     
     
-    Figure 7: Expected cases entering the traveller journey each month from residents of each country, based on arrival figures from this country in ",
+    Figure 7: Expected cases per month entering the traveller journey from each country, based on arrival figures from this country in ",
     month_name,
     " 2019.")))})
   output$graph6<-renderLeaflet({
@@ -269,39 +273,69 @@ This is simply the estimated infection rate multiplied by the number of arrivals
     show_leaflet(data_to_show = display_data,
                  primary_col = col_of_interest,
                  rounding_func = function(x){scale_signif(x,3)},
-                 legend_title =  "Expected monthly \n cases entering the \n traveller journey",
+                 legend_title =  "Expected monthly cases\n entering traveller journey",
                  custom_palette = binpal
     )
   })
 
-  output$paragraph_08<-renderUI({withMathJax(HTML(paste0(
+  output$graph8header<-renderUI({withMathJax(HTML(paste0(
     "
     As can be seen, rates vary widely from very, very low rates in East Asia through to very high rates in the United States and Europe.
 <br /><br />
 
-8. By assessing the reliability of the MIQ (Managed Isolation and Quarantine) system based on observed success so far, we can estimate the probability per traveller
-  that a case will exit MIQ into the community.
-  <br /><br />
+8. By assessing the reliability of the MIQ (Managed Isolation and Quarantine) system based on observed success so far, we can estimate the probability that a case, 
+once arriving in New Zealand, will exit to the community, or spread to a MIQ worker, or otherwise lead to a case in the community.
+
 We assessed this risk using based on 
 <a href='https://www.tepunahamatatini.ac.nz/2020/07/16/effect-of-new-zealand-border-controls-on-covid-19-reincursion-risk/'>prior research</a> 
 as well supplemental estimates of MIQ success rate.
+<br /><br />
+Roughly speaking, based on past experience, around 1 in 50 cases arriving in 14-day MIQ results in one case in the community.
+More precise estimates are display on the \"Proposed system\" tab.
+<br /><br />
+
+We can then calculate the expected (average) number of arrivals from each location who exits MIQ still infectious.
+
+<br /><br />
     
-    <br /><br /> We calculated the expected cases exiting MIQ from each location through the following process:
     
-    <div style='text-align: center'><img style='max-width:100%' src='aggregate_risk.png' /></div>
     
-    <br /><br />
-    We can calculate the number of cases exiting MIQ under the current system. We can also repeat the calculation for other proposed systems, considering the level of risk applicable.
-    <br /><br />
+    Figure 8: Expected number of cases to arrive and reach the community after MIQ, based on arrival figures in ",
+    month_name,
+    " 2019.")))})
+  output$graph8<-renderLeaflet({
     
-    The 'Journey Design' tab describes the journey risk in more detail. 
-    The complete details for calculations are available in our companion paper and its online supplemental materials.
-    Roughly speaking, our calculations suggest 1-2% of cases entering the traveller journey (currently, arriving 14-day MIQ) 
-    results in one case exiting MIQ.
-"    
-  )))})
+    display_data <- filtered_mapped_world_with_covid_data %>% filter(!is.na(ExpectedNumberOfCasesInCommunity))
+    col_of_interest <- "ExpectedNumberOfCasesInCommunity"
+    
+    binpal <- colorBin("YlOrRd",
+                       display_data$ExpectedNumberOfCasesInCommunity,
+                       domain=c(0,max(display_data$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)),
+                       na.color=NA,
+                       bins=c(0,0.01,0.1,1,
+                              10^c(1:ceiling(log10(
+                                max(display_data$ExpectedNumberOfCasesInCommunity,na.rm = TRUE)))
+                              )), pretty = FALSE)
+    
+    show_leaflet(data_to_show = display_data,
+                 primary_col = col_of_interest,
+                 rounding_func = function(x){scale_signif(x,2)},
+                 legend_title =  "Expected monthly\n community cases",
+                 custom_palette = binpal
+                 
+    )
+  })
   
+  output$paragraph_09 <- renderUI({withMathJax(HTML(paste0(
+    "
+
+<br /><br />
+
+In countries where health systems are underdeveloped, it is unlikely that COVID-19 deaths will be accurately recorded. 
+
+Because countries where health systems are underdeveloped may not accurately record deaths, 
+the visualization only displays countries with a life expectancy of "
+    ,as.character(life_exp_thresh),
+    " or higher.")))})
   
-  
-    
 }
