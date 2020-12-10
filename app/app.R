@@ -823,130 +823,134 @@ server <- function(input, output, session) {
 print_elapsed_time("Creating UI component...")
 app_display_title <- "Border relaxation measures"
 
-ui <- navbarPage(
-  app_display_title,
+ui <-   fluidPage(
+  div(class="header", includeHTML("header.html")),
+  add_busy_spinner(spin = "fading-circle"),
+  navbarPage(
+  title=app_display_title,
   id="mainNavbarPage",
   selected="Intervention simulation",
   footer=div(class = "footer",
              includeHTML("footer.html")
   ),
-  tabPanel(
-    "Location Profiles",
-    fluidPage(
-      titlePanel("Location Profiles"),
-      textOutput("Location Profile Options"),
-      selectInput("locprofile_Location",
-                  "Select a location to profile:",
-                  choices = key_interest_countries,
-                  multiple=FALSE),
-      downloadButton("downloadable_report", "Generate report")
-    )
-  ),
-  get_intsim_tabPanel(default_simulation_data,countries_to_choose_from),
-  #get_Proposal_tabPanel(default_simulation_data,countries_to_choose_from),
-  
-  tabPanel(
-    "Risk Matrix",
-    fluidPage(
-      fluidRow(
-        column(4,
-               titlePanel("COVID-19: Location Risk Matrix")),
-        column(2,
-               h4("View settings")),
-        column(3,
-               radioButtons("countrylist_type", 
-                            "List Type:", 
-                            choices = c(
-                              "Classic",
-                              "Comprehensive high-level",
-                              "Prevalence detail",
-                              "Raw"), 
-                            selected = "Classic",
-                            inline = FALSE
-               )
+    tabPanel(
+      "Location Profiles",
+      fluidPage(
+        titlePanel("Location Profiles"),
+        textOutput("Location Profile Options"),
+        selectInput("locprofile_Location",
+                    "Select a location to profile:",
+                    choices = key_interest_countries,
+                    multiple=FALSE),
+        downloadButton("downloadable_report", "Generate report")
+      )
+    ),
+    get_intsim_tabPanel(default_simulation_data,countries_to_choose_from),
+    #get_Proposal_tabPanel(default_simulation_data,countries_to_choose_from),
+    
+    tabPanel(
+      "Risk Matrix",
+      fluidPage(
+        fluidRow(
+          column(4,
+                 titlePanel("COVID-19: Location Risk Matrix")),
+          column(2,
+                 h4("View settings")),
+          column(3,
+                 radioButtons("countrylist_type", 
+                              "List Type:", 
+                              choices = c(
+                                "Classic",
+                                "Comprehensive high-level",
+                                "Prevalence detail",
+                                "Raw"), 
+                              selected = "Classic",
+                              inline = FALSE
+                 )
+          ),
+          column(2,
+                 numericInput("countrylist_travelerfilter",
+                              "Show countries with at least this number of travellers per month:",
+                              min=0,max=100000,
+                              step=500,
+                              value=2000)
+          ),
+          column(1,
+                 # Button
+                 downloadButton("countrylist_downloadcsv", "Download")
+          )
         ),
-        column(2,
-               numericInput("countrylist_travelerfilter",
-                            "Show countries with at least this number of travellers per month:",
-                            min=0,max=100000,
-                            step=500,
-                            value=2000)
+        hr(),
+        fluidRow(
+          column(12,
+                 div(DT::dataTableOutput("country_table"), style = "font-size:80%")
+          )
         ),
-        column(1,
-               # Button
-               downloadButton("countrylist_downloadcsv", "Download")
-        )
-      ),
-      hr(),
-      fluidRow(
-        column(12,
-               div(DT::dataTableOutput("country_table"), style = "font-size:80%")
-        )
-      ),
-      fluidRow(
-        column(12,
-               uiOutput("country_table_notes")
+        fluidRow(
+          column(12,
+                 uiOutput("country_table_notes")
+          )
         )
       )
-    )
-  ),
-  get_summary_map_tabPanel(default_run_date = default_run_date),
-  get_map_page_tabPanel(),
-  tabPanel(
-    "Validation",
-    fluidPage(
-      titlePanel("Validation"),
-      mainPanel(
-        textOutput("validation_description"),
-        plotOutput("new_zealand_status_quo"),
-        plotOutput("cases_at_border_graph"),
-        textOutput("validation_description_2"),
-        width = 12
+    ),
+    get_summary_map_tabPanel(default_run_date = default_run_date),
+    get_map_page_tabPanel(),
+    tabPanel(
+      "Validation",
+      fluidPage(
+        titlePanel("Validation"),
+        mainPanel(
+          textOutput("validation_description"),
+          plotOutput("new_zealand_status_quo"),
+          plotOutput("cases_at_border_graph"),
+          textOutput("validation_description_2"),
+          width = 12
+        )
       )
-    )
-  ),
-  get_journey_page_tabPanel(),
-  tabPanel(
-    "Simulation settings",
-    fluidPage(
-      useShinyjs(),#have to put this somewhere; I've arbitrarily put it in the simSettings page.
-      titlePanel("Simulation Settings"),
-      mainPanel(
-        # numericInput("intsim_quarantine_failure_odds",
-        #              "If someone who arrives in NZ with COVID19 and is quarantined,\nand they exit quarantine, the odds they are still contagious are 1 in ",
-        #              min=5,
-        #              max=10000,step=10,
-        #              value = default_quarantine_failure_odds),
-        textOutput("ifr_explanation"),
-        numericInput("simsettings_ifr",
-                     "Assumed Infection Fatality Rate (%):",
-                     min=0,
-                     max=5,step=0.1,
-                     value = default_assumed_ifr_percent),
-        numericInput("simsettings_traveler_relative_prevalence",
-                     "Prevalence of COVID-19 in travellers relative to the population:",
-                     min=0,
-                     max=10,step=0.1,
-                     value = default_traveler_relative_prevalence),
-        
-        numericInput("simsettings_current_lockdown_passenger_volume",
-                     "Current monthly incoming passenger volume:",
-                     min=0,
-                     max=10^5,step=1000,
-                     value = default_current_lockdown_passenger_volume),
-        dateInput("simsettings_run_date",
-                     "Run date:",
-                     value = default_run_date,max = Sys.Date()),
-        selectInput(inputId = "simsettings_mode",
-                    label="Simulation mode",
-                    choices = c("Simple","Advanced"),
-                    selected = "Simple"),
-        passwordInput(inputId="simsettings_cache_reset_password",
-                  label="To clear cache, enter the correct password first:"),
-        actionButton(inputId="simsettings_clear_cache",
-                     "Clear Cache"
-                     )
-        
+    ),
+    get_journey_page_tabPanel(),
+    tabPanel(
+      "Simulation settings",
+      fluidPage(
+        useShinyjs(),#have to put this somewhere; I've arbitrarily put it in the simSettings page.
+        titlePanel("Simulation Settings"),
+        mainPanel(
+          # numericInput("intsim_quarantine_failure_odds",
+          #              "If someone who arrives in NZ with COVID19 and is quarantined,\nand they exit quarantine, the odds they are still contagious are 1 in ",
+          #              min=5,
+          #              max=10000,step=10,
+          #              value = default_quarantine_failure_odds),
+          textOutput("ifr_explanation"),
+          numericInput("simsettings_ifr",
+                       "Assumed Infection Fatality Rate (%):",
+                       min=0,
+                       max=5,step=0.1,
+                       value = default_assumed_ifr_percent),
+          numericInput("simsettings_traveler_relative_prevalence",
+                       "Prevalence of COVID-19 in travellers relative to the population:",
+                       min=0,
+                       max=10,step=0.1,
+                       value = default_traveler_relative_prevalence),
+          
+          numericInput("simsettings_current_lockdown_passenger_volume",
+                       "Current monthly incoming passenger volume:",
+                       min=0,
+                       max=10^5,step=1000,
+                       value = default_current_lockdown_passenger_volume),
+          dateInput("simsettings_run_date",
+                       "Run date:",
+                       value = default_run_date,max = Sys.Date()),
+          selectInput(inputId = "simsettings_mode",
+                      label="Simulation mode",
+                      choices = c("Simple","Advanced"),
+                      selected = "Simple"),
+          passwordInput(inputId="simsettings_cache_reset_password",
+                    label="To clear cache, enter the correct password first:"),
+          actionButton(inputId="simsettings_clear_cache",
+                       "Clear Cache"
+                       )
+          
+        )
       )
     )
   )
