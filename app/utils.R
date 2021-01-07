@@ -25,6 +25,7 @@ library(leaflet)
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(RColorBrewer)
+source("git_exclude/auth_connect.R")
 
 #timer functionality
 session.id <- as.character(floor(runif(1)*1e18))
@@ -224,12 +225,14 @@ get_data_closure <- function() {
       # Or, if you don't use multiple Google identities, you can be more vague:
       #gs4_auth_configure(api_key = "AIzaSyAnEAdoH-yLBO1rvhmAD-kkKR9TMYqI0Rs")
       #gs4_auth_configure(app = google_app)
+      
       google_sheets_cache_filepath <- "manual_corrections_cache.Rds"
       get_manual_corrections_from_gsheet <- function(save_path){
         print('connecting to google sheet to get manual corrections')
-        options(gargle_oauth_email = "newzealandborderriskapp@gmail.com")
-        options(gargle_oauth_email = TRUE)
-        gs4_deauth()
+        # options(gargle_oauth_email = "newzealandborderriskapp@gmail.com")
+        # options(gargle_oauth_email = TRUE)
+        # gs4_deauth()
+        borderapp_google_auth_connect()
         #set this for now, but we may need to follow the instructions below:
         manual_corrections <- read_sheet("1hkpfinHpxT1KcTI8umh55aaiFug12jKKSMZoae4ttlA")
         #write it to a CSV
