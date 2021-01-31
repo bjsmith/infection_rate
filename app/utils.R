@@ -238,7 +238,12 @@ get_data_closure <- function() {
         #write it to a CSV
         return(manual_corrections)
       }
-      dl_local[["manual_corrections"]] <- get_cache_or_live_data(get_manual_corrections_from_gsheet,google_sheets_cache_filepath,cache_expiry_in_minutes = 60)
+      get_manual_corrections_from_flatfile <- function(save_path){
+        print("connecting to external web host to get manual connections")
+        manual_corrections <- readr::read_csv("https://nzborderriskproject.000webhostapp.com/manual_update_cache.csv")
+        return(manual_corrections)
+      }
+      dl_local[["manual_corrections"]] <- get_cache_or_live_data(get_manual_corrections_from_flatfile,google_sheets_cache_filepath,cache_expiry_in_minutes = 60)
       
       print_elapsed_time("fetching ourworldindata data...")
       owid_cache_filepath <- "owid_cache.Rds"

@@ -34,8 +34,8 @@ classify_country_prevalence <-function(lifeExp,prevalence_p_m){
     }else if(prevalence_p_m<10^4){
       return("Level 4")
       #high trust, very high prevalence
-    }else if(prevalence_p_m<10^5){
-      return("Above Level 4")
+    }else if(prevalence_p_m>=10^4){
+      return("Level 4 (extreme)")
       #high trust, very high prevalence
     }
   }else{
