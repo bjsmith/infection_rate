@@ -1,6 +1,7 @@
 
 
 app_packages <- c(
+  "rgdal",
   #shiny
   "shiny",
   "shinyjs",
@@ -18,6 +19,7 @@ app_packages <- c(
   "googlesheets4",
   "zoo",
   "tidyr",
+  
   
   #visual
   "ggplot2", # tidyverse vis package
