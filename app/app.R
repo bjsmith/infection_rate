@@ -897,8 +897,8 @@ ui <-   fluidPage(
         )
       )
     ),
-    # get_summary_map_tabPanel(default_run_date = default_run_date),
-    # get_map_page_tabPanel(),
+    get_summary_map_tabPanel(default_run_date = default_run_date),
+    get_map_page_tabPanel(),
     tabPanel(
       "Validation",
       fluidPage(
