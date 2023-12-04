@@ -962,4 +962,9 @@ ui <-   fluidPage(
 
 print_elapsed_time("Running Shiny Application...")
 # Run the application 
-shinyApp(ui = ui, server = server)
+shinyApp(ui = ui, server = server,
+         appDir=getwd(),
+         host = '0.0.0.0',
+         port = as.numeric(port)
+         
+         )
