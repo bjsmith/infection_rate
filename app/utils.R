@@ -19,11 +19,11 @@ library(zoo)
 #visual
 library(ggplot2) # tidyverse vis package
 library(ggrepel)
-library(sf)
-library(spData)
-library(leaflet)
-library(rnaturalearth)
-library(rnaturalearthdata)
+# library(sf)
+# library(spData)
+# library(leaflet)
+# library(rnaturalearth)
+# library(rnaturalearthdata)
 library(RColorBrewer)
 
 source("git_exclude/auth_connect.R")
