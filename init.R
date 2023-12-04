@@ -1,7 +1,7 @@
 
 
 app_packages <- c(
-  "rgdal",
+  #"rgdal",
   #shiny
   "shiny",
   "shinyjs",
@@ -25,8 +25,8 @@ app_packages <- c(
   "ggplot2", # tidyverse vis package
   "ggrepel",
   # "sf",
-  "spData",
-  "leaflet",
+  #"spData",
+  #"leaflet",
   # "rnaturalearth",
   # "rnaturalearthdata",
   "RColorBrewer"
