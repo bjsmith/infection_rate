@@ -21,7 +21,7 @@ library(ggplot2) # tidyverse vis package
 library(ggrepel)
 # library(sf)
 # library(spData)
-library(leaflet)
+#library(leaflet)
 # library(rnaturalearth)
 # library(rnaturalearthdata)
 library(RColorBrewer)
