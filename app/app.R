@@ -70,7 +70,11 @@ small_country_health_data <-data.frame(
 )
 
 
-admin_password <- read_file("git_exclude/pw.txt")
+admin_password<-Sys.getenv("infection_rate_pw")
+if (admin_password==""){
+  admin_password <- read_file("git_exclude/pw.txt")
+}
+
 source("key_interest_countries.R")
 
 
