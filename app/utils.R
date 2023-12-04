@@ -35,6 +35,9 @@ session.id <- as.character(floor(runif(1)*1e20))
 start_time <- Sys.time()
 last_time <- start_time
 timer_filepath <- paste0("data/log/timer", session.id, ".log")
+if (dir.exists("data/log/")==FALSE){
+  dir.create("data/log/")
+}
 if (file.exists(timer_filepath)){
   file.remove(timer_filepath)
 }
