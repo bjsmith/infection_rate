@@ -7,4 +7,5 @@
 #   port = as.numeric(port)
 # )
 
-source("app/app.R")
+setwd("app")
+source("app.R")

@@ -238,8 +238,9 @@ get_data_closure <- function() {
         return(manual_corrections)
       }
       get_manual_corrections_from_flatfile <- function(save_path){
-        print("connecting to external web host to get manual connections")
-        manual_corrections <- readr::read_csv("https://nzborderriskproject.000webhostapp.com/manual_connections_local_20200822.csv")
+        print("connecting to INTERNAL web host to get manual connections")
+        #manual_corrections <- readr::read_csv("https://nzborderriskproject.000webhostapp.com/manual_connections_local_20200822.csv")
+        manual_corrections <- readr::read_csv("data/manual_connections_local_20200822.csv")
         return(manual_corrections)
       }
       dl_local[["manual_corrections"]] <- get_cache_or_live_data(get_manual_corrections_from_flatfile,google_sheets_cache_filepath,cache_expiry_in_minutes = 60)
