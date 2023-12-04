@@ -17,15 +17,16 @@ app_packages <- c(
   "magrittr",
   "googlesheets4",
   "zoo",
+  "tidyr",
   
   #visual
   "ggplot2", # tidyverse vis package
   "ggrepel",
-  "sf",
+  # "sf",
   "spData",
   "leaflet",
-  "rnaturalearth",
-  "rnaturalearthdata",
+  # "rnaturalearth",
+  # "rnaturalearthdata",
   "RColorBrewer"
 )
 
