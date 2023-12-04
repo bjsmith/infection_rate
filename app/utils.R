@@ -26,7 +26,8 @@ library(ggrepel)
 # library(rnaturalearthdata)
 library(RColorBrewer)
 
-source("git_exclude/auth_connect.R")
+#source("git_exclude/auth_connect.R")
+source("auth_connect_deauth.R")
 
 
 #timer functionality
