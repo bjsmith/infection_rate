@@ -1,35 +1,4 @@
 
-#shiny
-library(shiny)
-library(shinyjs)
-library(dplyr)
-library(shinybusy)
-
-#data
-library(DT)
-library(data.table)
-library(dplyr)
-library(lubridate)
-library(readr)
-library(stringr)
-library(magrittr)
-library(googlesheets4)
-library(zoo)
-
-#visual
-library(ggplot2) # tidyverse vis package
-library(ggrepel)
-library(sf)
-library(spData)
-library(leaflet)
-library(rnaturalearth)
-library(rnaturalearthdata)
-library(RColorBrewer)
-
-#source("git_exclude/auth_connect.R")
-source("auth_connect_deauth.R")
-
-
 #timer functionality
 session.id <- as.character(floor(runif(1)*1e20))
 start_time <- Sys.time()
@@ -50,6 +19,41 @@ print_elapsed_time <- function(msg){
     "; ", msg,"\n"),file=timer_filepath,append=TRUE)
   last_time <<- this_time
 }
+
+print_elapsed_time("loading packages...")
+
+#shiny
+library(shiny)
+library(shinyjs)
+library(dplyr)
+library(shinybusy)
+
+#data
+library(DT)
+library(data.table)
+library(dplyr)
+library(lubridate)
+library(readr)
+library(stringr)
+library(magrittr)
+#library(googlesheets4)
+library(zoo)
+
+#visual
+library(ggplot2) # tidyverse vis package
+library(ggrepel)
+# library(sf)
+# library(spData)
+# library(leaflet)
+# library(rnaturalearth)
+# library(rnaturalearthdata)
+library(RColorBrewer)
+
+print_elapsed_time("packages loaded.")
+
+#source("git_exclude/auth_connect.R")
+source("auth_connect_deauth.R")
+
 
 
 show_leaflet <- function(data_to_show,primary_col,rounding_func,legend_title,
@@ -256,7 +260,7 @@ get_data_closure <- function() {
         return(owid_fullset)
       }
       
-      dl_local[["owid_fullset"]] <- get_cache_or_live_data(retrieve_owid_dataset, owid_cache_filepath,cache_expiry_in_minutes = 180)
+      dl_local[["owid_fullset"]] <- get_cache_or_live_data(retrieve_owid_dataset, owid_cache_filepath,cache_expiry_in_minutes = 86400*365*1000)
       
       data_list <<- dl_local
     }else{
@@ -588,23 +592,25 @@ get_geomapped_covid_data <- function(
   
   #exclude new zealand; it doesn't make sense to include it because returning NZers are allocated to other categories
   arrivals_data <- arrivals_data %>% filter(`ISO3166-1-Alpha-3`!="NZL")
-  print("world data")
+  #print("world data")
   ##### testing data
   owid_7_day_average_testing_observable <- preprocess_owid_test_data(data_list[["owid_fullset"]])
   
-  
+  print_elapsed_time("processing")
   if(include_geo_data){
+    print_elapsed_time("getting geo data...")
     worldc <- get_world_with_supplements()
     
     world_health<-worldc %>% 
       left_join(country_iso_2_to_3_map,by=c("iso_a2" = "ISO3166.1.Alpha.2"),name="iso_a2") %>%
       left_join(world_data,by=c("ISO3166.1.Alpha.3"="LocationCode")) %>%
       rename("LocationCode"="ISO3166.1.Alpha.3")
+    print_elapsed_time("geo data retrieved.")
   }else{
     world_health<-world_data
   }
 
-  print_elapsed_time("processing")
+  
   
   latest_date <- min(max(jh_dxc$Date),run_date)
   date_period_begin<- latest_date - days(7)

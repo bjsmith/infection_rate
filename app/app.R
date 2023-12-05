@@ -811,11 +811,11 @@ server <- function(input, output, session) {
   
   ######################################################################
   #map page
-  render_map_page(output,get_filtered_mapped_world_with_covid_data(),get_run_month())
+  #render_map_page(output,get_filtered_mapped_world_with_covid_data(),get_run_month())
   
   ######################################################################
   #SUMMARY map page
-  render_summary_map(input = input,output = output,session=session, get_filtered_mapped_world_with_covid_data(),get_run_month())
+  #render_summary_map(input = input,output = output,session=session, get_filtered_mapped_world_with_covid_data(),get_run_month())
   
   ######################################################################
   #journey page
@@ -897,8 +897,8 @@ ui <-   fluidPage(
         )
       )
     ),
-    get_summary_map_tabPanel(default_run_date = default_run_date),
-    get_map_page_tabPanel(),
+    # get_summary_map_tabPanel(default_run_date = default_run_date),
+    # get_map_page_tabPanel(),
     tabPanel(
       "Validation",
       fluidPage(
